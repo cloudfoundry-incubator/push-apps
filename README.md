@@ -1,0 +1,31 @@
+# Push Apps
+
+A jar that pushes apps to CF for PCF Metrics
+
+##Backlog
+
+v1
+* Push static
+    * Pushes static UI
+    * Blue green deploy (map-route)
+* Push mysql logqueue
+    * Pushes binary buildpack
+    * Blue green
+* Push es logqueue
+    * Pushes binary buildpack
+    * Blue green
+* Push ingestor
+    * Pushes binary buildpack
+    * Blue green
+
+v2
+* Migrate database(s)
+* Retry each task x times
+* Run tasks in parallel
+
+##Icebox
+* Push APM UI
+    * setup env
+    * create services
+    * bind services
+    * blue-green deploy (map-route)
