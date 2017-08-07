@@ -19,6 +19,7 @@ v1
     * Blue green
 
 v2
+* Should be able to provide a directory or a zip file. If path is a directory, zip it first.
 * Migrate database(s)
 * Retry each task x times
 * Run tasks in parallel

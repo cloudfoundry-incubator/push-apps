@@ -1,0 +1,12 @@
+cf:
+  apiHost: "api.example.com"
+  password: some-password
+  username: some-username
+  organization: some-organization
+  space: some-space
+apps:
+- name: some-name
+  path: some-path
+  buildpack: some-buildpack
+  environment:
+    FRUIT: lemons

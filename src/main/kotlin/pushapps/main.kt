@@ -1,26 +1,17 @@
 package pushapps
 
-import com.beust.jcommander.JCommander
-import com.beust.jcommander.Parameter
-
-class Args {
-    @Parameter(names = arrayOf("-name"), description = "Person to greet")
-    var name: String = "World"
-}
-
 fun main(args: Array<String>) {
-    var parsedArgs = Args()
+    val configPath = ArgumentParser.parseConfigPath(args)
+    val (cf, apps) = ConfigReader.parseConfig(configPath)
 
-    val argsParser = JCommander
-            .newBuilder()
-            .addObject(parsedArgs)
-            .build()
+    val pusher = Pusher(apiHost = cf.apiHost,
+        password = cf.password,
+        username = cf.username,
+        organization = cf.organization,
+        space = cf.space
+    )
 
-    if (argsParser == null) {
-        println("Couldn't parse command line args")
-    }
-
-    argsParser.parse(*args)
-
-    println("Hello ${parsedArgs.name}")
+    pusher.list()
+    val app = apps[0]
+    pusher.push(app.name, app.path, app.buildpack)
 }
