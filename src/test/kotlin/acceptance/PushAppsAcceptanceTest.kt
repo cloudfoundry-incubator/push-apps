@@ -9,9 +9,6 @@ import org.assertj.core.api.Fail
 import org.cloudfoundry.operations.spaces.DeleteSpaceRequest
 import pushapps.*
 import java.io.File
-import java.nio.file.Files
-import java.nio.file.LinkOption
-import java.nio.file.Paths
 import java.util.concurrent.TimeUnit
 
 class PushAppsAcceptanceTest : Test({
@@ -30,9 +27,7 @@ class PushAppsAcceptanceTest : Test({
 
     val cf = buildCfClient(apiHost, username, password, organization)
 
-    before {
-        writeConfigFile(apiHost, username, password, organization, "test")
-    }
+    val configFilePath = writeConfigFile(apiHost, username, password, organization, "test")
 
     after {
         val deleteSpaceRequest = DeleteSpaceRequest
@@ -44,29 +39,36 @@ class PushAppsAcceptanceTest : Test({
 
     describe("pushApps") {
         test("creates space in system org if it doesn't exist") {
-            val exitCode = runPushApps()
+            var spaces = cf.listSpaces()
+            assertThat(spaces).doesNotContain("test")
 
-            val spaces = cf.listSpaces()
+            val exitCode = runPushApps(configFilePath)
+            spaces = cf.listSpaces()
 
-            assertThat(spaces).contains("test")
             assertThat(exitCode).isEqualTo(0)
+            assertThat(spaces).contains("test")
         }
 
         test("does not create space if it already exists") {
             cf.createSpaceIfDoesNotExist("test")
 
-            val exitCode = runPushApps()
+            val exitCode = runPushApps(configFilePath)
             assertThat(exitCode).isEqualTo(0)
         }
     }
 })
 
 val workingDir = System.getProperty("user.dir")!!
-val configPath = "$workingDir/src/test/kotlin/acceptance/support/acceptance.yml"
 
-fun writeConfigFile(apiHost: String, username: String, password: String, organization: String, space: String) {
-    val cf = Cf(apiHost, username, password, organization, space)
-    val metricsApp = App(
+fun writeConfigFile(
+    apiHost: String,
+    username: String,
+    password: String,
+    organization: String,
+    space: String
+): String {
+    val cf = CfConfig(apiHost, username, password, organization, space)
+    val metricsApp = AppConfig(
         "metrics",
         "$workingDir/src/test/kotlin/acceptance/support/metrics.zip",
         "binary_buildpack",
@@ -77,16 +79,14 @@ fun writeConfigFile(apiHost: String, username: String, password: String, organiz
     val config = Config(cf, apps)
 
     val objectMapper = ObjectMapper(YAMLFactory()).registerModule(KotlinModule())
-    val configFilePath = Paths.get(configPath)
-    if (!Files.exists(configFilePath, LinkOption.NOFOLLOW_LINKS)) {
-        Files.createFile(configFilePath)
-    }
 
-    val configFile = File(configPath)
-    objectMapper.writeValue(configFile, config)
+    val tempFile = File.createTempFile("acceptance-test", ".yml")
+    objectMapper.writeValue(tempFile, config)
+
+    return tempFile.absolutePath
 }
 
-fun runPushApps(): Int {
+fun runPushApps(configFilePath: String): Int {
     val version = System.getenv("PUSHAPPS_VERSION")!!
 
     val pushAppsProcess = ProcessBuilder(
@@ -94,7 +94,7 @@ fun runPushApps(): Int {
         "-jar",
         "$workingDir/build/libs/push-apps-$version.jar",
         "-c",
-        configPath
+        configFilePath
     ).inheritIO().start()
 
     pushAppsProcess.waitFor(30, TimeUnit.SECONDS)

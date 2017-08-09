@@ -25,6 +25,8 @@ v2
 * Retry each task x times
 * Run tasks in parallel
 
+* Script to run pushapps needs to create security group
+
 ##Icebox
 * Push APM UI
     * setup env

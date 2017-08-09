@@ -13,9 +13,9 @@ class ConfigReader {
     }
 }
 
-data class Config(val cf: Cf, val apps: Array<App>)
+data class Config(val cf: CfConfig, val apps: Array<AppConfig>)
 
-data class Cf(
+data class CfConfig(
     val apiHost: String,
     val username: String,
     val password: String,
@@ -23,7 +23,7 @@ data class Cf(
     val space: String
 )
 
-data class App(
+data class AppConfig(
     val name: String,
     val path: String,
     val buildpack: String,
