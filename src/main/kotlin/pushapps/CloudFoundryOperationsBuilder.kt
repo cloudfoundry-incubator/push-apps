@@ -10,37 +10,15 @@ import org.cloudfoundry.reactor.doppler.ReactorDopplerClient
 import org.cloudfoundry.reactor.tokenprovider.PasswordGrantTokenProvider
 import org.cloudfoundry.reactor.uaa.ReactorUaaClient
 
+fun cloudFoundryOperationsBuilder(): CloudFoundryOperationsBuilder {
+    return CloudFoundryOperationsBuilder()
+}
+
 class CloudFoundryOperationsBuilder {
     var organization: String? = null
     var apiHost: String? = null
     var username: String? = null
     var password: String? = null
-
-    companion object {
-        fun builder(): CloudFoundryOperationsBuilder {
-            return CloudFoundryOperationsBuilder()
-        }
-    }
-
-    fun organization(organization: String): CloudFoundryOperationsBuilder {
-        this.organization = organization
-        return this
-    }
-
-    fun apiHost(apiHost: String): CloudFoundryOperationsBuilder {
-        this.apiHost = apiHost
-        return this
-    }
-
-    fun username(username: String): CloudFoundryOperationsBuilder {
-        this.username = username
-        return this
-    }
-
-    fun password(password: String): CloudFoundryOperationsBuilder {
-        this.password = password
-        return this
-    }
 
     fun build(): CloudFoundryOperations {
         val connectionContext = connectionContext()

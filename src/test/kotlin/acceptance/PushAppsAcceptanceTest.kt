@@ -15,17 +15,23 @@ import java.nio.file.Paths
 import java.util.concurrent.TimeUnit
 
 class PushAppsAcceptanceTest : Test({
-    val cf = buildCfClient()
-    val cfOperations = CloudFoundryOperationsBuilder
-        .builder()
-        .apiHost(apiHost)
-        .username(username)
-        .password(password)
-        .organization(organization)
-        .build()
+    val apiHost = System.getenv("CF_API")!!
+    val username = System.getenv("CF_USERNAME")!!
+    val password = System.getenv("CF_PASSWORD")!!
+    val organization = "system"
+
+    val cfOperations = cloudFoundryOperationsBuilder()
+        .apply {
+            this.apiHost = apiHost
+            this.username = username
+            this.password = password
+            this.organization = organization
+        }.build()
+
+    val cf = buildCfClient(apiHost, username, password, organization)
 
     before {
-        writeConfigFile()
+        writeConfigFile(apiHost, username, password, organization, "test")
     }
 
     after {
@@ -57,13 +63,8 @@ class PushAppsAcceptanceTest : Test({
 
 val workingDir = System.getProperty("user.dir")!!
 val configPath = "$workingDir/src/test/kotlin/acceptance/support/acceptance.yml"
-val apiHost = System.getenv("CF_API")!!
-val username = System.getenv("CF_USERNAME")!!
-val password = System.getenv("CF_PASSWORD")!!
-val organization = "system"
-val space = "test"
 
-fun writeConfigFile() {
+fun writeConfigFile(apiHost: String, username: String, password: String, organization: String, space: String) {
     val cf = Cf(apiHost, username, password, organization, space)
     val metricsApp = App(
         "metrics",
@@ -86,11 +87,12 @@ fun writeConfigFile() {
 }
 
 fun runPushApps(): Int {
-    //TODO: get version programmatically
+    val version = System.getenv("PUSHAPPS_VERSION")!!
+
     val pushAppsProcess = ProcessBuilder(
         "java",
         "-jar",
-        "$workingDir/build/libs/push-apps-0.0.1.jar",
+        "$workingDir/build/libs/push-apps-$version.jar",
         "-c",
         configPath
     ).inheritIO().start()
@@ -107,11 +109,11 @@ fun runPushApps(): Int {
     return exitValue
 }
 
-fun buildCfClient(): CloudFoundryClient {
+fun buildCfClient(apiHost: String, username: String, password: String, organization: String): CloudFoundryClient {
     return CloudFoundryClient(
         apiHost,
-        password,
         username,
+        password,
         organization
     )
 }

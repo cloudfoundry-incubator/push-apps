@@ -7,17 +7,18 @@ import reactor.core.publisher.Mono
 
 class CloudFoundryClient(
     apiHost: String,
-    password: String,
     username: String,
+    password: String,
     organization: String
 ) {
 
-    private val cloudFoundryOperations = CloudFoundryOperationsBuilder
-        .builder()
-        .apiHost(apiHost)
-        .username(username)
-        .password(password)
-        .organization(organization)
+    private val cloudFoundryOperations = cloudFoundryOperationsBuilder()
+        .apply {
+            this.apiHost = apiHost
+            this.username = username
+            this.password = password
+            this.organization = organization
+        }
         .build()
 
     fun listApplications(): MutableIterable<ApplicationSummary> {

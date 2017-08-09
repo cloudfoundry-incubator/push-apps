@@ -65,3 +65,6 @@ task version {
 }
 
 test.dependsOn "assemble"
+test.environment([
+    "PUSHAPPS_VERSION": "$version"
+])

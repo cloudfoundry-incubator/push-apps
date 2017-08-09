@@ -4,19 +4,7 @@ import org.cloudfoundry.operations.applications.ApplicationSummary
 import org.cloudfoundry.operations.applications.PushApplicationRequest
 import java.io.File
 
-class Pusher(
-    val apiHost: String,
-    val password: String,
-    val username: String,
-    val organization: String
-) {
-    private val cloudFoundryClient: CloudFoundryClient = CloudFoundryClient(
-        apiHost,
-        password,
-        username,
-        organization
-    )
-
+class Pusher(val cloudFoundryClient: CloudFoundryClient) {
     fun list() {
         val then: MutableIterable<ApplicationSummary> = cloudFoundryClient.listApplications()
 

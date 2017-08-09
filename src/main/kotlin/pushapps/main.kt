@@ -6,8 +6,8 @@ fun main(args: Array<String>) {
 
     val cloudFoundryClient = CloudFoundryClient(
         cf.apiHost,
-        cf.password,
         cf.username,
+        cf.password,
         cf.organization
     )
 
