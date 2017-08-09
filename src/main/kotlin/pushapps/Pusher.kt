@@ -1,32 +1,24 @@
 package pushapps
 
-import org.cloudfoundry.operations.DefaultCloudFoundryOperations
 import org.cloudfoundry.operations.applications.ApplicationSummary
 import org.cloudfoundry.operations.applications.PushApplicationRequest
-import org.cloudfoundry.reactor.ConnectionContext
-import org.cloudfoundry.reactor.DefaultConnectionContext
-import org.cloudfoundry.reactor.TokenProvider
-import org.cloudfoundry.reactor.client.ReactorCloudFoundryClient
-import org.cloudfoundry.reactor.doppler.ReactorDopplerClient
-import org.cloudfoundry.reactor.tokenprovider.PasswordGrantTokenProvider
-import org.cloudfoundry.reactor.uaa.ReactorUaaClient
 import java.io.File
 
 class Pusher(
     val apiHost: String,
     val password: String,
     val username: String,
-    val organization: String,
-    val space: String
+    val organization: String
 ) {
+    private val cloudFoundryClient: CloudFoundryClient = CloudFoundryClient(
+        apiHost,
+        password,
+        username,
+        organization
+    )
 
     fun list() {
-        val connectionContext = connectionContext()
-        val tokenProvider = tokenProvider()
-
-        val client = buildClient(connectionContext, tokenProvider)
-
-        val then: MutableIterable<ApplicationSummary> = client.applications().list().toIterable()
+        val then: MutableIterable<ApplicationSummary> = cloudFoundryClient.listApplications()
 
         println("Found apps: ")
         then.map {
@@ -35,10 +27,6 @@ class Pusher(
     }
 
     fun push(name: String, path: String, buildpack: String) {
-        val connectionContext = connectionContext()
-        val tokenProvider = tokenProvider()
-
-        val client = buildClient(connectionContext, tokenProvider)
         val file = File(path)
 
 
@@ -50,9 +38,7 @@ class Pusher(
             .buildpack(buildpack)
             .build()
 
-        val push = client
-            .applications()
-            .push(pushAppRequest)
+        val push = cloudFoundryClient.pushApplication(pushAppRequest)
             .doOnError { println("Failed to push $name, ${it.message}") }
             .doOnSuccess { println("************* SUCCESS **************") }
 
@@ -62,44 +48,5 @@ class Pusher(
             println("!!!!!!!!!!!!!!!!!!")
             println("Caught ${e.message}")
         }
-    }
-
-    private fun buildClient(connectionContext: ConnectionContext, tokenProvider: TokenProvider): DefaultCloudFoundryOperations {
-        val cfClient = ReactorCloudFoundryClient.builder()
-            .connectionContext(connectionContext)
-            .tokenProvider(tokenProvider)
-            .build()
-
-        val dopplerClient = ReactorDopplerClient.builder()
-            .connectionContext(connectionContext)
-            .tokenProvider(tokenProvider)
-            .build()
-
-        val uaaClient = ReactorUaaClient.builder()
-            .connectionContext(connectionContext)
-            .tokenProvider(tokenProvider)
-            .build()
-
-        return DefaultCloudFoundryOperations.builder()
-            .cloudFoundryClient(cfClient)
-            .dopplerClient(dopplerClient)
-            .uaaClient(uaaClient)
-            .organization(organization)
-            .space(space)
-            .build()
-    }
-
-    private fun connectionContext(): ConnectionContext {
-        return DefaultConnectionContext.builder()
-            .apiHost(apiHost)
-            .skipSslValidation(true)
-            .build()
-    }
-
-    private fun tokenProvider(): TokenProvider {
-        return PasswordGrantTokenProvider.builder()
-            .password(password)
-            .username(username)
-            .build()
     }
 }

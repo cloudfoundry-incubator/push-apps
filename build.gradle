@@ -17,7 +17,7 @@ apply plugin: 'application'
 
 version = '0.0.1'
 
-mainClassName = 'pushappstest.MainKt'
+mainClassName = 'pushapps.MainKt'
 jar {
     manifest {
         attributes 'Main-Class': "$mainClassName"
@@ -39,6 +39,7 @@ repositories {
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
     compile 'com.beust:jcommander:1.72'
     compile 'org.cloudfoundry:cloudfoundry-client-reactor:2.13.0.RELEASE'
     compile 'org.cloudfoundry:cloudfoundry-operations:2.13.0.RELEASE'
@@ -62,3 +63,5 @@ task wrapper(type: Wrapper) {
 task version {
     println "$version"
 }
+
+test.dependsOn "assemble"

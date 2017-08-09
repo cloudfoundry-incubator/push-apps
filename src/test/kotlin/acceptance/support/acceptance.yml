@@ -1,0 +1,13 @@
+---
+cf:
+  apiHost: "api.versace.gcp.pcf-metrics.com"
+  username: "admin"
+  password: "PASSWORD"
+  organization: "system"
+  space: "test"
+apps:
+- name: "metrics"
+  path: "/Users/pivotal/workspace/java-push-apps/src/test/kotlin/acceptance/support/metrics.zip"
+  buildpack: "binary_buildpack"
+  environment:
+    FOO: "bar"

@@ -1,7 +1,7 @@
 package pushappstest
 
 import io.damo.aspen.Test
-import org.assertj.core.api.Assertions.*
+import org.assertj.core.api.Assertions.assertThat
 import pushapps.ConfigReader
 
 class ConfigReaderTest: Test({

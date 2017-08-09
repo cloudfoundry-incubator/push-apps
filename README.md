@@ -21,6 +21,7 @@ v1
 v2
 * Should be able to provide a directory or a zip file. If path is a directory, zip it first.
 * Migrate database(s)
+* Skip ssl flag
 * Retry each task x times
 * Run tasks in parallel
 
