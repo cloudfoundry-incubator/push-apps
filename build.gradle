@@ -64,7 +64,13 @@ task version {
     println "$version"
 }
 
-test.dependsOn "assemble"
-test.environment([
-    "PUSHAPPS_VERSION": "$version"
-])
+test {
+    dependsOn "assemble"
+    environment([
+        "PUSHAPPS_VERSION": "$version"
+    ])
+    testLogging {
+        exceptionFormat = 'full'
+    }
+}
+

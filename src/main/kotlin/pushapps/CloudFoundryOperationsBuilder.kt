@@ -19,12 +19,32 @@ class CloudFoundryOperationsBuilder {
     var apiHost: String? = null
     var username: String? = null
     var password: String? = null
+    var existingCloudFoundryOperations: CloudFoundryOperations? = null
 
     fun build(): CloudFoundryOperations {
-        val connectionContext = connectionContext()
-        val tokenProvider = tokenProvider()
+        if (existingCloudFoundryOperations !== null) {
+            return buildCfOperationsFromExisting(existingCloudFoundryOperations!!)
+        } else {
+            val connectionContext = connectionContext()
+            val tokenProvider = tokenProvider()
 
-        return buildCfOperations(connectionContext, tokenProvider)
+            return buildCfOperations(connectionContext, tokenProvider)
+        }
+    }
+
+    fun fromExistingOperations(operations: CloudFoundryOperations): CloudFoundryOperationsBuilder {
+        this.existingCloudFoundryOperations = operations
+        return this
+    }
+
+    private fun buildCfOperationsFromExisting(cloudFoundryOperations: CloudFoundryOperations): DefaultCloudFoundryOperations {
+        val cfOperationsBuilder = DefaultCloudFoundryOperations
+            .builder()
+            .from(cloudFoundryOperations as DefaultCloudFoundryOperations)
+
+        if (organization !== null) cfOperationsBuilder.organization(organization)
+
+        return cfOperationsBuilder.build()
     }
 
     private fun buildCfOperations(connectionContext: ConnectionContext, tokenProvider: TokenProvider): DefaultCloudFoundryOperations {

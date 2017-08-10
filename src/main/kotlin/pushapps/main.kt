@@ -7,9 +7,10 @@ fun main(args: Array<String>) {
     val cloudFoundryClient = CloudFoundryClient(
         cf.apiHost,
         cf.username,
-        cf.password,
-        cf.organization
+        cf.password
     )
 
+    cloudFoundryClient.createOrganizationIfDoesNotExist(cf.organization)
+    cloudFoundryClient.targetOrganization(cf.organization)
     cloudFoundryClient.createSpaceIfDoesNotExist(cf.space)
 }

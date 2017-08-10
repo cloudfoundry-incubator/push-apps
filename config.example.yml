@@ -1,0 +1,7 @@
+cf:
+  apiHost: "api.example.com"
+  password: secret
+  username: user
+  organization: some-organization
+  space: some-space
+apps: []

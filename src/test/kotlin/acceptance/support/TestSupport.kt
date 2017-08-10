@@ -1,81 +1,82 @@
-package acceptance
+package acceptance.support
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.KotlinModule
-import io.damo.aspen.Test
-import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Fail
+import org.cloudfoundry.operations.CloudFoundryOperations
+import org.cloudfoundry.operations.organizations.DeleteOrganizationRequest
 import org.cloudfoundry.operations.spaces.DeleteSpaceRequest
 import pushapps.*
 import java.io.File
 import java.util.concurrent.TimeUnit
 
-class PushAppsAcceptanceTest : Test({
+val workingDir = System.getProperty("user.dir")!!
+
+data class TestContext(
+    val cfOperations: CloudFoundryOperations,
+    val cf: CloudFoundryClient,
+    val configFilePath: String
+)
+
+fun buildTestContext(organization: String, space: String, apps: Array<AppConfig>): TestContext {
     val apiHost = System.getenv("CF_API")!!
     val username = System.getenv("CF_USERNAME")!!
     val password = System.getenv("CF_PASSWORD")!!
-    val organization = "system"
 
     val cfOperations = cloudFoundryOperationsBuilder()
         .apply {
             this.apiHost = apiHost
             this.username = username
             this.password = password
+        }.build()
+
+    val cf = buildCfClient(apiHost, username, password)
+
+    val configFilePath = writeConfigFile(
+        apiHost = apiHost,
+        username = username,
+        password = password,
+        organization = organization,
+        space = space,
+        apps = apps
+    )
+
+    return TestContext(cfOperations, cf, configFilePath)
+}
+
+fun cleanupCf(cfOperations: CloudFoundryOperations, cfClient: CloudFoundryClient, organization: String, space: String) {
+    val organizations = cfClient.listOrganizations()
+    if (!organizations.contains(organization)) return
+
+    val newOperations = cloudFoundryOperationsBuilder()
+        .fromExistingOperations(cfOperations)
+        .apply {
             this.organization = organization
         }.build()
 
-    val cf = buildCfClient(apiHost, username, password, organization)
+    val deleteSpaceRequest = DeleteSpaceRequest
+        .builder()
+        .name(space)
+        .build()
+    newOperations.spaces().delete(deleteSpaceRequest).block()
 
-    val configFilePath = writeConfigFile(apiHost, username, password, organization, "test")
-
-    after {
-        val deleteSpaceRequest = DeleteSpaceRequest
-            .builder()
-            .name("test")
-            .build()
-        cfOperations.spaces().delete(deleteSpaceRequest).block()
-    }
-
-    describe("pushApps") {
-        test("creates space in system org if it doesn't exist") {
-            var spaces = cf.listSpaces()
-            assertThat(spaces).doesNotContain("test")
-
-            val exitCode = runPushApps(configFilePath)
-            spaces = cf.listSpaces()
-
-            assertThat(exitCode).isEqualTo(0)
-            assertThat(spaces).contains("test")
-        }
-
-        test("does not create space if it already exists") {
-            cf.createSpaceIfDoesNotExist("test")
-
-            val exitCode = runPushApps(configFilePath)
-            assertThat(exitCode).isEqualTo(0)
-        }
-    }
-})
-
-val workingDir = System.getProperty("user.dir")!!
+    val deleteOrganizationRequest = DeleteOrganizationRequest
+        .builder()
+        .name(organization)
+        .build()
+    newOperations.organizations().delete(deleteOrganizationRequest).block()
+}
 
 fun writeConfigFile(
     apiHost: String,
     username: String,
     password: String,
     organization: String,
-    space: String
+    space: String,
+    apps: Array<AppConfig>
 ): String {
     val cf = CfConfig(apiHost, username, password, organization, space)
-    val metricsApp = AppConfig(
-        "metrics",
-        "$workingDir/src/test/kotlin/acceptance/support/metrics.zip",
-        "binary_buildpack",
-        mapOf("FOO" to "bar")
-    )
-
-    val apps = arrayOf(metricsApp)
     val config = Config(cf, apps)
 
     val objectMapper = ObjectMapper(YAMLFactory()).registerModule(KotlinModule())
@@ -109,11 +110,10 @@ fun runPushApps(configFilePath: String): Int {
     return exitValue
 }
 
-fun buildCfClient(apiHost: String, username: String, password: String, organization: String): CloudFoundryClient {
+fun buildCfClient(apiHost: String, username: String, password: String): CloudFoundryClient {
     return CloudFoundryClient(
         apiHost,
         username,
-        password,
-        organization
+        password
     )
 }
