@@ -1,5 +1,7 @@
 package pushapps
 
+import java.util.concurrent.CompletableFuture
+
 fun main(args: Array<String>) {
     val configPath = ArgumentParser.parseConfigPath(args)
     val (cf, apps) = ConfigReader.parseConfig(configPath)
@@ -16,8 +18,16 @@ fun main(args: Array<String>) {
     cloudFoundryClient.createSpaceIfDoesNotExist(cf.space)
     cloudFoundryClient.targetSpace(cf.space)
 
-    apps.forEach {
-        val didSucceed = cloudFoundryClient.pushApplication(it).get()
-        if (!didSucceed) System.exit(127)
+    if (apps.isEmpty()) {
+        System.exit(0)
     }
+
+    val pushApps = apps.map { cloudFoundryClient.deployApplication(it) }.toTypedArray()
+
+    val didSucceed = CompletableFuture.allOf(*pushApps).thenApply {
+        pushApps.map(CompletableFuture<Boolean>::get)
+            .reduceRight({ acc, result -> acc && result })
+    }.get()
+
+    if (!didSucceed) System.exit(127)
 }

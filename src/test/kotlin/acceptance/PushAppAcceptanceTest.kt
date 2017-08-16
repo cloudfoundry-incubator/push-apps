@@ -51,7 +51,7 @@ class PushAppAcceptanceTest : Test({
             cleanupCf(tc, "dewey", "test")
         }
 
-        test("returning an error if a push fails") {
+        test("returning an error if a deploy fails") {
             val badBuildpackApp = AppConfig(
                 name = "sample",
                 path = "$workingDir/src/test/kotlin/acceptance/support/sample-app.zip",
