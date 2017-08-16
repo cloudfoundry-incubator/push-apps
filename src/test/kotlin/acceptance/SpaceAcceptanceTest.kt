@@ -7,7 +7,7 @@ import io.damo.aspen.Test
 import org.assertj.core.api.Assertions.assertThat
 
 class SpaceAcceptanceTest : Test({
-    val tc = buildTestContext("dewey", "test", emptyArray())
+    val tc = buildTestContext("dewey", "test", listOf())
 
     after {
         cleanupCf(tc, "dewey", "test")

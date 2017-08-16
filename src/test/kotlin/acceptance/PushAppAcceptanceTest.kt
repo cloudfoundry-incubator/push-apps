@@ -21,7 +21,7 @@ class PushAppAcceptanceTest : Test({
 
     describe("pushApps interacts with applications by") {
         test("pushing every application in the config file") {
-            val tc = buildTestContext("dewey", "test", arrayOf(sampleApp))
+            val tc = buildTestContext("dewey", "test", listOf(sampleApp))
 
             val exitCode = runPushApps(tc.configFilePath)
             assertThat(exitCode).isEqualTo(0)
@@ -61,7 +61,7 @@ class PushAppAcceptanceTest : Test({
                     "NAME" to "Steve"
                 )
             )
-            val tc = buildTestContext("dewey", "test", arrayOf(badBuildpackApp))
+            val tc = buildTestContext("dewey", "test", listOf(badBuildpackApp))
 
             val exitCode = runPushApps(tc.configFilePath)
             assertThat(exitCode).isEqualTo(127)

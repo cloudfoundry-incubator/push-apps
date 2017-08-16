@@ -7,7 +7,7 @@ import io.damo.aspen.Test
 import org.assertj.core.api.Assertions.assertThat
 
 class OrganizationAcceptanceTest : Test({
-    val tc = buildTestContext("dewey", "test", emptyArray())
+    val tc = buildTestContext("dewey", "test", emptyList())
 
     after {
         cleanupCf(tc, "dewey", "test")

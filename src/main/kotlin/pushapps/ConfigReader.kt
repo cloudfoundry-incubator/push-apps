@@ -14,7 +14,7 @@ class ConfigReader {
     }
 }
 
-data class Config(val cf: CfConfig, val apps: Array<AppConfig>)
+data class Config(val cf: CfConfig, val apps: List<AppConfig>)
 
 data class CfConfig(
     val apiHost: String,

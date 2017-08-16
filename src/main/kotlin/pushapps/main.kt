@@ -1,5 +1,6 @@
 package pushapps
 
+import reactor.core.publisher.Flux
 import java.util.concurrent.CompletableFuture
 
 fun main(args: Array<String>) {
@@ -22,12 +23,24 @@ fun main(args: Array<String>) {
         System.exit(0)
     }
 
-    val pushApps = apps.map { cloudFoundryClient.deployApplication(it) }.toTypedArray()
-
-    val didSucceed = CompletableFuture.allOf(*pushApps).thenApply {
-        pushApps.map(CompletableFuture<Boolean>::get)
-            .reduceRight({ acc, result -> acc && result })
-    }.get()
+    val results = createPushAppFlux(apps, cloudFoundryClient).toIterable().toList()
+    val didSucceed = results.reduceRight({ acc, result -> acc && result })
 
     if (!didSucceed) System.exit(127)
+}
+
+fun createPushAppFlux(apps: List<AppConfig>, cloudFoundryClient: CloudFoundryClient): Flux<Boolean> {
+    return Flux.create { sink ->
+        val applicationDeployments = apps.map {
+            cloudFoundryClient
+                .deployApplication(it)
+                .thenApply {
+                    sink.next(it)
+                }
+        }
+
+        CompletableFuture.allOf(*applicationDeployments
+            .toTypedArray())
+            .thenApply { sink.complete() }
+    }
 }

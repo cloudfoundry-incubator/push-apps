@@ -33,7 +33,7 @@ fun getEnv(name: String): String {
     return env
 }
 
-fun buildTestContext(organization: String, space: String, apps: Array<AppConfig>): TestContext {
+fun buildTestContext(organization: String, space: String, apps: List<AppConfig>): TestContext {
     val apiHost = getEnv("CF_API")
     val username = getEnv("CF_USERNAME")
     val password = getEnv("CF_PASSWORD")
@@ -111,7 +111,7 @@ fun writeConfigFile(
     password: String,
     organization: String,
     space: String,
-    apps: Array<AppConfig>
+    apps: List<AppConfig>
 ): String {
     val cf = CfConfig(apiHost, username, password, organization, space)
     val config = Config(cf, apps)
