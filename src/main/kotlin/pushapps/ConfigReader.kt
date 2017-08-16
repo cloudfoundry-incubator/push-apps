@@ -5,7 +5,8 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import java.io.File
 
-val mapper: ObjectMapper = ObjectMapper(YAMLFactory()).registerModule(KotlinModule())
+val mapper: ObjectMapper = ObjectMapper(YAMLFactory())
+    .registerModule(KotlinModule())
 
 class ConfigReader {
     companion object {
@@ -26,6 +27,7 @@ data class CfConfig(
 data class AppConfig(
     val name: String,
     val path: String,
-    val buildpack: String,
-    val environment: Map<String, String>
+    val buildpack: String?,
+    val command: String?,
+    val environment: Map<String, String>?
 )

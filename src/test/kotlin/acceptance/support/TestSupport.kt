@@ -3,8 +3,13 @@ package acceptance.support
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.sun.javaws.exceptions.InvalidArgumentException
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
 import org.assertj.core.api.Fail
 import org.cloudfoundry.operations.CloudFoundryOperations
+import org.cloudfoundry.operations.applications.DeleteApplicationRequest
 import org.cloudfoundry.operations.organizations.DeleteOrganizationRequest
 import org.cloudfoundry.operations.spaces.DeleteSpaceRequest
 import pushapps.*
@@ -15,14 +20,23 @@ val workingDir = System.getProperty("user.dir")!!
 
 data class TestContext(
     val cfOperations: CloudFoundryOperations,
-    val cf: CloudFoundryClient,
+    val cfClient: CloudFoundryClient,
     val configFilePath: String
 )
 
+fun getEnv(name: String): String {
+    val env = System.getenv(name)
+    if (env === null || env.isEmpty()) {
+        throw InvalidArgumentException(arrayOf("must provide a $name for pushapps"))
+    }
+
+    return env
+}
+
 fun buildTestContext(organization: String, space: String, apps: Array<AppConfig>): TestContext {
-    val apiHost = System.getenv("CF_API")!!
-    val username = System.getenv("CF_USERNAME")!!
-    val password = System.getenv("CF_PASSWORD")!!
+    val apiHost = getEnv("CF_API")
+    val username = getEnv("CF_USERNAME")
+    val password = getEnv("CF_PASSWORD")
 
     val cfOperations = cloudFoundryOperationsBuilder()
         .apply {
@@ -45,15 +59,38 @@ fun buildTestContext(organization: String, space: String, apps: Array<AppConfig>
     return TestContext(cfOperations, cf, configFilePath)
 }
 
-fun cleanupCf(cfOperations: CloudFoundryOperations, cfClient: CloudFoundryClient, organization: String, space: String) {
+fun cleanupCf(tc: TestContext?, organization: String, space: String) {
+    if (tc === null) {
+        return
+    }
+
+    val (cfOperations, cfClient, configFilePath) = tc
+
     val organizations = cfClient.listOrganizations()
     if (!organizations.contains(organization)) return
+
+    cfClient.targetOrganization(organization)
+
+    val spaces = cfClient.listSpaces()
+    if (!spaces.contains(space)) return
+
+    cfClient.targetSpace(space)
 
     val newOperations = cloudFoundryOperationsBuilder()
         .fromExistingOperations(cfOperations)
         .apply {
             this.organization = organization
+            this.space = space
         }.build()
+
+    cfClient.listApplications().forEach { applicationSummary ->
+        val deleteApplicationRequest = DeleteApplicationRequest
+            .builder()
+            .name(applicationSummary.name)
+            .deleteRoutes(true)
+            .build()
+        newOperations.applications().delete(deleteApplicationRequest).block()
+    }
 
     val deleteSpaceRequest = DeleteSpaceRequest
         .builder()
@@ -87,15 +124,23 @@ fun writeConfigFile(
     return tempFile.absolutePath
 }
 
-fun runPushApps(configFilePath: String): Int {
-    val version = System.getenv("PUSHAPPS_VERSION")!!
+fun runPushApps(configFilePath: String, debug: Boolean = false): Int {
+    val version = getEnv("PUSHAPPS_VERSION")
+
+    val pushAppsCommand = mutableListOf("java")
+
+    if (debug) pushAppsCommand.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005")
+
+    pushAppsCommand.addAll(
+        listOf("-jar",
+            "$workingDir/build/libs/push-apps-$version.jar",
+            "-c",
+            configFilePath
+        )
+    )
 
     val pushAppsProcess = ProcessBuilder(
-        "java",
-        "-jar",
-        "$workingDir/build/libs/push-apps-$version.jar",
-        "-c",
-        configFilePath
+        pushAppsCommand
     ).inheritIO().start()
 
     pushAppsProcess.waitFor(30, TimeUnit.SECONDS)
@@ -116,4 +161,16 @@ fun buildCfClient(apiHost: String, username: String, password: String): CloudFou
         username,
         password
     )
+}
+
+
+val client = OkHttpClient()
+
+fun httpGet(url: String): Response {
+
+    val request = Request.Builder()
+        .url(url)
+        .build()
+
+    return client.newCall(request).execute()
 }

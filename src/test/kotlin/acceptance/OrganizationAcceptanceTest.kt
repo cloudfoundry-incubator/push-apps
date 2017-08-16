@@ -4,33 +4,32 @@ import acceptance.support.buildTestContext
 import acceptance.support.cleanupCf
 import acceptance.support.runPushApps
 import io.damo.aspen.Test
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 
 class OrganizationAcceptanceTest : Test({
-    val (cfOperations, cf, configFilePath) = buildTestContext("dewey", "test", emptyArray())
+    val tc = buildTestContext("dewey", "test", emptyArray())
 
     after {
-        cleanupCf(cfOperations, cf, "dewey", "test")
+        cleanupCf(tc, "dewey", "test")
     }
 
     describe("pushApps interacts with organizations by") {
         test("creating an organization if it doesn't exist") {
-            var organizations = cf.listOrganizations()
-            Assertions.assertThat(organizations).doesNotContain("dewey")
+            var organizations = tc.cfClient.listOrganizations()
+            assertThat(organizations).doesNotContain("dewey")
 
-            val exitCode = runPushApps(configFilePath)
-            organizations = cf.listOrganizations()
+            val exitCode = runPushApps(tc.configFilePath)
+            organizations = tc.cfClient.listOrganizations()
 
-            Assertions.assertThat(exitCode).isEqualTo(0)
-            Assertions.assertThat(organizations).contains("dewey")
+            assertThat(exitCode).isEqualTo(0)
+            assertThat(organizations).contains("dewey")
         }
 
         test("not creating an org if it already exists") {
-            cf.createOrganizationIfDoesNotExist("dewey")
+            tc.cfClient.createOrganizationIfDoesNotExist("dewey")
 
-            val exitCode = runPushApps(configFilePath)
-            Assertions.assertThat(exitCode).isEqualTo(0)
+            val exitCode = runPushApps(tc.configFilePath)
+            assertThat(exitCode).isEqualTo(0)
         }
     }
-
 })

@@ -15,10 +15,11 @@ fun cloudFoundryOperationsBuilder(): CloudFoundryOperationsBuilder {
 }
 
 class CloudFoundryOperationsBuilder {
-    var organization: String? = null
     var apiHost: String? = null
     var username: String? = null
     var password: String? = null
+    var organization: String? = null
+    var space: String? = null
     var existingCloudFoundryOperations: CloudFoundryOperations? = null
 
     fun build(): CloudFoundryOperations {
@@ -43,6 +44,7 @@ class CloudFoundryOperationsBuilder {
             .from(cloudFoundryOperations as DefaultCloudFoundryOperations)
 
         if (organization !== null) cfOperationsBuilder.organization(organization)
+        if (space !== null) cfOperationsBuilder.space(space)
 
         return cfOperationsBuilder.build()
     }
@@ -69,6 +71,7 @@ class CloudFoundryOperationsBuilder {
             .uaaClient(uaaClient)
 
         if (organization !== null) cfOperationsBuilder.organization(organization)
+        if (space !== null) cfOperationsBuilder.space(space)
 
         return cfOperationsBuilder.build()
     }

@@ -1,5 +1,5 @@
 buildscript {
-    ext.kotlin_version = '1.1.3'
+    ext.kotlin_version = '1.1.4'
     repositories {
         mavenCentral()
     }
@@ -44,11 +44,11 @@ dependencies {
     compile 'org.cloudfoundry:cloudfoundry-client-reactor:2.13.0.RELEASE'
     compile 'org.cloudfoundry:cloudfoundry-operations:2.13.0.RELEASE'
     compile 'org.slf4j:slf4j-simple:1.7.25'
+    compile 'com.squareup.okhttp3:okhttp:3.8.1'
+    compile 'com.fasterxml.jackson.module:jackson-module-kotlin:2.7.1-2'
 
     compile 'io.projectreactor:reactor-core'
     compile 'io.projectreactor.ipc:reactor-netty'
-
-    compile 'com.fasterxml.jackson.module:jackson-module-kotlin:2.7.1-2'
 
     testCompile "io.damo.aspen:aspen:2.0.0"
     testCompile "com.nhaarman:mockito-kotlin:1.5.0"

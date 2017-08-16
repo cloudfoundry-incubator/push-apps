@@ -12,5 +12,12 @@ fun main(args: Array<String>) {
 
     cloudFoundryClient.createOrganizationIfDoesNotExist(cf.organization)
     cloudFoundryClient.targetOrganization(cf.organization)
+
     cloudFoundryClient.createSpaceIfDoesNotExist(cf.space)
+    cloudFoundryClient.targetSpace(cf.space)
+
+    apps.forEach {
+        val didSucceed = cloudFoundryClient.pushApplication(it).get()
+        if (!didSucceed) System.exit(127)
+    }
 }
