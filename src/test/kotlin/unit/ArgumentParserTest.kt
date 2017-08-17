@@ -1,4 +1,4 @@
-package pushappstest
+package unit
 
 import io.damo.aspen.Test
 import org.assertj.core.api.Assertions.*

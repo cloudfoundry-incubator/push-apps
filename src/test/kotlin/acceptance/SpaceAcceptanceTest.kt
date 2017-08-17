@@ -1,10 +1,10 @@
 package acceptance
 
-import acceptance.support.buildTestContext
-import acceptance.support.cleanupCf
-import acceptance.support.runPushApps
 import io.damo.aspen.Test
 import org.assertj.core.api.Assertions.assertThat
+import support.buildTestContext
+import support.cleanupCf
+import support.runPushApps
 
 class SpaceAcceptanceTest : Test({
     val tc = buildTestContext("dewey", "test", listOf())

@@ -1,8 +1,8 @@
 package acceptance
 
-import acceptance.support.buildTestContext
-import acceptance.support.cleanupCf
-import acceptance.support.runPushApps
+import support.buildTestContext
+import support.cleanupCf
+import support.runPushApps
 import io.damo.aspen.Test
 import org.assertj.core.api.Assertions.assertThat
 

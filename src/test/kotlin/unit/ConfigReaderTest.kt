@@ -1,4 +1,4 @@
-package pushappstest
+package unit
 
 import io.damo.aspen.Test
 import org.assertj.core.api.Assertions.assertThat
@@ -7,7 +7,7 @@ import pushapps.ConfigReader
 class ConfigReaderTest: Test({
     describe("#parseConfig") {
         test("Parses the config file") {
-            val pushAppsConfig = ConfigReader.parseConfig("src/test/kotlin/pushappstest/exampleConfig.yml")
+            val pushAppsConfig = ConfigReader.parseConfig("src/test/kotlin/support/exampleConfig.yml")
 
             assertThat(pushAppsConfig.cf.apiHost).isEqualTo("api.example.com")
             assertThat(pushAppsConfig.cf.username).isEqualTo("some-username")

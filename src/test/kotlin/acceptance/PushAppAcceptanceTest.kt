@@ -1,6 +1,6 @@
 package acceptance
 
-import acceptance.support.*
+import support.*
 import io.damo.aspen.Test
 import org.assertj.core.api.Assertions.assertThat
 import org.cloudfoundry.operations.applications.GetApplicationRequest
@@ -11,7 +11,7 @@ import reactor.core.publisher.SynchronousSink
 class PushAppAcceptanceTest : Test({
     val sampleApp = AppConfig(
         name = "sample",
-        path = "$workingDir/src/test/kotlin/acceptance/support/sample-app.zip",
+        path = "$workingDir/src/test/kotlin/support/sample-app.zip",
         buildpack = "binary_buildpack",
         command = "sample-app/sample-app",
         environment = mapOf(
@@ -54,7 +54,7 @@ class PushAppAcceptanceTest : Test({
         test("returning an error if a deploy fails") {
             val badBuildpackApp = AppConfig(
                 name = "sample",
-                path = "$workingDir/src/test/kotlin/acceptance/support/sample-app.zip",
+                path = "$workingDir/src/test/kotlin/support/sample-app.zip",
                 buildpack = "im_not_really_a_buildpack",
                 command = "sample-app/sample-app",
                 environment = mapOf(
@@ -64,7 +64,7 @@ class PushAppAcceptanceTest : Test({
             val tc = buildTestContext("dewey", "test", listOf(badBuildpackApp))
 
             val exitCode = runPushApps(tc.configFilePath)
-            assertThat(exitCode).isEqualTo(127)
+            assertThat(exitCode).isEqualTo(3)
 
             cleanupCf(tc, "dewey", "test")
         }

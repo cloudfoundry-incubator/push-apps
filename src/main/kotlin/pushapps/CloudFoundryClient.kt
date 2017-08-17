@@ -26,6 +26,11 @@ class CloudFoundryClient(
         return pushApps.deploy()
     }
 
+    fun createAndTargetOrganization(cf: CfConfig): CloudFoundryClient {
+        createOrganizationIfDoesNotExist(cf.organization)
+        return targetOrganization(cf.organization)
+    }
+
     fun createOrganizationIfDoesNotExist(name: String) {
         if (!organizationDoesExist(name)) {
             createOrganization(name)
@@ -41,6 +46,11 @@ class CloudFoundryClient(
             .build()
 
         cloudFoundryOperations.organizations().create(createOrganizationRequest).block()
+    }
+
+    fun createAndTargetSpace(cf: CfConfig): CloudFoundryClient {
+        createSpaceIfDoesNotExist(cf.space)
+        return targetSpace(cf.space)
     }
 
     fun createSpaceIfDoesNotExist(name: String) {
