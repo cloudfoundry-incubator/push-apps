@@ -21,7 +21,7 @@ class CloudFoundryClient(
         }
         .build()
 
-    fun deployApplication(appConfig: AppConfig): CompletableFuture<Boolean> {
+    fun deployApplication(appConfig: AppConfig): CompletableFuture<DeployResult> {
         val pushApps = DeployApplication(cloudFoundryOperations, appConfig)
         return pushApps.deploy()
     }

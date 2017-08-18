@@ -1,32 +1,43 @@
 package acceptance
 
-import support.*
 import io.damo.aspen.Test
 import org.assertj.core.api.Assertions.assertThat
 import org.cloudfoundry.operations.applications.GetApplicationRequest
 import pushapps.AppConfig
 import pushapps.cloudFoundryOperationsBuilder
-import reactor.core.publisher.SynchronousSink
+import support.*
 
 class PushAppAcceptanceTest : Test({
-    val sampleApp = AppConfig(
-        name = "sample",
-        path = "$workingDir/src/test/kotlin/support/sample-app.zip",
+    val helloApp = AppConfig(
+        name = "hello",
+        path = "$workingDir/src/test/kotlin/support/helloapp.zip",
         buildpack = "binary_buildpack",
-        command = "sample-app/sample-app",
+        command = "./helloapp",
         environment = mapOf(
             "NAME" to "Steve"
         )
     )
 
+    val goodbyeApp = AppConfig(
+        name = "goodbye",
+        path = "$workingDir/src/test/kotlin/support/goodbyeapp.zip",
+        buildpack = "binary_buildpack",
+        command = "./goodbyeapp",
+        environment = mapOf(
+            "NAME" to "George"
+        )
+    )
+
     describe("pushApps interacts with applications by") {
         test("pushing every application in the config file") {
-            val tc = buildTestContext("dewey", "test", listOf(sampleApp))
+            val tc = buildTestContext("dewey", "test", listOf(helloApp, goodbyeApp))
 
             val exitCode = runPushApps(tc.configFilePath)
             assertThat(exitCode).isEqualTo(0)
 
-            val getApplicationRequest = GetApplicationRequest.builder().name("sample").build()
+            val getHelloApplicationReq = GetApplicationRequest.builder().name("hello").build()
+            val getGoodbyeApplicationReq = GetApplicationRequest.builder().name("goodbye").build()
+
             val targetedOperations = cloudFoundryOperationsBuilder()
                 .fromExistingOperations(tc.cfOperations)
                 .apply {
@@ -34,19 +45,28 @@ class PushAppAcceptanceTest : Test({
                     space = "test"
                 }.build()
 
-
-            targetedOperations
+            val applicationOperations = targetedOperations
                 .applications()
-                .get(getApplicationRequest)
+
+            val helloUrl = applicationOperations
+                .get(getHelloApplicationReq)
                 .map({ it.urls[0] })
-                .handle({ url, sink: SynchronousSink<String> ->
-                    val response = httpGet("http://$url")
+                .toFuture()
+                .get()
 
-                    assertThat(response.isSuccessful).isTrue()
-                    assertThat(response.body()?.string()).contains("hello Steve")
+            val helloResponse = httpGet("http://$helloUrl")
+            assertThat(helloResponse.isSuccessful).isTrue()
+            assertThat(helloResponse.body()?.string()).contains("hello Steve")
 
-                    sink.complete()
-                }).block()
+            val goodbyeUrl = applicationOperations
+                .get(getGoodbyeApplicationReq)
+                .map({ it.urls[0] })
+                .toFuture()
+                .get()
+
+            val goodbyeResponse = httpGet("http://$goodbyeUrl")
+            assertThat(goodbyeResponse.isSuccessful).isTrue()
+            assertThat(goodbyeResponse.body()?.string()).contains("goodbye George")
 
             cleanupCf(tc, "dewey", "test")
         }

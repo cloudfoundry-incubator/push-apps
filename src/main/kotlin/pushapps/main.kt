@@ -1,9 +1,14 @@
 package pushapps
 
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import reactor.core.publisher.Flux
 import java.util.concurrent.CompletableFuture
 
 fun main(args: Array<String>) {
+    val logger: Logger = LoggerFactory.getLogger("Push Apps")
+
+
     val configPath = ArgumentParser.parseConfigPath(args)
     val (cf, apps) = ConfigReader.parseConfig(configPath)
 
@@ -16,9 +21,27 @@ fun main(args: Array<String>) {
     val results = createPushAppFlux(apps, cloudFoundryClient)
         .toIterable()
         .toList()
-    val didSucceed = results.reduceRight({ acc, result -> acc && result })
 
-    if (!didSucceed) System.exit(3)
+    val didSucceed = results.fold(true, { acc, result -> acc && result.didSucceed })
+
+    if (!didSucceed) {
+        results
+            .filterNot(DeployResult::didSucceed)
+            .forEach { (appName, _, error, failedStage) ->
+                if (error !== null) {
+                    logger.error("Application $appName failed during the $failedStage stage with " +
+                        "error message: ${error.message}")
+
+                    if (logger.isDebugEnabled) {
+                        error.printStackTrace()
+                    }
+                } else {
+                    logger.error("Application $appName failed during the $failedStage stage")
+                }
+            }
+
+        System.exit(3)
+    }
 }
 
 private fun targetCf(cf: CfConfig): CloudFoundryClient {
@@ -33,7 +56,7 @@ private fun targetCf(cf: CfConfig): CloudFoundryClient {
         .createAndTargetSpace(cf)
 }
 
-private fun createPushAppFlux(apps: List<AppConfig>, cloudFoundryClient: CloudFoundryClient): Flux<Boolean> {
+private fun createPushAppFlux(apps: List<AppConfig>, cloudFoundryClient: CloudFoundryClient): Flux<DeployResult> {
     return Flux.create { sink ->
         val applicationDeployments = apps.map {
             cloudFoundryClient

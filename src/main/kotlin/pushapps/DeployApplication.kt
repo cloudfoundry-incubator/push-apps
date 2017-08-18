@@ -7,11 +7,22 @@ import org.cloudfoundry.operations.applications.StartApplicationRequest
 import java.io.File
 import java.util.concurrent.CompletableFuture
 
+enum class DeploymentStage(val stage: String) {
+    PUSH("push"),
+}
+
+data class DeployResult(
+    val appName: String,
+    val didSucceed: Boolean,
+    val error: Throwable? = null,
+    val failedStage: DeploymentStage? = null
+)
+
 class DeployApplication(
     private val cloudFoundryOperations: CloudFoundryOperations,
     private val appConfig: AppConfig
 ) {
-    fun deploy(): CompletableFuture<Boolean> {
+    fun deploy(): CompletableFuture<DeployResult> {
         val pushAppFuture = generatePushAppFuture()
 
         return pushAppFuture.thenApply {
@@ -21,8 +32,18 @@ class DeployApplication(
         }.thenCompose {
             generateStartApplicationFuture(appConfig.name)
         }.thenApply {
-            true
-        }.exceptionally { _ -> false }
+            DeployResult(
+                appName = appConfig.name,
+                didSucceed = true
+            )
+        }.exceptionally { error ->
+            DeployResult(
+                appName = appConfig.name,
+                didSucceed = false,
+                error = error,
+                failedStage = DeploymentStage.PUSH
+            )
+        }
     }
 
     private fun generatePushAppFuture(): CompletableFuture<Void> {

@@ -4,3 +4,8 @@ build
 .envrc
 config.yml
 out
+src/test/kotlin/support/goodbyeapp/*
+!src/test/kotlin/support/goodbyeapp/main.go
+src/test/kotlin/support/helloapp/*
+!src/test/kotlin/support/helloapp/main.go
+src/test/kotlin/support/*.zip

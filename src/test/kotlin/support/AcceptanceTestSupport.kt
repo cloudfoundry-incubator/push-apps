@@ -27,7 +27,7 @@ data class TestContext(
 fun getEnv(name: String): String {
     val env = System.getenv(name)
     if (env === null || env.isEmpty()) {
-        throw InvalidArgumentException(arrayOf("must provide a $name for pushapps"))
+        throw InvalidArgumentException(arrayOf("must provide a $name for pushapps")) as Throwable
     }
 
     return env
@@ -129,7 +129,12 @@ fun runPushApps(configFilePath: String, debug: Boolean = false): Int {
 
     val pushAppsCommand = mutableListOf("java")
 
-    if (debug) pushAppsCommand.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005")
+    if (debug) pushAppsCommand.addAll(
+        listOf(
+            "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005",
+            "-Dorg.slf4j.simpleLogger.defaultLogLevel=debug"
+        )
+    )
 
     pushAppsCommand.addAll(
         listOf("-jar",

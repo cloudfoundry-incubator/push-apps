@@ -46,6 +46,7 @@ dependencies {
     compile 'org.slf4j:slf4j-simple:1.7.25'
     compile 'com.squareup.okhttp3:okhttp:3.8.1'
     compile 'com.fasterxml.jackson.module:jackson-module-kotlin:2.7.1-2'
+    compile 'org.slf4j:slf4j-simple:1.7.25'
 
     compile 'io.projectreactor:reactor-core'
     compile 'io.projectreactor.ipc:reactor-netty'
@@ -64,8 +65,44 @@ task version {
     println "$version"
 }
 
+task buildHelloApp(type: Exec) {
+    environment GOOS: "linux", GOPATH: "${System.getenv("HOME")}/workspace/go"
+    workingDir "${project.rootDir}/src/test/kotlin/support/helloapp"
+    commandLine "go", "build", "-o", "helloapp"
+}
+
+task packageHelloApp(type: Zip) {
+    dependsOn "buildHelloApp"
+
+    from "${project.rootDir}/src/test/kotlin/support/helloapp"
+    include "*"
+    archiveName "helloapp.zip"
+    destinationDir file("${project.rootDir}/src/test/kotlin/support")
+}
+
+task buildGoodbyeApp(type: Exec) {
+    environment GOOS: "linux", GOPATH: "${System.getenv("HOME")}/workspace/go"
+    workingDir "${project.rootDir}/src/test/kotlin/support/goodbyeapp"
+    commandLine "go", "build", "-o", "goodbyeapp"
+}
+
+task packageGoodbyeApp(type: Zip) {
+    dependsOn "buildGoodbyeApp"
+
+    from "${project.rootDir}/src/test/kotlin/support/goodbyeapp"
+    include "*"
+    archiveName "goodbyeapp.zip"
+    destinationDir file("${project.rootDir}/src/test/kotlin/support")
+}
+
+task buildSampleApps {
+    dependsOn "packageHelloApp", "packageGoodbyeApp"
+}
+
+
 test {
     dependsOn "assemble"
+    dependsOn "buildSampleApps"
     environment([
         "PUSHAPPS_VERSION": "$version"
     ])
