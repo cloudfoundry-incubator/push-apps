@@ -7,17 +7,6 @@ import org.cloudfoundry.operations.applications.StartApplicationRequest
 import java.io.File
 import java.util.concurrent.CompletableFuture
 
-enum class DeploymentStage(val stage: String) {
-    PUSH("push"),
-}
-
-data class DeployResult(
-    val appName: String,
-    val didSucceed: Boolean,
-    val error: Throwable? = null,
-    val failedStage: DeploymentStage? = null
-)
-
 class DeployApplication(
     private val cloudFoundryOperations: CloudFoundryOperations,
     private val appConfig: AppConfig
@@ -40,8 +29,7 @@ class DeployApplication(
             DeployResult(
                 appName = appConfig.name,
                 didSucceed = false,
-                error = error,
-                failedStage = DeploymentStage.PUSH
+                error = error
             )
         }
     }

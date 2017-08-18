@@ -27,16 +27,11 @@ fun main(args: Array<String>) {
     if (!didSucceed) {
         results
             .filterNot(DeployResult::didSucceed)
-            .forEach { (appName, _, error, failedStage) ->
-                if (error !== null) {
-                    logger.error("Application $appName failed during the $failedStage stage with " +
-                        "error message: ${error.message}")
+            .forEach { (appName, _, error) ->
+                logger.error("Deploying application $appName failed with error message: ${error!!.message}")
 
-                    if (logger.isDebugEnabled) {
-                        error.printStackTrace()
-                    }
-                } else {
-                    logger.error("Application $appName failed during the $failedStage stage")
+                if (logger.isDebugEnabled) {
+                    error.printStackTrace()
                 }
             }
 
