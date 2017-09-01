@@ -3,6 +3,7 @@ package pushapps
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.fasterxml.jackson.module.kotlin.readValue
 import java.io.File
 
 val mapper: ObjectMapper = ObjectMapper(YAMLFactory())
@@ -10,7 +11,7 @@ val mapper: ObjectMapper = ObjectMapper(YAMLFactory())
 
 class ConfigReader {
     companion object {
-        fun parseConfig(configPath: String) = mapper.readValue(File(configPath), Config::class.java)
+        fun parseConfig(configPath: String) = mapper.readValue<Config>(File(configPath))
     }
 }
 
@@ -27,7 +28,12 @@ data class CfConfig(
 data class AppConfig(
     val name: String,
     val path: String,
-    val buildpack: String?,
-    val command: String?,
-    val environment: Map<String, String>?
+    val buildpack: String? = null,
+    val command: String? = null,
+    val environment: Map<String, String>? = null,
+    val instances: Int? = null,
+    val diskQuota: Int? = null,
+    val memory: Int? = null,
+    val noHostname: Boolean? = null,
+    val noRoute: Boolean? = null
 )

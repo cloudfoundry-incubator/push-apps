@@ -35,19 +35,57 @@ class DeployApplication(
     }
 
     private fun generatePushAppFuture(): CompletableFuture<Void> {
-        val pushAppRequest = PushApplicationRequest
+        var builder = PushApplicationRequest
             .builder()
             .name(appConfig.name)
-            .buildpack(appConfig.buildpack)
-            .command(appConfig.command)
             .path(File(appConfig.path).toPath())
             .noStart(true)
-            .build()
+
+        builder = setOptionalBuilderParams(builder)
+
+        val pushAppRequest = builder.build()
 
         return cloudFoundryOperations
             .applications()
             .push(pushAppRequest)
             .toFuture()
+    }
+
+    private fun setOptionalBuilderParams(builder: PushApplicationRequest.Builder): PushApplicationRequest.Builder {
+        val pushApplicationRequest = builder.build()
+        val newBuilder = PushApplicationRequest
+            .builder()
+            .from(pushApplicationRequest)
+
+        if (appConfig.buildpack !== null) {
+            newBuilder.buildpack(appConfig.buildpack)
+        }
+
+        if (appConfig.command !== null) {
+            newBuilder.command(appConfig.command)
+        }
+
+        if (appConfig.instances !== null) {
+            newBuilder.instances(appConfig.instances)
+        }
+
+        if (appConfig.diskQuota !== null) {
+            newBuilder.diskQuota(appConfig.diskQuota)
+        }
+
+        if (appConfig.memory !== null) {
+            newBuilder.memory(appConfig.memory)
+        }
+
+        if (appConfig.noHostname !== null) {
+            newBuilder.noHostname(appConfig.noHostname)
+        }
+
+        if (appConfig.noRoute !== null) {
+            newBuilder.noRoute(appConfig.noRoute)
+        }
+
+        return newBuilder
     }
 
     private fun generateSetEnvFutures(): List<CompletableFuture<Void>> {
