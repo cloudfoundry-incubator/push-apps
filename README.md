@@ -5,9 +5,6 @@ A jar that pushes apps to CF for PCF Metrics
 ##Backlog
 
 v1
-* Push static
-    * Pushes static UI
-    * Blue green deploy (map-route)
 * Push mysql logqueue
     * Pushes binary buildpack
     * Blue green
@@ -17,6 +14,9 @@ v1
 * Push ingestor
     * Pushes binary buildpack
     * Blue green
+* Push static
+    * Pushes static UI
+    * Blue green deploy (map-route)
 
 v2
 * Should be able to provide a directory or a zip file. If path is a directory, zip it first.

@@ -35,5 +35,6 @@ data class AppConfig(
     val diskQuota: Int? = null,
     val memory: Int? = null,
     val noHostname: Boolean? = null,
-    val noRoute: Boolean? = null
+    val noRoute: Boolean? = null,
+    val timeout: Int? = null
 )

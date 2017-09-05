@@ -176,6 +176,21 @@ class DeployApplicationTest : Test({
                         argForWhich { noRoute == true }
                     )
                 }
+
+                test("sets timeout variable if present in config") {
+                    val tc = buildTestContext()
+                    val appConfig = AppConfig(
+                        name = "Foo bar",
+                        path = "/tmp/foo/bar",
+                        timeout = 100
+                    )
+
+                    deployApplication(tc, appConfig)
+
+                    verify(tc.cfApplicationOperations).push(
+                        argForWhich { timeout == 100 }
+                    )
+                }
             }
         }
     }

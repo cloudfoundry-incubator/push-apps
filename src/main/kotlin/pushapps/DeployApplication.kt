@@ -85,6 +85,10 @@ class DeployApplication(
             newBuilder.noRoute(appConfig.noRoute)
         }
 
+        if (appConfig.timeout !== null) {
+            newBuilder.timeout(appConfig.timeout)
+        }
+
         return newBuilder
     }
 

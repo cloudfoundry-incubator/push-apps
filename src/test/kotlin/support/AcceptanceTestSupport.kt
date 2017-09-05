@@ -27,7 +27,7 @@ data class TestContext(
 fun getEnv(name: String): String {
     val env = System.getenv(name)
     if (env === null || env.isEmpty()) {
-        throw InvalidArgumentException(arrayOf("must provide a $name for pushapps")) as Throwable
+        throw InvalidArgumentException(arrayOf("must provide a $name for pushapps"))
     }
 
     return env
@@ -64,7 +64,7 @@ fun cleanupCf(tc: TestContext?, organization: String, space: String) {
         return
     }
 
-    val (cfOperations, cfClient, configFilePath) = tc
+    val (cfOperations, cfClient, _) = tc
 
     val organizations = cfClient.listOrganizations()
     if (!organizations.contains(organization)) return
@@ -167,7 +167,6 @@ fun buildCfClient(apiHost: String, username: String, password: String): CloudFou
         password
     )
 }
-
 
 val client = OkHttpClient()
 
