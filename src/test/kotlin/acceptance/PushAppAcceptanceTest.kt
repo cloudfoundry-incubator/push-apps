@@ -28,6 +28,17 @@ class PushAppAcceptanceTest : Test({
         )
     )
 
+    val blueGreenApp = AppConfig(
+        name = "generic",
+        path = "$workingDir/src/test/kotlin/support/goodbyeapp.zip",
+        buildpack = "binary_buildpack",
+        command = "./goodbyeapp",
+        environment = mapOf(
+            "NAME" to "BLUE OR GREEN"
+        ),
+        blueGreenDeploy = true
+    )
+
     describe("pushApps interacts with applications by") {
         test("pushing every application in the config file") {
             val tc = buildTestContext("dewey", "test", listOf(helloApp, goodbyeApp))
@@ -67,6 +78,41 @@ class PushAppAcceptanceTest : Test({
             val goodbyeResponse = httpGet("http://$goodbyeUrl")
             assertThat(goodbyeResponse.isSuccessful).isTrue()
             assertThat(goodbyeResponse.body()?.string()).contains("goodbye George")
+
+            cleanupCf(tc, "dewey", "test")
+        }
+
+        test("blue green deploys applications with blue green set to true") {
+            val tc = buildTestContext("dewey", "test", listOf(blueGreenApp))
+
+            val exitCode = runPushApps(tc.configFilePath)
+            assertThat(exitCode).isEqualTo(0)
+
+            val getGreenApplicationReq = GetApplicationRequest.builder().name("generic").build()
+            val getBlueApplicationReq = GetApplicationRequest.builder().name("generic-blue").build()
+
+            val targetedOperations = cloudFoundryOperationsBuilder()
+                .fromExistingOperations(tc.cfOperations)
+                .apply {
+                    organization = "dewey"
+                    space = "test"
+                }.build()
+
+            val applicationOperations = targetedOperations
+                .applications()
+
+            val greenUrl = applicationOperations
+                .get(getGreenApplicationReq)
+                .map({ it.urls[0] })
+                .toFuture()
+                .get()
+
+            val helloResponse = httpGet("http://$greenUrl")
+            assertThat(helloResponse.isSuccessful).isTrue()
+            assertThat(helloResponse.body()?.string()).contains("goodbye BLUE OR GREEN")
+
+            val blueAppDetails = applicationOperations.get(getBlueApplicationReq).toFuture().get()
+            assertThat(blueAppDetails.requestedState).isEqualTo("STOPPED")
 
             cleanupCf(tc, "dewey", "test")
         }

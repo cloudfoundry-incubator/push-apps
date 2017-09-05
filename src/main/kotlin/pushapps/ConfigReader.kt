@@ -36,5 +36,6 @@ data class AppConfig(
     val memory: Int? = null,
     val noHostname: Boolean? = null,
     val noRoute: Boolean? = null,
-    val timeout: Int? = null
+    val timeout: Int? = null,
+    val blueGreenDeploy: Boolean? = null
 )

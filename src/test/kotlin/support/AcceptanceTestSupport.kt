@@ -171,7 +171,6 @@ fun buildCfClient(apiHost: String, username: String, password: String): CloudFou
 val client = OkHttpClient()
 
 fun httpGet(url: String): Response {
-
     val request = Request.Builder()
         .url(url)
         .build()

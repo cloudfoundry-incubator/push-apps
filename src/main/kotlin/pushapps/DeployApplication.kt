@@ -4,6 +4,7 @@ import org.cloudfoundry.operations.CloudFoundryOperations
 import org.cloudfoundry.operations.applications.PushApplicationRequest
 import org.cloudfoundry.operations.applications.SetEnvironmentVariableApplicationRequest
 import org.cloudfoundry.operations.applications.StartApplicationRequest
+import org.cloudfoundry.operations.applications.StopApplicationRequest
 import java.io.File
 import java.util.concurrent.CompletableFuture
 
@@ -11,21 +12,21 @@ class DeployApplication(
     private val cloudFoundryOperations: CloudFoundryOperations,
     private val appConfig: AppConfig
 ) {
-    fun deploy(): CompletableFuture<DeployResult> {
-        val pushAppFuture = generatePushAppFuture()
 
-        return pushAppFuture.thenApply {
-            generateSetEnvFutures()
-        }.thenCompose { setEnvFutures ->
-            CompletableFuture.allOf(*setEnvFutures.toTypedArray())
-        }.thenCompose {
-            generateStartApplicationFuture(appConfig.name)
-        }.thenApply {
-            DeployResult(
-                appName = appConfig.name,
-                didSucceed = true
-            )
-        }.exceptionally { error ->
+    fun deploy(): CompletableFuture<DeployResult> {
+        val deployAppFuture = if (appConfig.blueGreenDeploy == true) {
+            generateBlueGreenDeployApplicationFuture()
+        } else {
+            generateDeployApplicationFuture(appConfig.name)
+        }
+
+        return deployAppFuture
+            .thenApply {
+                DeployResult(
+                    appName = appConfig.name,
+                    didSucceed = true
+                )
+            }.exceptionally { error ->
             DeployResult(
                 appName = appConfig.name,
                 didSucceed = false,
@@ -34,10 +35,41 @@ class DeployApplication(
         }
     }
 
-    private fun generatePushAppFuture(): CompletableFuture<Void> {
+    private fun generateBlueGreenDeployApplicationFuture(): CompletableFuture<Void> {
+        val blueAppName = appConfig.name + "-blue"
+        return generateDeployApplicationFuture(blueAppName)
+            .thenCompose { generateDeployApplicationFuture(appConfig.name) }
+            .thenCompose { generateStopApplicationFuture(blueAppName) }
+    }
+
+    private fun generateStopApplicationFuture(appName: String): CompletableFuture<Void>? {
+        val stopApplicationRequest = StopApplicationRequest
+            .builder()
+            .name(appName)
+            .build()
+
+        return cloudFoundryOperations
+            .applications()
+            .stop(stopApplicationRequest)
+            .toFuture()
+    }
+
+    private fun generateDeployApplicationFuture(appName: String): CompletableFuture<Void> {
+        val pushAppFuture = generatePushAppFuture(appName)
+
+        return pushAppFuture.thenApply {
+            generateSetEnvFutures(appName)
+        }.thenCompose { setEnvFutures ->
+            CompletableFuture.allOf(*setEnvFutures.toTypedArray())
+        }.thenCompose {
+            generateStartApplicationFuture(appName)
+        }
+    }
+
+    private fun generatePushAppFuture(appName: String): CompletableFuture<Void> {
         var builder = PushApplicationRequest
             .builder()
-            .name(appConfig.name)
+            .name(appName)
             .path(File(appConfig.path).toPath())
             .noStart(true)
 
@@ -92,8 +124,8 @@ class DeployApplication(
         return newBuilder
     }
 
-    private fun generateSetEnvFutures(): List<CompletableFuture<Void>> {
-        val setEnvRequests = generateSetEnvRequests()
+    private fun generateSetEnvFutures(appName: String): List<CompletableFuture<Void>> {
+        val setEnvRequests = generateSetEnvRequests(appName)
 
         return setEnvRequests.map { request ->
             cloudFoundryOperations
@@ -103,13 +135,13 @@ class DeployApplication(
         }
     }
 
-    private fun generateSetEnvRequests(): List<SetEnvironmentVariableApplicationRequest> {
+    private fun generateSetEnvRequests(appName: String): List<SetEnvironmentVariableApplicationRequest> {
         if (appConfig.environment === null) return emptyList()
 
         return appConfig.environment.map { variable ->
             SetEnvironmentVariableApplicationRequest
                 .builder()
-                .name(appConfig.name)
+                .name(appName)
                 .variableName(variable.key)
                 .variableValue(variable.value)
                 .build()

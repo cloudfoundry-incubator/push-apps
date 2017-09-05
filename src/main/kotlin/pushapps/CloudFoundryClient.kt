@@ -1,6 +1,7 @@
 package pushapps
 
 import org.cloudfoundry.operations.applications.ApplicationSummary
+import org.cloudfoundry.operations.applications.StopApplicationRequest
 import org.cloudfoundry.operations.organizations.CreateOrganizationRequest
 import org.cloudfoundry.operations.organizations.OrganizationSummary
 import org.cloudfoundry.operations.spaces.CreateSpaceRequest
@@ -22,8 +23,8 @@ class CloudFoundryClient(
         .build()
 
     fun deployApplication(appConfig: AppConfig): CompletableFuture<DeployResult> {
-        val pushApps = DeployApplication(cloudFoundryOperations, appConfig)
-        return pushApps.deploy()
+        val appDeploy = DeployApplication(cloudFoundryOperations, appConfig)
+        return appDeploy.deploy()
     }
 
     fun createAndTargetOrganization(cf: CfConfig): CloudFoundryClient {
