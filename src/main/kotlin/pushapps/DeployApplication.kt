@@ -1,10 +1,7 @@
 package pushapps
 
 import org.cloudfoundry.operations.CloudFoundryOperations
-import org.cloudfoundry.operations.applications.PushApplicationRequest
-import org.cloudfoundry.operations.applications.SetEnvironmentVariableApplicationRequest
-import org.cloudfoundry.operations.applications.StartApplicationRequest
-import org.cloudfoundry.operations.applications.StopApplicationRequest
+import org.cloudfoundry.operations.applications.*
 import java.io.File
 import java.util.concurrent.CompletableFuture
 
@@ -123,6 +120,10 @@ class DeployApplication(
 
         if (appConfig.domain !== null) {
             newBuilder.domain(appConfig.domain)
+        }
+
+        if (appConfig.healthCheckType !== null) {
+            newBuilder.healthCheckType(ApplicationHealthCheck.from(appConfig.healthCheckType))
         }
 
         return newBuilder

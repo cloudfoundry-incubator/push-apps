@@ -3,6 +3,7 @@ package unit
 import com.nhaarman.mockito_kotlin.*
 import io.damo.aspen.Test
 import org.cloudfoundry.operations.CloudFoundryOperations
+import org.cloudfoundry.operations.applications.ApplicationHealthCheck
 import org.cloudfoundry.operations.applications.Applications
 import pushapps.AppConfig
 import pushapps.DeployApplication
@@ -204,6 +205,21 @@ class DeployApplicationTest : Test({
 
                     verify(tc.cfApplicationOperations).push(
                         argForWhich { domain == "lemons" }
+                    )
+                }
+
+                test("sets healthcheck type if present in config") {
+                    val tc = buildTestContext()
+                    val appConfig = AppConfig(
+                        name = "Foo bar",
+                        path = "/tmp/foo/bar",
+                        healthCheckType = "none"
+                    )
+
+                    deployApplication(tc, appConfig)
+
+                    verify(tc.cfApplicationOperations).push(
+                        argForWhich { healthCheckType == ApplicationHealthCheck.NONE }
                     )
                 }
             }

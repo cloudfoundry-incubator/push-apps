@@ -39,5 +39,6 @@ data class AppConfig(
     val noRoute: Boolean? = null,
     val timeout: Int? = null,
     val blueGreenDeploy: Boolean? = null,
-    val domain: String? = null
+    val domain: String? = null,
+    val healthCheckType: String? = null
 )
