@@ -14,6 +14,7 @@ class ConfigReaderTest: Test({
             assertThat(pushAppsConfig.cf.password).isEqualTo("some-password")
             assertThat(pushAppsConfig.cf.organization).isEqualTo("some-organization")
             assertThat(pushAppsConfig.cf.space).isEqualTo("some-space")
+            assertThat(pushAppsConfig.cf.skipSslValidation).isTrue()
 
             val apps = pushAppsConfig.apps
             assertThat(apps).hasSize(1)

@@ -22,7 +22,8 @@ data class CfConfig(
     val username: String,
     val password: String,
     val organization: String,
-    val space: String
+    val space: String,
+    val skipSslValidation: Boolean = false
 )
 
 data class AppConfig(
@@ -37,5 +38,6 @@ data class AppConfig(
     val noHostname: Boolean? = null,
     val noRoute: Boolean? = null,
     val timeout: Int? = null,
-    val blueGreenDeploy: Boolean? = null
+    val blueGreenDeploy: Boolean? = null,
+    val domain: String? = null
 )

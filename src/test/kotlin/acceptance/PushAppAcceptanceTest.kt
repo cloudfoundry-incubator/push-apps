@@ -54,6 +54,7 @@ class PushAppAcceptanceTest : Test({
                 .apply {
                     organization = "dewey"
                     space = "test"
+                    skipSslValidation = true
                 }.build()
 
             val applicationOperations = targetedOperations
@@ -96,6 +97,7 @@ class PushAppAcceptanceTest : Test({
                 .apply {
                     organization = "dewey"
                     space = "test"
+                    skipSslValidation = true
                 }.build()
 
             val applicationOperations = targetedOperations

@@ -20,6 +20,7 @@ class CloudFoundryOperationsBuilder {
     var password: String? = null
     var organization: String? = null
     var space: String? = null
+    var skipSslValidation: Boolean = false
     var existingCloudFoundryOperations: CloudFoundryOperations? = null
 
     fun build(): CloudFoundryOperations {
@@ -81,7 +82,7 @@ class CloudFoundryOperationsBuilder {
         if (apiHost !== null) connectionContextBuilder.apiHost(apiHost)
 
         return connectionContextBuilder
-            .skipSslValidation(true)
+            .skipSslValidation(skipSslValidation)
             .build()
     }
 

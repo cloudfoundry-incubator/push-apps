@@ -43,7 +43,8 @@ private fun targetCf(cf: CfConfig): CloudFoundryClient {
     val cloudFoundryClient = CloudFoundryClient(
         cf.apiHost,
         cf.username,
-        cf.password
+        cf.password,
+        cf.skipSslValidation
     )
 
     return cloudFoundryClient

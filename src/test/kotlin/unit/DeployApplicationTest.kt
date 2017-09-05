@@ -191,6 +191,21 @@ class DeployApplicationTest : Test({
                         argForWhich { timeout == 100 }
                     )
                 }
+
+                test("sets domain variable if present in config") {
+                    val tc = buildTestContext()
+                    val appConfig = AppConfig(
+                        name = "Foo bar",
+                        path = "/tmp/foo/bar",
+                        domain = "lemons"
+                    )
+
+                    deployApplication(tc, appConfig)
+
+                    verify(tc.cfApplicationOperations).push(
+                        argForWhich { domain == "lemons" }
+                    )
+                }
             }
         }
     }

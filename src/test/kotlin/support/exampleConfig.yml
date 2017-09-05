@@ -4,6 +4,7 @@ cf:
   username: some-username
   organization: some-organization
   space: some-space
+  skipSslValidation: true
 apps:
 - name: some-name
   path: some-path

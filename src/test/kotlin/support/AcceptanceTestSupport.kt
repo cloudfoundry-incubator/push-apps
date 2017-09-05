@@ -43,6 +43,7 @@ fun buildTestContext(organization: String, space: String, apps: List<AppConfig>)
             this.apiHost = apiHost
             this.username = username
             this.password = password
+            this.skipSslValidation = true
         }.build()
 
     val cf = buildCfClient(apiHost, username, password)
@@ -53,7 +54,8 @@ fun buildTestContext(organization: String, space: String, apps: List<AppConfig>)
         password = password,
         organization = organization,
         space = space,
-        apps = apps
+        apps = apps,
+        skipSslValidation = true
     )
 
     return TestContext(cfOperations, cf, configFilePath)
@@ -81,6 +83,7 @@ fun cleanupCf(tc: TestContext?, organization: String, space: String) {
         .apply {
             this.organization = organization
             this.space = space
+            this.skipSslValidation = true
         }.build()
 
     cfClient.listApplications().forEach { applicationSummary ->
@@ -111,9 +114,10 @@ fun writeConfigFile(
     password: String,
     organization: String,
     space: String,
-    apps: List<AppConfig>
+    apps: List<AppConfig>,
+    skipSslValidation: Boolean
 ): String {
-    val cf = CfConfig(apiHost, username, password, organization, space)
+    val cf = CfConfig(apiHost, username, password, organization, space, skipSslValidation)
     val config = Config(cf, apps)
 
     val objectMapper = ObjectMapper(YAMLFactory()).registerModule(KotlinModule())
@@ -164,7 +168,8 @@ fun buildCfClient(apiHost: String, username: String, password: String): CloudFou
     return CloudFoundryClient(
         apiHost,
         username,
-        password
+        password,
+        skipSslValidation = true
     )
 }
 

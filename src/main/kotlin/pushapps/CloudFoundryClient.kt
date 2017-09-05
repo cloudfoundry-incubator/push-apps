@@ -11,7 +11,8 @@ import java.util.concurrent.CompletableFuture
 class CloudFoundryClient(
     apiHost: String,
     username: String,
-    password: String
+    password: String,
+    skipSslValidation: Boolean = false
 ) {
 
     private var cloudFoundryOperations = cloudFoundryOperationsBuilder()
@@ -19,6 +20,7 @@ class CloudFoundryClient(
             this.apiHost = apiHost
             this.username = username
             this.password = password
+            this.skipSslValidation = skipSslValidation
         }
         .build()
 

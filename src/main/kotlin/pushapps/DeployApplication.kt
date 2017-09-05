@@ -121,6 +121,10 @@ class DeployApplication(
             newBuilder.timeout(appConfig.timeout)
         }
 
+        if (appConfig.domain !== null) {
+            newBuilder.domain(appConfig.domain)
+        }
+
         return newBuilder
     }
 
