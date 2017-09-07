@@ -2,6 +2,7 @@ package pushapps
 
 import org.cloudfoundry.operations.CloudFoundryOperations
 import org.cloudfoundry.operations.applications.*
+import reactor.core.publisher.Mono
 import java.io.File
 import java.util.concurrent.CompletableFuture
 
@@ -36,10 +37,10 @@ class DeployApplication(
         val blueAppName = appConfig.name + "-blue"
         return generateDeployApplicationFuture(blueAppName)
             .thenCompose { generateDeployApplicationFuture(appConfig.name) }
-            .thenCompose { generateStopApplicationFuture(blueAppName) }
+            .thenCompose { generateStopApplicationAction(blueAppName).toFuture() }
     }
 
-    private fun generateStopApplicationFuture(appName: String): CompletableFuture<Void>? {
+    private fun generateStopApplicationAction(appName: String): Mono<Void> {
         val stopApplicationRequest = StopApplicationRequest
             .builder()
             .name(appName)
@@ -48,22 +49,20 @@ class DeployApplication(
         return cloudFoundryOperations
             .applications()
             .stop(stopApplicationRequest)
-            .toFuture()
     }
 
     private fun generateDeployApplicationFuture(appName: String): CompletableFuture<Void> {
-        val pushAppFuture = generatePushAppFuture(appName)
+        val pushAppAction = generatePushAppAction(appName)
+        val setEnvActions = generateSetEnvActions(appName)
+        val deployAppFuture = setEnvActions
+            .fold(pushAppAction.toFuture()) { acc, setEnvAction ->
+                acc.thenCompose { setEnvAction.toFuture() }
+            }
 
-        return pushAppFuture.thenApply {
-            generateSetEnvFutures(appName)
-        }.thenCompose { setEnvFutures ->
-            CompletableFuture.allOf(*setEnvFutures.toTypedArray())
-        }.thenCompose {
-            generateStartApplicationFuture(appName)
-        }
+        return deployAppFuture.thenCompose { generateStartApplicationAction(appName).toFuture() }
     }
 
-    private fun generatePushAppFuture(appName: String): CompletableFuture<Void> {
+    private fun generatePushAppAction(appName: String): Mono<Void> {
         var builder = PushApplicationRequest
             .builder()
             .name(appName)
@@ -77,7 +76,6 @@ class DeployApplication(
         return cloudFoundryOperations
             .applications()
             .push(pushAppRequest)
-            .toFuture()
     }
 
     private fun setOptionalBuilderParams(builder: PushApplicationRequest.Builder): PushApplicationRequest.Builder {
@@ -129,19 +127,18 @@ class DeployApplication(
         return newBuilder
     }
 
-    private fun generateSetEnvFutures(appName: String): List<CompletableFuture<Void>> {
+    private fun generateSetEnvActions(appName: String): List<Mono<Void>> {
         val setEnvRequests = generateSetEnvRequests(appName)
 
         return setEnvRequests.map { request ->
             cloudFoundryOperations
                 .applications()
                 .setEnvironmentVariable(request)
-                .toFuture()
         }
     }
 
-    private fun generateSetEnvRequests(appName: String): List<SetEnvironmentVariableApplicationRequest> {
-        if (appConfig.environment === null) return emptyList()
+    private fun generateSetEnvRequests(appName: String): Array<SetEnvironmentVariableApplicationRequest> {
+        if (appConfig.environment === null) return emptyArray()
 
         return appConfig.environment.map { variable ->
             SetEnvironmentVariableApplicationRequest
@@ -150,11 +147,11 @@ class DeployApplication(
                 .variableName(variable.key)
                 .variableValue(variable.value)
                 .build()
-        }
+        }.toTypedArray()
     }
 
-    private fun generateStartApplicationFuture(applicationName: String): CompletableFuture<Void> {
+    private fun generateStartApplicationAction(applicationName: String): Mono<Void> {
         val startApplicationRequest = StartApplicationRequest.builder().name(applicationName).build()
-        return cloudFoundryOperations.applications().start(startApplicationRequest).toFuture()
+        return cloudFoundryOperations.applications().start(startApplicationRequest)
     }
 }

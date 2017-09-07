@@ -8,7 +8,6 @@ import java.util.concurrent.CompletableFuture
 fun main(args: Array<String>) {
     val logger: Logger = LoggerFactory.getLogger("Push Apps")
 
-
     val configPath = ArgumentParser.parseConfigPath(args)
     val (cf, apps) = ConfigReader.parseConfig(configPath)
 

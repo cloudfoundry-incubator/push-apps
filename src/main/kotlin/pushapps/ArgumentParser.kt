@@ -6,7 +6,7 @@ import com.beust.jcommander.Parameter
 class ArgumentParser {
     companion object {
         fun parseConfigPath(args: Array<String>): String {
-            var parsedArgs = Args()
+            val parsedArgs = Args()
 
             try {
                 JCommander
