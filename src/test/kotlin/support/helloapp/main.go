@@ -4,12 +4,34 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"encoding/json"
 )
+
+type Vcap struct {
+  UserProvided []UserProvidedService `json:"user-provided"`
+}
+
+type UserProvidedService struct {
+  Credentials map[string]string `json:"credentials"`
+  Name string `json:"name"`
+}
 
 func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		name := os.Getenv("NAME")
-		fmt.Fprintf(w, "hello %s\n", name)
+		vcapJson := os.Getenv("VCAP_SERVICES")
+
+    var vcap Vcap
+    var credentials map[string]string
+
+		json.Unmarshal([]byte(vcapJson), &vcap)
+		for _, service := range vcap.UserProvided {
+		  if service.Name == "compliment-service" {
+		    credentials = service.Credentials
+		  }
+		}
+
+		fmt.Fprintf(w, "hello %s, you are %s!\n", name, credentials["compliment"])
 	})
 
 	port := os.Getenv("PORT")

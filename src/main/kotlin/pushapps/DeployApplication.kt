@@ -2,6 +2,7 @@ package pushapps
 
 import org.cloudfoundry.operations.CloudFoundryOperations
 import org.cloudfoundry.operations.applications.*
+import org.cloudfoundry.operations.services.BindServiceInstanceRequest
 import reactor.core.publisher.Mono
 import java.io.File
 import java.util.concurrent.CompletableFuture
@@ -11,7 +12,7 @@ class DeployApplication(
     private val appConfig: AppConfig
 ) {
 
-    fun deploy(): CompletableFuture<DeployResult> {
+    fun deploy(): CompletableFuture<OperationResult> {
         val deployAppFuture = if (appConfig.blueGreenDeploy == true) {
             generateBlueGreenDeployApplicationFuture()
         } else {
@@ -20,13 +21,13 @@ class DeployApplication(
 
         return deployAppFuture
             .thenApply {
-                DeployResult(
-                    appName = appConfig.name,
+                OperationResult(
+                    name = appConfig.name,
                     didSucceed = true
                 )
             }.exceptionally { error ->
-            DeployResult(
-                appName = appConfig.name,
+            OperationResult(
+                name = appConfig.name,
                 didSucceed = false,
                 error = error
             )
@@ -54,9 +55,16 @@ class DeployApplication(
     private fun generateDeployApplicationFuture(appName: String): CompletableFuture<Void> {
         val pushAppAction = generatePushAppAction(appName)
         val setEnvActions = generateSetEnvActions(appName)
-        val deployAppFuture = setEnvActions
+        val bindServiceActions = generateBindServiceActions(appName)
+
+        val pushAppWithEnvFuture = setEnvActions
             .fold(pushAppAction.toFuture()) { acc, setEnvAction ->
                 acc.thenCompose { setEnvAction.toFuture() }
+            }
+
+        val deployAppFuture = bindServiceActions
+            .fold(pushAppWithEnvFuture) { acc, bindServiceAction ->
+                acc.thenCompose { bindServiceAction.toFuture() }
             }
 
         return deployAppFuture.thenCompose { generateStartApplicationAction(appName).toFuture() }
@@ -146,6 +154,28 @@ class DeployApplication(
                 .name(appName)
                 .variableName(variable.key)
                 .variableValue(variable.value)
+                .build()
+        }.toTypedArray()
+    }
+
+    private fun generateBindServiceActions(appName: String): List<Mono<Void>> {
+        val bindServiceRequests = generateBindServiceRequests(appName)
+
+        return bindServiceRequests.map { request ->
+            cloudFoundryOperations
+                .services()
+                .bind(request)
+        }
+    }
+
+    private fun generateBindServiceRequests(appName: String): Array<BindServiceInstanceRequest> {
+        if (appConfig.serviceNames === null) return emptyArray()
+
+        return appConfig.serviceNames.map { serviceName ->
+            BindServiceInstanceRequest
+                .builder()
+                .applicationName(appName)
+                .serviceInstanceName(serviceName)
                 .build()
         }.toTypedArray()
     }

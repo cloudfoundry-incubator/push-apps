@@ -4,10 +4,16 @@ import io.damo.aspen.Test
 import org.assertj.core.api.Assertions.assertThat
 import org.cloudfoundry.operations.applications.GetApplicationRequest
 import pushapps.AppConfig
+import pushapps.UserProvidedServiceConfig
 import pushapps.cloudFoundryOperationsBuilder
 import support.*
 
 class PushAppAcceptanceTest : Test({
+    val complimentService = UserProvidedServiceConfig(
+        name = "compliment-service",
+        credentials = mapOf("compliment" to "handsome")
+    )
+
     val helloApp = AppConfig(
         name = "hello",
         path = "$workingDir/src/test/kotlin/support/helloapp.zip",
@@ -15,6 +21,9 @@ class PushAppAcceptanceTest : Test({
         command = "./helloapp",
         environment = mapOf(
             "NAME" to "Steve"
+        ),
+        serviceNames = listOf(
+            "compliment-service"
         )
     )
 
@@ -41,7 +50,7 @@ class PushAppAcceptanceTest : Test({
 
     describe("pushApps interacts with applications by") {
         test("pushing every application in the config file") {
-            val tc = buildTestContext("dewey", "test", listOf(helloApp, goodbyeApp))
+            val tc = buildTestContext("dewey", "test", listOf(helloApp, goodbyeApp), listOf(complimentService))
 
             val exitCode = runPushApps(tc.configFilePath)
             assertThat(exitCode).isEqualTo(0)
@@ -68,7 +77,7 @@ class PushAppAcceptanceTest : Test({
 
             val helloResponse = httpGet("http://$helloUrl")
             assertThat(helloResponse.isSuccessful).isTrue()
-            assertThat(helloResponse.body()?.string()).contains("hello Steve")
+            assertThat(helloResponse.body()?.string()).contains("hello Steve, you are handsome!")
 
             val goodbyeUrl = applicationOperations
                 .get(getGoodbyeApplicationReq)
@@ -84,7 +93,7 @@ class PushAppAcceptanceTest : Test({
         }
 
         test("blue green deploys applications with blue green set to true") {
-            val tc = buildTestContext("dewey", "test", listOf(blueGreenApp))
+            val tc = buildTestContext("dewey", "test", listOf(blueGreenApp), emptyList())
 
             val exitCode = runPushApps(tc.configFilePath)
             assertThat(exitCode).isEqualTo(0)
@@ -129,7 +138,7 @@ class PushAppAcceptanceTest : Test({
                     "NAME" to "Steve"
                 )
             )
-            val tc = buildTestContext("dewey", "test", listOf(badBuildpackApp))
+            val tc = buildTestContext("dewey", "test", listOf(badBuildpackApp), emptyList())
 
             val exitCode = runPushApps(tc.configFilePath)
             assertThat(exitCode).isEqualTo(3)

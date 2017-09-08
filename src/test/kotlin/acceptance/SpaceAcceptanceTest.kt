@@ -7,7 +7,7 @@ import support.cleanupCf
 import support.runPushApps
 
 class SpaceAcceptanceTest : Test({
-    val tc = buildTestContext("dewey", "test", listOf())
+    val tc = buildTestContext("dewey", "test", emptyList(), emptyList())
 
     after {
         cleanupCf(tc, "dewey", "test")

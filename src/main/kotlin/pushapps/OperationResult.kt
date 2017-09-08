@@ -1,7 +1,7 @@
 package pushapps
 
-data class DeployResult(
-    val appName: String,
+data class OperationResult(
+    val name: String,
     val didSucceed: Boolean,
     val error: Throwable? = null
 )

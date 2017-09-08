@@ -11,3 +11,8 @@ apps:
   buildpack: some-buildpack
   environment:
     FRUIT: lemons
+  serviceNames: [some-service-name]
+userProvidedServices:
+- name: some-service-name
+  credentials:
+    username: some-username

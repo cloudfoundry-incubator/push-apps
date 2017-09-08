@@ -11,6 +11,7 @@ import org.assertj.core.api.Fail
 import org.cloudfoundry.operations.CloudFoundryOperations
 import org.cloudfoundry.operations.applications.DeleteApplicationRequest
 import org.cloudfoundry.operations.organizations.DeleteOrganizationRequest
+import org.cloudfoundry.operations.services.DeleteServiceInstanceRequest
 import org.cloudfoundry.operations.spaces.DeleteSpaceRequest
 import pushapps.*
 import java.io.File
@@ -33,7 +34,7 @@ fun getEnv(name: String): String {
     return env
 }
 
-fun buildTestContext(organization: String, space: String, apps: List<AppConfig>): TestContext {
+fun buildTestContext(organization: String, space: String, apps: List<AppConfig>, userProvidedServices: List<UserProvidedServiceConfig>): TestContext {
     val apiHost = getEnv("CF_API")
     val username = getEnv("CF_USERNAME")
     val password = getEnv("CF_PASSWORD")
@@ -55,6 +56,7 @@ fun buildTestContext(organization: String, space: String, apps: List<AppConfig>)
         organization = organization,
         space = space,
         apps = apps,
+        userProvidedServices = userProvidedServices,
         skipSslValidation = true
     )
 
@@ -78,7 +80,7 @@ fun cleanupCf(tc: TestContext?, organization: String, space: String) {
 
     cfClient.targetSpace(space)
 
-    val newOperations = cloudFoundryOperationsBuilder()
+    val targetedOperations = cloudFoundryOperationsBuilder()
         .fromExistingOperations(cfOperations)
         .apply {
             this.organization = organization
@@ -86,6 +88,16 @@ fun cleanupCf(tc: TestContext?, organization: String, space: String) {
             this.skipSslValidation = true
         }.build()
 
+    deleteApplications(cfClient, targetedOperations)
+
+    deleteServices(cfClient, targetedOperations)
+
+    deleteSpace(space, targetedOperations)
+
+    deleteOrganization(organization, targetedOperations)
+}
+
+private fun deleteApplications(cfClient: CloudFoundryClient, newOperations: CloudFoundryOperations) {
     cfClient.listApplications().forEach { applicationSummary ->
         val deleteApplicationRequest = DeleteApplicationRequest
             .builder()
@@ -94,13 +106,27 @@ fun cleanupCf(tc: TestContext?, organization: String, space: String) {
             .build()
         newOperations.applications().delete(deleteApplicationRequest).block()
     }
+}
 
+private fun deleteServices(cfClient: CloudFoundryClient, newOperations: CloudFoundryOperations) {
+    cfClient.listServices().forEach { serviceName ->
+        val deleteServiceInstanceRequest = DeleteServiceInstanceRequest
+            .builder()
+            .name(serviceName)
+            .build()
+        newOperations.services().deleteInstance(deleteServiceInstanceRequest).block()
+    }
+}
+
+private fun deleteSpace(space: String, newOperations: CloudFoundryOperations) {
     val deleteSpaceRequest = DeleteSpaceRequest
         .builder()
         .name(space)
         .build()
     newOperations.spaces().delete(deleteSpaceRequest).block()
+}
 
+private fun deleteOrganization(organization: String, newOperations: CloudFoundryOperations) {
     val deleteOrganizationRequest = DeleteOrganizationRequest
         .builder()
         .name(organization)
@@ -115,10 +141,11 @@ fun writeConfigFile(
     organization: String,
     space: String,
     apps: List<AppConfig>,
+    userProvidedServices: List<UserProvidedServiceConfig>,
     skipSslValidation: Boolean
 ): String {
     val cf = CfConfig(apiHost, username, password, organization, space, skipSslValidation)
-    val config = Config(cf, apps)
+    val config = Config(cf, apps, userProvidedServices)
 
     val objectMapper = ObjectMapper(YAMLFactory()).registerModule(KotlinModule())
 
@@ -152,7 +179,7 @@ fun runPushApps(configFilePath: String, debug: Boolean = false): Int {
         pushAppsCommand
     ).inheritIO().start()
 
-    pushAppsProcess.waitFor(30, TimeUnit.SECONDS)
+    pushAppsProcess.waitFor(60, TimeUnit.SECONDS)
 
     if (pushAppsProcess.isAlive) {
         Fail.fail("Process failed to finish within timeout window")

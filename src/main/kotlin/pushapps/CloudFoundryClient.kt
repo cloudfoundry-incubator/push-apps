@@ -1,12 +1,14 @@
 package pushapps
 
 import org.cloudfoundry.operations.applications.ApplicationSummary
-import org.cloudfoundry.operations.applications.StopApplicationRequest
 import org.cloudfoundry.operations.organizations.CreateOrganizationRequest
 import org.cloudfoundry.operations.organizations.OrganizationSummary
+import org.cloudfoundry.operations.services.CreateUserProvidedServiceInstanceRequest
+import org.cloudfoundry.operations.services.ServiceInstanceSummary
 import org.cloudfoundry.operations.spaces.CreateSpaceRequest
 import org.cloudfoundry.operations.spaces.SpaceSummary
 import java.util.concurrent.CompletableFuture
+
 
 class CloudFoundryClient(
     apiHost: String,
@@ -24,7 +26,32 @@ class CloudFoundryClient(
         }
         .build()
 
-    fun deployApplication(appConfig: AppConfig): CompletableFuture<DeployResult> {
+    fun createUserProvidedService(serviceConfig: UserProvidedServiceConfig): CompletableFuture<OperationResult> {
+        val createServiceRequest = CreateUserProvidedServiceInstanceRequest
+            .builder()
+            .name(serviceConfig.name)
+            .credentials(serviceConfig.credentials)
+            .build()
+
+        return cloudFoundryOperations
+            .services()
+            .createUserProvidedInstance(createServiceRequest)
+            .toFuture()
+            .thenApply {
+                OperationResult(
+                    name = serviceConfig.name,
+                    didSucceed = true
+                )
+            }.exceptionally { error ->
+            OperationResult(
+                name = serviceConfig.name,
+                didSucceed = false,
+                error = error
+            )
+        }
+    }
+
+    fun deployApplication(appConfig: AppConfig): CompletableFuture<OperationResult> {
         val appDeploy = DeployApplication(cloudFoundryOperations, appConfig)
         return appDeploy.deploy()
     }
@@ -95,6 +122,17 @@ class CloudFoundryClient(
             .map(SpaceSummary::getName)
 
         return spaceFlux
+            .toIterable()
+            .toList()
+    }
+
+    fun listServices(): List<String> {
+        val serviceInstanceFlux = cloudFoundryOperations
+            .services()
+            .listInstances()
+            .map(ServiceInstanceSummary::getName)
+
+        return serviceInstanceFlux
             .toIterable()
             .toList()
     }

@@ -9,7 +9,7 @@ fun main(args: Array<String>) {
     val logger: Logger = LoggerFactory.getLogger("Push Apps")
 
     val configPath = ArgumentParser.parseConfigPath(args)
-    val (cf, apps) = ConfigReader.parseConfig(configPath)
+    val (cf, apps, userProvidedServices) = ConfigReader.parseConfig(configPath)
 
     val cloudFoundryClient = targetCf(cf)
 
@@ -17,24 +17,65 @@ fun main(args: Array<String>) {
         System.exit(0)
     }
 
-    val results = createPushAppFlux(apps, cloudFoundryClient)
+    createUserProvidedServices(userProvidedServices, cloudFoundryClient, logger)
+
+    deployApps(apps, cloudFoundryClient, logger)
+}
+
+private fun createUserProvidedServices(userProvidedServices: List<UserProvidedServiceConfig>, cloudFoundryClient: CloudFoundryClient, logger: Logger) {
+    val createUserServicesResults = createUserProvidedServicesFlux(userProvidedServices, cloudFoundryClient)
+        .toIterable()
+        .toList()
+    val didSucceed = didSucceed(createUserServicesResults)
+    if (!didSucceed) {
+        handleOperationFailure(createUserServicesResults, "Creating user provided service", logger)
+    }
+}
+
+private fun deployApps(apps: List<AppConfig>, cloudFoundryClient: CloudFoundryClient, logger: Logger) {
+    val results = createDeployAppsFlux(apps, cloudFoundryClient)
         .toIterable()
         .toList()
 
-    val didSucceed = results.fold(true, { acc, result -> acc && result.didSucceed })
+    val didSucceed = didSucceed(results)
 
     if (!didSucceed) {
-        results
-            .filterNot(DeployResult::didSucceed)
-            .forEach { (appName, _, error) ->
-                logger.error("Deploying application $appName failed with error message: ${error!!.message}")
+        handleOperationFailure(results, "Deploying application", logger)
+    }
+}
 
-                if (logger.isDebugEnabled) {
-                    error.printStackTrace()
-                }
+private fun handleOperationFailure(results: List<OperationResult>, actionName: String, logger: Logger) {
+    results
+        .filterNot(OperationResult::didSucceed)
+        .forEach { (name, _, error) ->
+            logger.error("$actionName $name failed with error message: ${error!!.message}")
+
+            if (logger.isDebugEnabled) {
+                error.printStackTrace()
             }
+        }
 
-        System.exit(3)
+    System.exit(3)
+}
+
+private fun didSucceed(results: List<OperationResult>): Boolean {
+    val didSucceed = results.fold(true, { acc, result -> acc && result.didSucceed })
+    return didSucceed
+}
+
+fun createUserProvidedServicesFlux(userProvidedServices: List<UserProvidedServiceConfig>, cloudFoundryClient: CloudFoundryClient): Flux<OperationResult> {
+    return Flux.create { sink ->
+        val createServices = userProvidedServices.map {
+            cloudFoundryClient
+                .createUserProvidedService(it)
+                .thenApply {
+                    sink.next(it)
+                }
+        }
+
+        CompletableFuture.allOf(*createServices
+            .toTypedArray())
+            .thenApply { sink.complete() }
     }
 }
 
@@ -51,7 +92,7 @@ private fun targetCf(cf: CfConfig): CloudFoundryClient {
         .createAndTargetSpace(cf)
 }
 
-private fun createPushAppFlux(apps: List<AppConfig>, cloudFoundryClient: CloudFoundryClient): Flux<DeployResult> {
+private fun createDeployAppsFlux(apps: List<AppConfig>, cloudFoundryClient: CloudFoundryClient): Flux<OperationResult> {
     return Flux.create { sink ->
         val applicationDeployments = apps.map {
             cloudFoundryClient

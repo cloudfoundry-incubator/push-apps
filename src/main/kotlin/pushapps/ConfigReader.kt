@@ -15,7 +15,7 @@ class ConfigReader {
     }
 }
 
-data class Config(val cf: CfConfig, val apps: List<AppConfig>)
+data class Config(val cf: CfConfig, val apps: List<AppConfig>, val userProvidedServices: List<UserProvidedServiceConfig>)
 
 data class CfConfig(
     val apiHost: String,
@@ -40,5 +40,11 @@ data class AppConfig(
     val timeout: Int? = null,
     val blueGreenDeploy: Boolean? = null,
     val domain: String? = null,
-    val healthCheckType: String? = null
+    val healthCheckType: String? = null,
+    val serviceNames: List<String>? = emptyList()
+)
+
+data class UserProvidedServiceConfig(
+    val name: String,
+    val credentials: Map<String, Any>
 )
