@@ -7,6 +7,7 @@ import org.cloudfoundry.operations.services.CreateUserProvidedServiceInstanceReq
 import org.cloudfoundry.operations.services.ServiceInstanceSummary
 import org.cloudfoundry.operations.spaces.CreateSpaceRequest
 import org.cloudfoundry.operations.spaces.SpaceSummary
+import reactor.core.publisher.Mono
 import java.util.concurrent.CompletableFuture
 
 
@@ -26,7 +27,7 @@ class CloudFoundryClient(
         }
         .build()
 
-    fun createUserProvidedService(serviceConfig: UserProvidedServiceConfig): CompletableFuture<OperationResult> {
+    fun createUserProvidedService(serviceConfig: UserProvidedServiceConfig): Mono<Void> {
         val createServiceRequest = CreateUserProvidedServiceInstanceRequest
             .builder()
             .name(serviceConfig.name)
@@ -36,19 +37,6 @@ class CloudFoundryClient(
         return cloudFoundryOperations
             .services()
             .createUserProvidedInstance(createServiceRequest)
-            .toFuture()
-            .thenApply {
-                OperationResult(
-                    name = serviceConfig.name,
-                    didSucceed = true
-                )
-            }.exceptionally { error ->
-            OperationResult(
-                name = serviceConfig.name,
-                didSucceed = false,
-                error = error
-            )
-        }
     }
 
     fun deployApplication(appConfig: AppConfig): CompletableFuture<OperationResult> {
