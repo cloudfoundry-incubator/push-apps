@@ -9,6 +9,7 @@ import okhttp3.Request
 import okhttp3.Response
 import org.assertj.core.api.Fail
 import org.cloudfoundry.operations.CloudFoundryOperations
+import org.cloudfoundry.operations.applications.ApplicationSummary
 import org.cloudfoundry.operations.applications.DeleteApplicationRequest
 import org.cloudfoundry.operations.organizations.DeleteOrganizationRequest
 import org.cloudfoundry.operations.services.DeleteServiceInstanceRequest
@@ -73,12 +74,12 @@ fun cleanupCf(tc: TestContext?, organization: String, space: String) {
     val organizations = cfClient.listOrganizations()
     if (!organizations.contains(organization)) return
 
-    cfClient.targetOrganization(organization)
+    cfClient.createAndTargetOrganization(organization)
 
     val spaces = cfClient.listSpaces()
     if (!spaces.contains(space)) return
 
-    cfClient.targetSpace(space)
+    cfClient.createAndTargetSpace(space)
 
     val targetedOperations = cloudFoundryOperationsBuilder()
         .fromExistingOperations(cfOperations)
@@ -88,7 +89,7 @@ fun cleanupCf(tc: TestContext?, organization: String, space: String) {
             this.skipSslValidation = true
         }.build()
 
-    deleteApplications(cfClient, targetedOperations)
+    deleteApplications(targetedOperations)
 
     deleteServices(cfClient, targetedOperations)
 
@@ -97,14 +98,21 @@ fun cleanupCf(tc: TestContext?, organization: String, space: String) {
     deleteOrganization(organization, targetedOperations)
 }
 
-private fun deleteApplications(cfClient: CloudFoundryClient, newOperations: CloudFoundryOperations) {
-    cfClient.listApplications().forEach { applicationSummary ->
+private fun deleteApplications(targetedOperations: CloudFoundryOperations) {
+    val appNames: List<String> = targetedOperations
+        .applications()
+        .list()
+        .map(ApplicationSummary::getName)
+        .toIterable()
+        .toList()
+
+    appNames.forEach { appName ->
         val deleteApplicationRequest = DeleteApplicationRequest
             .builder()
-            .name(applicationSummary.name)
+            .name(appName)
             .deleteRoutes(true)
             .build()
-        newOperations.applications().delete(deleteApplicationRequest).block()
+        targetedOperations.applications().delete(deleteApplicationRequest).block()
     }
 }
 

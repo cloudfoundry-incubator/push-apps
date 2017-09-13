@@ -46,6 +46,11 @@ class CloudFoundryClient(
         return pushApplication.generatePushAppAction()
     }
 
+    fun startApplication(appName: String): Mono<Void> {
+        val startApplicationRequest = StartApplicationRequest.builder().name(appName).build()
+        return cloudFoundryOperations.applications().start(startApplicationRequest)
+    }
+
     fun stopApplication(appName: String): Mono<Void> {
         val stopApplicationRequest = StopApplicationRequest
             .builder()
@@ -103,17 +108,12 @@ class CloudFoundryClient(
         }.toTypedArray()
     }
 
-    fun startApplication(applicationName: String): Mono<Void> {
-        val startApplicationRequest = StartApplicationRequest.builder().name(applicationName).build()
-        return cloudFoundryOperations.applications().start(startApplicationRequest)
+    fun createAndTargetOrganization(organizationName: String): CloudFoundryClient {
+        createOrganizationIfDoesNotExist(organizationName)
+        return targetOrganization(organizationName)
     }
 
-    fun createAndTargetOrganization(cf: CfConfig): CloudFoundryClient {
-        createOrganizationIfDoesNotExist(cf.organization)
-        return targetOrganization(cf.organization)
-    }
-
-    fun createOrganizationIfDoesNotExist(name: String) {
+    private fun createOrganizationIfDoesNotExist(name: String) {
         if (!organizationDoesExist(name)) {
             createOrganization(name)
         }
@@ -130,12 +130,22 @@ class CloudFoundryClient(
         cloudFoundryOperations.organizations().create(createOrganizationRequest).block()
     }
 
-    fun createAndTargetSpace(cf: CfConfig): CloudFoundryClient {
-        createSpaceIfDoesNotExist(cf.space)
-        return targetSpace(cf.space)
+    private fun targetOrganization(organizationName: String): CloudFoundryClient {
+        cloudFoundryOperations = cloudFoundryOperationsBuilder()
+            .fromExistingOperations(cloudFoundryOperations)
+            .apply {
+                this.organization = organizationName
+            }.build()
+
+        return this
     }
 
-    fun createSpaceIfDoesNotExist(name: String) {
+    fun createAndTargetSpace(spaceName: String): CloudFoundryClient {
+        createSpaceIfDoesNotExist(spaceName)
+        return targetSpace(spaceName)
+    }
+
+    private fun createSpaceIfDoesNotExist(name: String) {
         if (!spaceDoesExist(name)) {
             createSpace(name)
         }
@@ -152,8 +162,14 @@ class CloudFoundryClient(
         cloudFoundryOperations.spaces().create(createSpaceRequest).block()
     }
 
-    fun listApplications(): MutableIterable<ApplicationSummary> {
-        return cloudFoundryOperations.applications().list().toIterable()
+    private fun targetSpace(space: String): CloudFoundryClient {
+        cloudFoundryOperations = cloudFoundryOperationsBuilder()
+            .fromExistingOperations(cloudFoundryOperations)
+            .apply {
+                this.space = space
+            }.build()
+
+        return this
     }
 
     fun listOrganizations(): List<String> {
@@ -187,25 +203,5 @@ class CloudFoundryClient(
         return serviceInstanceFlux
             .toIterable()
             .toList()
-    }
-
-    fun targetOrganization(organizationName: String): CloudFoundryClient {
-        cloudFoundryOperations = cloudFoundryOperationsBuilder()
-            .fromExistingOperations(cloudFoundryOperations)
-            .apply {
-                this.organization = organizationName
-            }.build()
-
-        return this
-    }
-
-    fun targetSpace(space: String): CloudFoundryClient {
-        cloudFoundryOperations = cloudFoundryOperationsBuilder()
-            .fromExistingOperations(cloudFoundryOperations)
-            .apply {
-                this.space = space
-            }.build()
-
-        return this
     }
 }

@@ -21,7 +21,7 @@ class SpaceAcceptanceTest : Test({
 
             val exitCode = runPushApps(tc.configFilePath)
 
-            tc.cfClient.targetOrganization("dewey")
+            tc.cfClient.createAndTargetOrganization("dewey")
             val spaces = tc.cfClient.listSpaces()
 
             assertThat(exitCode).isEqualTo(0)
@@ -29,9 +29,8 @@ class SpaceAcceptanceTest : Test({
         }
 
         test("not creating a space if it already exists") {
-            tc.cfClient.createOrganizationIfDoesNotExist("dewey")
-            tc.cfClient.targetOrganization("dewey")
-            tc.cfClient.createSpaceIfDoesNotExist("test")
+            tc.cfClient.createAndTargetOrganization("dewey")
+            tc.cfClient.createAndTargetSpace("test")
 
             val exitCode = runPushApps(tc.configFilePath)
             assertThat(exitCode).isEqualTo(0)

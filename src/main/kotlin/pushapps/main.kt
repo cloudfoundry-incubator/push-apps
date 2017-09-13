@@ -31,8 +31,8 @@ private fun targetCf(cf: CfConfig): CloudFoundryClient {
     )
 
     return cloudFoundryClient
-        .createAndTargetOrganization(cf)
-        .createAndTargetSpace(cf)
+        .createAndTargetOrganization(cf.organization)
+        .createAndTargetSpace(cf.space)
 }
 
 private fun createUserProvidedServices(userProvidedServices: List<UserProvidedServiceConfig>, cloudFoundryClient: CloudFoundryClient, logger: Logger) {

@@ -26,7 +26,7 @@ class OrganizationAcceptanceTest : Test({
         }
 
         test("not creating an org if it already exists") {
-            tc.cfClient.createOrganizationIfDoesNotExist("dewey")
+            tc.cfClient.createAndTargetOrganization("dewey")
 
             val exitCode = runPushApps(tc.configFilePath)
             assertThat(exitCode).isEqualTo(0)

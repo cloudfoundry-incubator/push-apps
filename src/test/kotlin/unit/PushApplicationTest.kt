@@ -9,27 +9,29 @@ import pushapps.AppConfig
 import pushapps.PushApplication
 import reactor.core.publisher.Mono
 
-data class PushApplicationTestContext(
-    val pushApplication: PushApplication,
-    val mockApplications: Applications
-)
 
-fun buildPushApplicationTestContext(appConfig: AppConfig): PushApplicationTestContext {
-    val mockApplications = mock<Applications>()
-    whenever(mockApplications.push(any())).thenReturn(Mono.empty())
-
-    val mockCfOperations = mock<CloudFoundryOperations>()
-    whenever(mockCfOperations.applications()).thenReturn(mockApplications)
-
-    val pushApplication = PushApplication(
-        cloudFoundryOperations = mockCfOperations,
-        appConfig = appConfig
-    )
-
-    return PushApplicationTestContext(pushApplication, mockApplications)
-}
 
 class PushApplicationTest : Test({
+    data class TestContext(
+        val pushApplication: PushApplication,
+        val mockApplications: Applications
+    )
+
+    fun buildTestContext(appConfig: AppConfig): TestContext {
+        val mockApplications = mock<Applications>()
+        whenever(mockApplications.push(any())).thenReturn(Mono.empty())
+
+        val mockCfOperations = mock<CloudFoundryOperations>()
+        whenever(mockCfOperations.applications()).thenReturn(mockApplications)
+
+        val pushApplication = PushApplication(
+            cloudFoundryOperations = mockCfOperations,
+            appConfig = appConfig
+        )
+
+        return TestContext(pushApplication, mockApplications)
+    }
+
     describe("#generatePushAppAction") {
         //TODO test other things than optional config vars
 
@@ -40,7 +42,7 @@ class PushApplicationTest : Test({
                     path = "/tmp/foo/bar",
                     buildpack = "bob_the_builder"
                 )
-                val tc = buildPushApplicationTestContext(appConfig)
+                val tc = buildTestContext(appConfig)
 
                 tc.pushApplication.generatePushAppAction()
 
@@ -55,7 +57,7 @@ class PushApplicationTest : Test({
                     path = "/tmp/foo/bar",
                     command = "some-command"
                 )
-                val tc = buildPushApplicationTestContext(appConfig)
+                val tc = buildTestContext(appConfig)
 
                 tc.pushApplication.generatePushAppAction()
 
@@ -70,7 +72,7 @@ class PushApplicationTest : Test({
                     path = "/tmp/foo/bar",
                     instances = 1
                 )
-                val tc = buildPushApplicationTestContext(appConfig)
+                val tc = buildTestContext(appConfig)
 
                 tc.pushApplication.generatePushAppAction()
 
@@ -85,7 +87,7 @@ class PushApplicationTest : Test({
                     path = "/tmp/foo/bar",
                     diskQuota = 512
                 )
-                val tc = buildPushApplicationTestContext(appConfig)
+                val tc = buildTestContext(appConfig)
 
                 tc.pushApplication.generatePushAppAction()
 
@@ -100,7 +102,7 @@ class PushApplicationTest : Test({
                     path = "/tmp/foo/bar",
                     memory = 512
                 )
-                val tc = buildPushApplicationTestContext(appConfig)
+                val tc = buildTestContext(appConfig)
 
                 tc.pushApplication.generatePushAppAction()
 
@@ -115,7 +117,7 @@ class PushApplicationTest : Test({
                     path = "/tmp/foo/bar",
                     noHostname = true
                 )
-                val tc = buildPushApplicationTestContext(appConfig)
+                val tc = buildTestContext(appConfig)
 
                 tc.pushApplication.generatePushAppAction()
 
@@ -130,7 +132,7 @@ class PushApplicationTest : Test({
                     path = "/tmp/foo/bar",
                     noRoute = true
                 )
-                val tc = buildPushApplicationTestContext(appConfig)
+                val tc = buildTestContext(appConfig)
 
                 tc.pushApplication.generatePushAppAction()
 
@@ -145,7 +147,7 @@ class PushApplicationTest : Test({
                     path = "/tmp/foo/bar",
                     timeout = 100
                 )
-                val tc = buildPushApplicationTestContext(appConfig)
+                val tc = buildTestContext(appConfig)
 
                 tc.pushApplication.generatePushAppAction()
 
@@ -160,7 +162,7 @@ class PushApplicationTest : Test({
                     path = "/tmp/foo/bar",
                     domain = "lemons"
                 )
-                val tc = buildPushApplicationTestContext(appConfig)
+                val tc = buildTestContext(appConfig)
 
                 tc.pushApplication.generatePushAppAction()
 
@@ -175,7 +177,7 @@ class PushApplicationTest : Test({
                     path = "/tmp/foo/bar",
                     healthCheckType = "none"
                 )
-                val tc = buildPushApplicationTestContext(appConfig)
+                val tc = buildTestContext(appConfig)
 
                 tc.pushApplication.generatePushAppAction()
 
