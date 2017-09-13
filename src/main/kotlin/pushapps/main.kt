@@ -46,30 +46,12 @@ private fun createUserProvidedServices(userProvidedServices: List<UserProvidedSe
 }
 
 private fun deployApps(apps: List<AppConfig>, cloudFoundryClient: CloudFoundryClient, logger: Logger) {
-    val results = createDeployAppsFlux(apps, cloudFoundryClient)
-        .toIterable()
-        .toList()
+    val appDeployer = AppDeployer(cloudFoundryClient, apps)
+    val results = appDeployer.deployApps()
 
     val didSucceed = didSucceed(results)
-
     if (!didSucceed) {
         handleOperationFailure(results, "Deploying application", logger)
-    }
-}
-
-private fun createDeployAppsFlux(apps: List<AppConfig>, cloudFoundryClient: CloudFoundryClient): Flux<OperationResult> {
-    return Flux.create { sink ->
-        val applicationDeployments = apps.map {
-            cloudFoundryClient
-                .deployApplication(it)
-                .thenApply {
-                    sink.next(it)
-                }
-        }
-
-        CompletableFuture.allOf(*applicationDeployments
-            .toTypedArray())
-            .thenApply { sink.complete() }
     }
 }
 

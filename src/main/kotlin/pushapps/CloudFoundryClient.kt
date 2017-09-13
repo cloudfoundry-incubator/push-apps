@@ -1,24 +1,25 @@
 package pushapps
 
+import org.cloudfoundry.operations.CloudFoundryOperations
 import org.cloudfoundry.operations.applications.ApplicationSummary
+import org.cloudfoundry.operations.applications.SetEnvironmentVariableApplicationRequest
+import org.cloudfoundry.operations.applications.StartApplicationRequest
+import org.cloudfoundry.operations.applications.StopApplicationRequest
 import org.cloudfoundry.operations.organizations.CreateOrganizationRequest
 import org.cloudfoundry.operations.organizations.OrganizationSummary
+import org.cloudfoundry.operations.services.BindServiceInstanceRequest
 import org.cloudfoundry.operations.services.CreateUserProvidedServiceInstanceRequest
 import org.cloudfoundry.operations.services.ServiceInstanceSummary
 import org.cloudfoundry.operations.spaces.CreateSpaceRequest
 import org.cloudfoundry.operations.spaces.SpaceSummary
 import reactor.core.publisher.Mono
-import java.util.concurrent.CompletableFuture
-
 
 class CloudFoundryClient(
     apiHost: String,
     username: String,
     password: String,
-    skipSslValidation: Boolean = false
-) {
-
-    private var cloudFoundryOperations = cloudFoundryOperationsBuilder()
+    skipSslValidation: Boolean = false,
+    private var cloudFoundryOperations: CloudFoundryOperations = cloudFoundryOperationsBuilder()
         .apply {
             this.apiHost = apiHost
             this.username = username
@@ -26,6 +27,7 @@ class CloudFoundryClient(
             this.skipSslValidation = skipSslValidation
         }
         .build()
+) {
 
     fun createUserProvidedService(serviceConfig: UserProvidedServiceConfig): Mono<Void> {
         val createServiceRequest = CreateUserProvidedServiceInstanceRequest
@@ -39,9 +41,71 @@ class CloudFoundryClient(
             .createUserProvidedInstance(createServiceRequest)
     }
 
-    fun deployApplication(appConfig: AppConfig): CompletableFuture<OperationResult> {
-        val appDeploy = DeployApplication(cloudFoundryOperations, appConfig)
-        return appDeploy.deploy()
+    fun pushApplication(appConfig: AppConfig): Mono<Void> {
+        val pushApplication = PushApplication(cloudFoundryOperations, appConfig)
+        return pushApplication.generatePushAppAction()
+    }
+
+    fun stopApplication(appName: String): Mono<Void> {
+        val stopApplicationRequest = StopApplicationRequest
+            .builder()
+            .name(appName)
+            .build()
+
+        return cloudFoundryOperations
+            .applications()
+            .stop(stopApplicationRequest)
+    }
+
+    fun setApplicationEnvironment(appConfig: AppConfig): List<Mono<Void>> {
+        val setEnvRequests = generateSetEnvRequests(appConfig)
+
+        return setEnvRequests.map { request ->
+            cloudFoundryOperations
+                .applications()
+                .setEnvironmentVariable(request)
+        }
+    }
+
+    private fun generateSetEnvRequests(appConfig: AppConfig): Array<SetEnvironmentVariableApplicationRequest> {
+        if (appConfig.environment === null) return emptyArray()
+
+        return appConfig.environment.map { variable ->
+            SetEnvironmentVariableApplicationRequest
+                .builder()
+                .name(appConfig.name)
+                .variableName(variable.key)
+                .variableValue(variable.value)
+                .build()
+        }.toTypedArray()
+    }
+
+    //TODO should this just return one action at a time?
+    fun bindServicesToApplication(appConfig: AppConfig): List<Mono<Void>> {
+        val bindServiceRequests = generateBindServiceRequests(appConfig)
+
+        return bindServiceRequests.map { request ->
+            cloudFoundryOperations
+                .services()
+                .bind(request)
+        }
+    }
+
+    private fun generateBindServiceRequests(appConfig: AppConfig): Array<BindServiceInstanceRequest> {
+        if (appConfig.serviceNames === null) return emptyArray()
+
+        return appConfig.serviceNames.map { serviceName ->
+            BindServiceInstanceRequest
+                .builder()
+                .applicationName(appConfig.name)
+                .serviceInstanceName(serviceName)
+                .build()
+        }.toTypedArray()
+    }
+
+    fun startApplication(applicationName: String): Mono<Void> {
+        val startApplicationRequest = StartApplicationRequest.builder().name(applicationName).build()
+        return cloudFoundryOperations.applications().start(startApplicationRequest)
     }
 
     fun createAndTargetOrganization(cf: CfConfig): CloudFoundryClient {
