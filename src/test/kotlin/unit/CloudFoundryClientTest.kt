@@ -57,7 +57,7 @@ class CloudFoundryClientTest : Test({
         )
     }
 
-    describe("createUserProvidedService") {
+    describe("#createUserProvidedService") {
         test("creates the given service") {
             val tc = buildTestContext()
             whenever(tc.mockServices.createUserProvidedInstance(any())).thenReturn(Mono.empty())
@@ -75,6 +75,30 @@ class CloudFoundryClientTest : Test({
             verify(tc.mockServices, times(1)).createUserProvidedInstance(
                 argForWhich {
                     name == serviceConfig.name &&
+                        credentials == serviceConfig.credentials
+                }
+            )
+        }
+    }
+
+    describe("#updateUserProvidedService") {
+        test("updates the given service") {
+            val tc = buildTestContext()
+            whenever(tc.mockServices.updateUserProvidedInstance(any())).thenReturn(Mono.empty())
+
+            val serviceConfig = UserProvidedServiceConfig(
+                name = "Foo bar",
+                credentials = mapOf(
+                    "FOO" to "BAR",
+                    "BAR" to "BAZ"
+                )
+            )
+
+            tc.cloudFoundryClient.updateUserProvidedService(serviceConfig)
+
+            verify(tc.mockServices, times(1)).updateUserProvidedInstance(
+                argForWhich {
+                    userProvidedServiceInstanceName == serviceConfig.name &&
                         credentials == serviceConfig.credentials
                 }
             )

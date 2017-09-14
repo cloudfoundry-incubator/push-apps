@@ -4,6 +4,10 @@ A jar that pushes apps to CF for PCF Metrics
 
 ##Backlog
 
+TODO before adding to app dev
+* Create services that aren't user provided
+* add dial timeout paramerter to CF connection context
+
 v1
 * Push mysql logqueue
     * Pushes binary buildpack

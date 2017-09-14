@@ -7,16 +7,14 @@ class UserProvidedServiceCreator(
     private val cloudFoundryClient: CloudFoundryClient,
     private val userProvidedServiceConfigs: List<UserProvidedServiceConfig>
 ) {
-    fun createServices(): List<OperationResult> {
+    fun createOrUpdateServices(): List<OperationResult> {
         val createServicesFlux: Flux<OperationResult> = Flux.create { sink ->
-            val createServices = userProvidedServiceConfigs.map { serviceConfig ->
-                createServiceFuture(serviceConfig)
-                    .thenApply {
-                        sink.next(it)
-                    }
+            val createOrUpdateServiceFutures = userProvidedServiceConfigs.map { serviceConfig ->
+                generateServiceFuture(serviceConfig)
+                    .thenApply { sink.next(it) }
             }
 
-            CompletableFuture.allOf(*createServices
+            CompletableFuture.allOf(*createOrUpdateServiceFutures
                 .toTypedArray())
                 .thenApply { sink.complete() }
         }
@@ -24,9 +22,16 @@ class UserProvidedServiceCreator(
         return createServicesFlux.toIterable().toList()
     }
 
-    private fun createServiceFuture(serviceConfig: UserProvidedServiceConfig): CompletableFuture<OperationResult> {
-        return cloudFoundryClient
-            .createUserProvidedService(serviceConfig)
+    private fun generateServiceFuture(serviceConfig: UserProvidedServiceConfig): CompletableFuture<OperationResult> {
+        val existingServiceNames = cloudFoundryClient.listServices()
+
+        val serviceCommand = if (existingServiceNames.contains(serviceConfig.name)) {
+            cloudFoundryClient.updateUserProvidedService(serviceConfig)
+        } else {
+            cloudFoundryClient.createUserProvidedService(serviceConfig)
+        }
+
+        return serviceCommand
             .toFuture()
             .thenApply {
                 OperationResult(

@@ -2,8 +2,6 @@ package pushapps
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import reactor.core.publisher.Flux
-import java.util.concurrent.CompletableFuture
 
 fun main(args: Array<String>) {
     val logger: Logger = LoggerFactory.getLogger("Push Apps")
@@ -37,7 +35,7 @@ private fun targetCf(cf: CfConfig): CloudFoundryClient {
 
 private fun createUserProvidedServices(userProvidedServices: List<UserProvidedServiceConfig>, cloudFoundryClient: CloudFoundryClient, logger: Logger) {
     val userProvidedServiceCreator = UserProvidedServiceCreator(cloudFoundryClient, userProvidedServices)
-    val createUserServicesResults = userProvidedServiceCreator.createServices()
+    val createUserServicesResults = userProvidedServiceCreator.createOrUpdateServices()
 
     val didSucceed = didSucceed(createUserServicesResults)
     if (!didSucceed) {

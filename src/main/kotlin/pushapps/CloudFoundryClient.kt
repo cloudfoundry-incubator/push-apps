@@ -10,6 +10,7 @@ import org.cloudfoundry.operations.organizations.OrganizationSummary
 import org.cloudfoundry.operations.services.BindServiceInstanceRequest
 import org.cloudfoundry.operations.services.CreateUserProvidedServiceInstanceRequest
 import org.cloudfoundry.operations.services.ServiceInstanceSummary
+import org.cloudfoundry.operations.services.UpdateUserProvidedServiceInstanceRequest
 import org.cloudfoundry.operations.spaces.CreateSpaceRequest
 import org.cloudfoundry.operations.spaces.SpaceSummary
 import reactor.core.publisher.Mono
@@ -39,6 +40,18 @@ class CloudFoundryClient(
         return cloudFoundryOperations
             .services()
             .createUserProvidedInstance(createServiceRequest)
+    }
+
+    fun updateUserProvidedService(serviceConfig: UserProvidedServiceConfig): Mono<Void> {
+        val updateServiceRequest = UpdateUserProvidedServiceInstanceRequest
+            .builder()
+            .userProvidedServiceInstanceName(serviceConfig.name)
+            .credentials(serviceConfig.credentials)
+            .build()
+
+        return cloudFoundryOperations
+            .services()
+            .updateUserProvidedInstance(updateServiceRequest)
     }
 
     fun pushApplication(appConfig: AppConfig): Mono<Void> {
