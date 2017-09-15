@@ -31,7 +31,11 @@ func main() {
 		  }
 		}
 
-		fmt.Fprintf(w, "hello %s, you are %s!\n", name, credentials["compliment"])
+		fmt.Fprintf(w, "hello %s, you are %s!\nYou have these services: %s",
+		  name,
+		  credentials["compliment"],
+		  vcapJson,
+    )
 	})
 
 	port := os.Getenv("PORT")

@@ -4,14 +4,21 @@ import io.damo.aspen.Test
 import org.assertj.core.api.Assertions.assertThat
 import org.cloudfoundry.operations.applications.GetApplicationRequest
 import pushapps.AppConfig
+import pushapps.ServiceConfig
 import pushapps.UserProvidedServiceConfig
 import pushapps.cloudFoundryOperationsBuilder
 import support.*
 
-class PushAppAcceptanceTest : Test({
+class DeployAppAcceptanceTest : Test({
     val complimentService = UserProvidedServiceConfig(
         name = "compliment-service",
         credentials = mapOf("compliment" to "handsome")
+    )
+
+    val metricsForwarderService = ServiceConfig(
+        name = "my-mf-service",
+        plan = "unlimited",
+        broker = "metrics-forwarder"
     )
 
     val helloApp = AppConfig(
@@ -23,7 +30,8 @@ class PushAppAcceptanceTest : Test({
             "NAME" to "Steve"
         ),
         serviceNames = listOf(
-            "compliment-service"
+            "compliment-service",
+            "my-mf-service"
         )
     )
 
@@ -50,7 +58,7 @@ class PushAppAcceptanceTest : Test({
 
     describe("pushApps interacts with applications by") {
         test("pushing every application in the config file") {
-            val tc = buildTestContext("dewey", "test", listOf(helloApp, goodbyeApp), listOf(complimentService))
+            val tc = buildTestContext("dewey", "test", listOf(helloApp, goodbyeApp), listOf(metricsForwarderService), listOf(complimentService))
 
             val exitCode = runPushApps(tc.configFilePath)
             assertThat(exitCode).isEqualTo(0)
@@ -76,8 +84,11 @@ class PushAppAcceptanceTest : Test({
                 .get()
 
             val helloResponse = httpGet("http://$helloUrl")
+            val helloResponseBody = helloResponse.body()?.string()
             assertThat(helloResponse.isSuccessful).isTrue()
-            assertThat(helloResponse.body()?.string()).contains("hello Steve, you are handsome!")
+            assertThat(helloResponseBody).contains("hello Steve, you are handsome!")
+            assertThat(helloResponseBody).contains("compliment-service")
+            assertThat(helloResponseBody).contains("my-mf-service")
 
             val goodbyeUrl = applicationOperations
                 .get(getGoodbyeApplicationReq)
@@ -93,7 +104,7 @@ class PushAppAcceptanceTest : Test({
         }
 
         test("blue green deploys applications with blue green set to true") {
-            val tc = buildTestContext("dewey", "test", listOf(blueGreenApp), emptyList())
+            val tc = buildTestContext("dewey", "test", listOf(blueGreenApp), emptyList(), emptyList())
 
             val exitCode = runPushApps(tc.configFilePath)
             assertThat(exitCode).isEqualTo(0)
@@ -138,7 +149,7 @@ class PushAppAcceptanceTest : Test({
                     "NAME" to "Steve"
                 )
             )
-            val tc = buildTestContext("dewey", "test", listOf(badBuildpackApp), emptyList())
+            val tc = buildTestContext("dewey", "test", listOf(badBuildpackApp), emptyList(), emptyList())
 
             val exitCode = runPushApps(tc.configFilePath)
             assertThat(exitCode).isEqualTo(3)

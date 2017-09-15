@@ -7,7 +7,7 @@ fun main(args: Array<String>) {
     val logger: Logger = LoggerFactory.getLogger("Push Apps")
 
     val configPath = ArgumentParser.parseConfigPath(args)
-    val (cf, apps, userProvidedServices) = ConfigReader.parseConfig(configPath)
+    val (cf, apps, services, userProvidedServices) = ConfigReader.parseConfig(configPath)
 
     val cloudFoundryClient = targetCf(cf)
 
@@ -15,7 +15,8 @@ fun main(args: Array<String>) {
         System.exit(0)
     }
 
-    createUserProvidedServices(userProvidedServices, cloudFoundryClient, logger)
+    createServices(services, cloudFoundryClient, logger)
+    createOrUpdateUserProvidedServices(userProvidedServices, cloudFoundryClient, logger)
 
     deployApps(apps, cloudFoundryClient, logger)
 }
@@ -34,7 +35,17 @@ private fun targetCf(cf: CfConfig): CloudFoundryClient {
         .createAndTargetSpace(cf.space)
 }
 
-private fun createUserProvidedServices(userProvidedServices: List<UserProvidedServiceConfig>, cloudFoundryClient: CloudFoundryClient, logger: Logger) {
+fun createServices(services: List<ServiceConfig>, cloudFoundryClient: CloudFoundryClient, logger: Logger) {
+    val serviceCreator = ServiceCreator(cloudFoundryClient, services)
+    val createServiceResults = serviceCreator.createServices()
+
+    val didSucceed = didSucceed(createServiceResults)
+    if (!didSucceed) {
+        handleOperationFailure(createServiceResults, "Creating user provided service", logger)
+    }
+}
+
+private fun createOrUpdateUserProvidedServices(userProvidedServices: List<UserProvidedServiceConfig>, cloudFoundryClient: CloudFoundryClient, logger: Logger) {
     val userProvidedServiceCreator = UserProvidedServiceCreator(cloudFoundryClient, userProvidedServices)
     val createUserServicesResults = userProvidedServiceCreator.createOrUpdateServices()
 

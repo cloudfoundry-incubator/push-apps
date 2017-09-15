@@ -15,6 +15,7 @@ import org.cloudfoundry.operations.spaces.SpaceSummary
 import org.cloudfoundry.operations.spaces.Spaces
 import pushapps.AppConfig
 import pushapps.CloudFoundryClient
+import pushapps.ServiceConfig
 import pushapps.UserProvidedServiceConfig
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -55,6 +56,29 @@ class CloudFoundryClientTest : Test({
             mockOrganizations = mockOrganizations,
             mockSpaces = mockSpaces
         )
+    }
+
+    describe("#createService") {
+        test("creates the given service") {
+            val tc = buildTestContext()
+            whenever(tc.mockServices.createInstance(any())).thenReturn(Mono.empty())
+
+            val serviceConfig = ServiceConfig(
+                name = "some-service",
+                plan = "some-plan",
+                broker = "some-broker"
+            )
+
+            tc.cloudFoundryClient.createService(serviceConfig)
+
+            verify(tc.mockServices, times(1)).createInstance(
+                argForWhich {
+                    serviceInstanceName == serviceConfig.name &&
+                        planName == serviceConfig.plan &&
+                        serviceName == serviceConfig.broker
+                }
+            )
+        }
     }
 
     describe("#createUserProvidedService") {

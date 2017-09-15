@@ -3,18 +3,20 @@ package pushapps
 import reactor.core.publisher.Flux
 import java.util.concurrent.CompletableFuture
 
-class UserProvidedServiceCreator(
+class ServiceCreator(
     private val cloudFoundryClient: CloudFoundryClient,
-    private val serviceConfigs: List<UserProvidedServiceConfig>
+    private val serviceConfigs: List<ServiceConfig>
 ) {
-    fun createOrUpdateServices(): List<OperationResult> {
+    fun createServices(): List<OperationResult> {
+        val servicesToBeCreated = filterExistingServices()
+
         val createServicesFlux: Flux<OperationResult> = Flux.create { sink ->
-            val createOrUpdateServiceFutures = serviceConfigs.map { serviceConfig ->
+            val createServiceFutures = servicesToBeCreated.map { serviceConfig ->
                 generateServiceFuture(serviceConfig)
                     .thenApply { sink.next(it) }
             }
 
-            CompletableFuture.allOf(*createOrUpdateServiceFutures
+            CompletableFuture.allOf(*createServiceFutures
                 .toTypedArray())
                 .thenApply { sink.complete() }
         }
@@ -22,16 +24,17 @@ class UserProvidedServiceCreator(
         return createServicesFlux.toIterable().toList()
     }
 
-    private fun generateServiceFuture(serviceConfig: UserProvidedServiceConfig): CompletableFuture<OperationResult> {
+    private fun filterExistingServices(): List<ServiceConfig> {
         val existingServiceNames = cloudFoundryClient.listServices()
 
-        val serviceCommand = if (existingServiceNames.contains(serviceConfig.name)) {
-            cloudFoundryClient.updateUserProvidedService(serviceConfig)
-        } else {
-            cloudFoundryClient.createUserProvidedService(serviceConfig)
+        return serviceConfigs.filter { serviceConfig ->
+            !existingServiceNames.contains(serviceConfig.name)
         }
+    }
 
-        return serviceCommand
+    private fun generateServiceFuture(serviceConfig: ServiceConfig): CompletableFuture<OperationResult> {
+        return cloudFoundryClient
+            .createService(serviceConfig)
             .toFuture()
             .thenApply {
                 OperationResult(

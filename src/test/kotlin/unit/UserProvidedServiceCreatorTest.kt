@@ -22,7 +22,7 @@ class UserProvidedServiceCreatorTest : Test({
         val serviceConfig = UserProvidedServiceConfig(credentials = emptyMap(), name = "some-service")
         val serviceCreator = UserProvidedServiceCreator(
             cloudFoundryClient = mockCloudFoundryClient,
-            userProvidedServiceConfigs = listOf(serviceConfig))
+            serviceConfigs = listOf(serviceConfig))
 
         return TestContext(serviceCreator, mockCloudFoundryClient, serviceConfig)
     }

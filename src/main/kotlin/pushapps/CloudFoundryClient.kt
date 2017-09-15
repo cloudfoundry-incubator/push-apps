@@ -6,10 +6,7 @@ import org.cloudfoundry.operations.applications.StartApplicationRequest
 import org.cloudfoundry.operations.applications.StopApplicationRequest
 import org.cloudfoundry.operations.organizations.CreateOrganizationRequest
 import org.cloudfoundry.operations.organizations.OrganizationSummary
-import org.cloudfoundry.operations.services.BindServiceInstanceRequest
-import org.cloudfoundry.operations.services.CreateUserProvidedServiceInstanceRequest
-import org.cloudfoundry.operations.services.ServiceInstanceSummary
-import org.cloudfoundry.operations.services.UpdateUserProvidedServiceInstanceRequest
+import org.cloudfoundry.operations.services.*
 import org.cloudfoundry.operations.spaces.CreateSpaceRequest
 import org.cloudfoundry.operations.spaces.SpaceSummary
 import reactor.core.publisher.Mono
@@ -19,7 +16,7 @@ class CloudFoundryClient(
     username: String,
     password: String,
     skipSslValidation: Boolean = false,
-    dialTimeoutInMillis: Long?,
+    dialTimeoutInMillis: Long? = null,
 
     private var cloudFoundryOperations: CloudFoundryOperations = cloudFoundryOperationsBuilder()
         .apply {
@@ -31,6 +28,19 @@ class CloudFoundryClient(
         }
         .build()
 ) {
+
+    fun createService(serviceConfig: ServiceConfig): Mono<Void> {
+        val createServiceRequest = CreateServiceInstanceRequest
+            .builder()
+            .serviceInstanceName(serviceConfig.name)
+            .planName(serviceConfig.plan)
+            .serviceName(serviceConfig.broker)
+            .build()
+
+        return cloudFoundryOperations
+            .services()
+            .createInstance(createServiceRequest)
+    }
 
     fun createUserProvidedService(serviceConfig: UserProvidedServiceConfig): Mono<Void> {
         val createServiceRequest = CreateUserProvidedServiceInstanceRequest

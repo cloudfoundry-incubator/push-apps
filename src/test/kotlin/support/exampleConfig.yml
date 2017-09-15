@@ -13,7 +13,11 @@ apps:
   environment:
     FRUIT: lemons
   serviceNames: [some-service-name]
-userProvidedServices:
+services:
 - name: some-service-name
+  plan: a-good-one
+  broker: some-broker
+userProvidedServices:
+- name: some-user-provided-service-name
   credentials:
     username: some-username

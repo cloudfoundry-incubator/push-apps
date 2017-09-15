@@ -33,15 +33,27 @@ class ConfigReaderTest: Test({
             assertThat(app1.serviceNames).isEqualTo(listOf("some-service-name"))
         }
 
+        test("Parses the services config") {
+            val pushAppsConfig = ConfigReader.parseConfig("src/test/kotlin/support/exampleConfig.yml")
+
+            val services = pushAppsConfig.services
+            assertThat(services).hasSize(1)
+
+            val service = services[0]
+            assertThat(service.name).isEqualTo("some-service-name")
+            assertThat(service.plan).isEqualTo("a-good-one")
+            assertThat(service.broker).isEqualTo("some-broker")
+        }
+
         test("Parses the user provided services config") {
             val pushAppsConfig = ConfigReader.parseConfig("src/test/kotlin/support/exampleConfig.yml")
 
             val userProvidedServices = pushAppsConfig.userProvidedServices
             assertThat(userProvidedServices).hasSize(1)
 
-            val service1 = userProvidedServices[0]
-            assertThat(service1.name).isEqualTo("some-service-name")
-            assertThat(service1.credentials).isEqualTo(mapOf("username" to "some-username"))
+            val service = userProvidedServices[0]
+            assertThat(service.name).isEqualTo("some-user-provided-service-name")
+            assertThat(service.credentials).isEqualTo(mapOf("username" to "some-username"))
         }
     }
 })

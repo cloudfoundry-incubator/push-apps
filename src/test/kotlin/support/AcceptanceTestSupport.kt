@@ -35,7 +35,12 @@ fun getEnv(name: String): String {
     return env
 }
 
-fun buildTestContext(organization: String, space: String, apps: List<AppConfig>, userProvidedServices: List<UserProvidedServiceConfig>): TestContext {
+fun buildTestContext(organization: String,
+                     space: String,
+                     apps: List<AppConfig>,
+                     services: List<ServiceConfig>,
+                     userProvidedServices: List<UserProvidedServiceConfig>
+): TestContext {
     val apiHost = getEnv("CF_API")
     val username = getEnv("CF_USERNAME")
     val password = getEnv("CF_PASSWORD")
@@ -58,6 +63,7 @@ fun buildTestContext(organization: String, space: String, apps: List<AppConfig>,
         space = space,
         apps = apps,
         userProvidedServices = userProvidedServices,
+        services = services,
         skipSslValidation = true
     )
 
@@ -150,10 +156,11 @@ fun writeConfigFile(
     space: String,
     apps: List<AppConfig>,
     userProvidedServices: List<UserProvidedServiceConfig>,
+    services: List<ServiceConfig>,
     skipSslValidation: Boolean
 ): String {
     val cf = CfConfig(apiHost, username, password, organization, space, skipSslValidation)
-    val config = Config(cf, apps, userProvidedServices)
+    val config = Config(cf, apps, services, userProvidedServices)
 
     val objectMapper = ObjectMapper(YAMLFactory()).registerModule(KotlinModule())
 
