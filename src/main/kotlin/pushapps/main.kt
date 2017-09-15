@@ -15,10 +15,17 @@ fun main(args: Array<String>) {
         System.exit(0)
     }
 
-    createServices(services, cloudFoundryClient, logger)
-    createOrUpdateUserProvidedServices(userProvidedServices, cloudFoundryClient, logger)
+    if (services !== null) {
+        createServices(services, cloudFoundryClient, logger)
+    }
+
+    if (userProvidedServices !== null) {
+        createOrUpdateUserProvidedServices(userProvidedServices, cloudFoundryClient, logger)
+    }
 
     deployApps(apps, cloudFoundryClient, logger)
+
+    println("SUCCESS")
 }
 
 private fun targetCf(cf: CfConfig): CloudFoundryClient {
@@ -65,6 +72,11 @@ private fun deployApps(apps: List<AppConfig>, cloudFoundryClient: CloudFoundryCl
     }
 }
 
+private fun didSucceed(results: List<OperationResult>): Boolean {
+    val didSucceed = results.fold(true, { acc, result -> acc && result.didSucceed })
+    return didSucceed
+}
+
 private fun handleOperationFailure(results: List<OperationResult>, actionName: String, logger: Logger) {
     results
         .filterNot(OperationResult::didSucceed)
@@ -77,9 +89,4 @@ private fun handleOperationFailure(results: List<OperationResult>, actionName: S
         }
 
     System.exit(3)
-}
-
-private fun didSucceed(results: List<OperationResult>): Boolean {
-    val didSucceed = results.fold(true, { acc, result -> acc && result.didSucceed })
-    return didSucceed
 }

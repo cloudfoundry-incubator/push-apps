@@ -18,8 +18,8 @@ class ConfigReader {
 data class Config(
     val cf: CfConfig,
     val apps: List<AppConfig>,
-    val services: List<ServiceConfig>,
-    val userProvidedServices: List<UserProvidedServiceConfig>
+    val services: List<ServiceConfig>? = emptyList(),
+    val userProvidedServices: List<UserProvidedServiceConfig>? = emptyList()
 )
 
 data class CfConfig(
