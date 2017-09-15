@@ -5,6 +5,7 @@ cf:
   organization: some-organization
   space: some-space
   skipSslValidation: true
+  dialTimeoutInMillis: 1000
 apps:
 - name: some-name
   path: some-path

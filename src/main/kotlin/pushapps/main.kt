@@ -25,7 +25,8 @@ private fun targetCf(cf: CfConfig): CloudFoundryClient {
         cf.apiHost,
         cf.username,
         cf.password,
-        cf.skipSslValidation
+        cf.skipSslValidation,
+        cf.dialTimeoutInMillis
     )
 
     return cloudFoundryClient

@@ -9,6 +9,7 @@ import org.cloudfoundry.reactor.client.ReactorCloudFoundryClient
 import org.cloudfoundry.reactor.doppler.ReactorDopplerClient
 import org.cloudfoundry.reactor.tokenprovider.PasswordGrantTokenProvider
 import org.cloudfoundry.reactor.uaa.ReactorUaaClient
+import java.time.Duration
 
 fun cloudFoundryOperationsBuilder(): CloudFoundryOperationsBuilder {
     return CloudFoundryOperationsBuilder()
@@ -22,6 +23,7 @@ class CloudFoundryOperationsBuilder {
     var space: String? = null
     var skipSslValidation: Boolean = false
     var existingCloudFoundryOperations: CloudFoundryOperations? = null
+    var dialTimeoutInMillis: Long? = null
 
     fun build(): CloudFoundryOperations {
         if (existingCloudFoundryOperations !== null) {
@@ -80,6 +82,7 @@ class CloudFoundryOperationsBuilder {
     private fun connectionContext(): ConnectionContext {
         val connectionContextBuilder = DefaultConnectionContext.builder()
         if (apiHost !== null) connectionContextBuilder.apiHost(apiHost)
+        if (dialTimeoutInMillis !== null) connectionContextBuilder.connectTimeout(Duration.ofMillis(dialTimeoutInMillis!!))
 
         return connectionContextBuilder
             .skipSslValidation(skipSslValidation)

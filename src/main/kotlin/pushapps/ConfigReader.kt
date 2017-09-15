@@ -23,7 +23,8 @@ data class CfConfig(
     val password: String,
     val organization: String,
     val space: String,
-    val skipSslValidation: Boolean = false
+    val skipSslValidation: Boolean = false,
+    val dialTimeoutInMillis: Long? = null
 )
 
 data class AppConfig(

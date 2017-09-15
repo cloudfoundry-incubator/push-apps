@@ -15,6 +15,7 @@ class ConfigReaderTest: Test({
             assertThat(pushAppsConfig.cf.organization).isEqualTo("some-organization")
             assertThat(pushAppsConfig.cf.space).isEqualTo("some-space")
             assertThat(pushAppsConfig.cf.skipSslValidation).isTrue()
+            assertThat(pushAppsConfig.cf.dialTimeoutInMillis).isEqualTo(1000)
         }
 
         test("Parses the apps config") {

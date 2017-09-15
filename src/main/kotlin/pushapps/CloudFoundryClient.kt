@@ -1,7 +1,6 @@
 package pushapps
 
 import org.cloudfoundry.operations.CloudFoundryOperations
-import org.cloudfoundry.operations.applications.ApplicationSummary
 import org.cloudfoundry.operations.applications.SetEnvironmentVariableApplicationRequest
 import org.cloudfoundry.operations.applications.StartApplicationRequest
 import org.cloudfoundry.operations.applications.StopApplicationRequest
@@ -20,12 +19,15 @@ class CloudFoundryClient(
     username: String,
     password: String,
     skipSslValidation: Boolean = false,
+    dialTimeoutInMillis: Long?,
+
     private var cloudFoundryOperations: CloudFoundryOperations = cloudFoundryOperationsBuilder()
         .apply {
             this.apiHost = apiHost
             this.username = username
             this.password = password
             this.skipSslValidation = skipSslValidation
+            this.dialTimeoutInMillis = dialTimeoutInMillis
         }
         .build()
 ) {
