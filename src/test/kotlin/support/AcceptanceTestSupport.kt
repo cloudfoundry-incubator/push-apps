@@ -12,6 +12,7 @@ import org.cloudfoundry.operations.CloudFoundryOperations
 import org.cloudfoundry.operations.applications.ApplicationSummary
 import org.cloudfoundry.operations.applications.DeleteApplicationRequest
 import org.cloudfoundry.operations.organizations.DeleteOrganizationRequest
+import org.cloudfoundry.operations.routes.DeleteOrphanedRoutesRequest
 import org.cloudfoundry.operations.services.DeleteServiceInstanceRequest
 import org.cloudfoundry.operations.spaces.DeleteSpaceRequest
 import pushapps.*
@@ -97,6 +98,8 @@ fun cleanupCf(tc: TestContext?, organization: String, space: String) {
 
     deleteApplications(targetedOperations)
 
+    deleteRoutes(targetedOperations)
+
     deleteServices(cfClient, targetedOperations)
 
     deleteSpace(space, targetedOperations)
@@ -120,6 +123,13 @@ private fun deleteApplications(targetedOperations: CloudFoundryOperations) {
             .build()
         targetedOperations.applications().delete(deleteApplicationRequest).block()
     }
+}
+
+private fun deleteRoutes(targetedOperations: CloudFoundryOperations) {
+    val deleteRouteRequest = DeleteOrphanedRoutesRequest
+        .builder()
+        .build()
+    targetedOperations.routes().deleteOrphanedRoutes(deleteRouteRequest).block()
 }
 
 private fun deleteServices(cfClient: CloudFoundryClient, newOperations: CloudFoundryOperations) {

@@ -10,6 +10,9 @@ apps:
 - name: some-name
   path: some-path
   buildpack: some-buildpack
+  route:
+    hostname: "lemons"
+    path: "/citrus"
   environment:
     FRUIT: lemons
   serviceNames: [some-service-name]

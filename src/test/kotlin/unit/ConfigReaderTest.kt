@@ -31,6 +31,9 @@ class ConfigReaderTest: Test({
 
             assertThat(app1.environment).isEqualTo(mapOf("FRUIT" to "lemons"))
             assertThat(app1.serviceNames).isEqualTo(listOf("some-service-name"))
+
+            assertThat(app1.route!!.hostname).isEqualTo("lemons")
+            assertThat(app1.route!!.path).isEqualTo("/citrus")
         }
 
         test("Parses the services config") {
@@ -39,7 +42,7 @@ class ConfigReaderTest: Test({
             val services = pushAppsConfig.services
             assertThat(services).hasSize(1)
 
-            val service = services[0]
+            val service = services!![0]
             assertThat(service.name).isEqualTo("some-service-name")
             assertThat(service.plan).isEqualTo("a-good-one")
             assertThat(service.broker).isEqualTo("some-broker")
@@ -51,7 +54,7 @@ class ConfigReaderTest: Test({
             val userProvidedServices = pushAppsConfig.userProvidedServices
             assertThat(userProvidedServices).hasSize(1)
 
-            val service = userProvidedServices[0]
+            val service = userProvidedServices!![0]
             assertThat(service.name).isEqualTo("some-user-provided-service-name")
             assertThat(service.credentials).isEqualTo(mapOf("username" to "some-username"))
         }

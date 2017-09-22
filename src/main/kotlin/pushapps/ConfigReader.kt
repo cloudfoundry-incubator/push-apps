@@ -43,11 +43,17 @@ data class AppConfig(
     val memory: Int? = null,
     val noHostname: Boolean? = null,
     val noRoute: Boolean? = null,
+    val route: Route? = null,
     val timeout: Int? = null,
     val blueGreenDeploy: Boolean? = null,
     val domain: String? = null,
     val healthCheckType: String? = null,
     val serviceNames: List<String>? = emptyList()
+)
+
+data class Route(
+    val hostname: String,
+    val path: String? = null
 )
 
 data class ServiceConfig (

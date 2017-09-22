@@ -52,6 +52,7 @@ class AppDeployer(
 
         return generateDeployApplicationFuture(blueAppConfig)
             .thenCompose { generateDeployApplicationFuture(appConfig) }
+            .thenCompose { cloudFoundryClient.unmapRoute(blueAppConfig).toFuture() }
             .thenCompose { cloudFoundryClient.stopApplication(blueAppConfig.name).toFuture() }
     }
 
@@ -70,7 +71,9 @@ class AppDeployer(
                 acc.thenCompose { bindServiceAction.toFuture() }
             }
 
-        return deployAppFuture.thenCompose { cloudFoundryClient.startApplication(appConfig.name).toFuture() }
+        return deployAppFuture
+            .thenCompose { cloudFoundryClient.startApplication(appConfig.name).toFuture() }
+            .thenCompose { cloudFoundryClient.mapRoute(appConfig).toFuture() }
     }
 
     private fun generatePushAppAction(appConfig: AppConfig): Mono<Void> {

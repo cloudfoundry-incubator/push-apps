@@ -3,10 +3,9 @@ package acceptance
 import io.damo.aspen.Test
 import org.assertj.core.api.Assertions.assertThat
 import org.cloudfoundry.operations.applications.GetApplicationRequest
-import pushapps.AppConfig
-import pushapps.ServiceConfig
-import pushapps.UserProvidedServiceConfig
-import pushapps.cloudFoundryOperationsBuilder
+import org.cloudfoundry.operations.routes.Level
+import org.cloudfoundry.operations.routes.ListRoutesRequest
+import pushapps.*
 import support.*
 
 class DeployAppAcceptanceTest : Test({
@@ -40,6 +39,12 @@ class DeployAppAcceptanceTest : Test({
         path = "$workingDir/src/test/kotlin/support/goodbyeapp.zip",
         buildpack = "binary_buildpack",
         command = "./goodbyeapp",
+        noRoute = true,
+        domain = "versace.gcp.pcf-metrics.com",
+        route = Route(
+            hostname = "oranges",
+            path = "/v1"
+        ),
         environment = mapOf(
             "NAME" to "George"
         )
@@ -52,6 +57,11 @@ class DeployAppAcceptanceTest : Test({
         command = "./goodbyeapp",
         environment = mapOf(
             "NAME" to "BLUE OR GREEN"
+        ),
+        noRoute = true,
+        domain = "versace.gcp.pcf-metrics.com",
+        route = Route(
+            hostname = "generic"
         ),
         blueGreenDeploy = true
     )
@@ -83,7 +93,7 @@ class DeployAppAcceptanceTest : Test({
                 .toFuture()
                 .get()
 
-            val helloResponse = httpGet("http://$helloUrl")
+            val helloResponse = httpGet("http://$helloUrl/v1")
             val helloResponseBody = helloResponse.body()?.string()
             assertThat(helloResponse.isSuccessful).isTrue()
             assertThat(helloResponseBody).contains("hello Steve, you are handsome!")
@@ -96,9 +106,11 @@ class DeployAppAcceptanceTest : Test({
                 .toFuture()
                 .get()
 
-            val goodbyeResponse = httpGet("http://$goodbyeUrl")
+            assertThat(goodbyeUrl).contains("oranges")
+
+            val goodbyeResponse = httpGet("http://$goodbyeUrl/v1")
             assertThat(goodbyeResponse.isSuccessful).isTrue()
-            assertThat(goodbyeResponse.body()?.string()).contains("goodbye George")
+            assertThat(goodbyeResponse.body()?.string()).contains("goodbye from v1 George")
 
             cleanupCf(tc, "dewey", "test")
         }
@@ -135,6 +147,19 @@ class DeployAppAcceptanceTest : Test({
 
             val blueAppDetails = applicationOperations.get(getBlueApplicationReq).toFuture().get()
             assertThat(blueAppDetails.requestedState).isEqualTo("STOPPED")
+
+            val listRoutesRequest = ListRoutesRequest.builder().level(Level.ORGANIZATION).build()
+            val routes = targetedOperations
+                .routes()
+                .list(listRoutesRequest)
+                .filter { r -> r.domain == blueGreenApp.domain &&
+                    r.host == blueGreenApp.route!!.hostname
+                }
+                .toIterable()
+                .toList()
+
+            assertThat(routes).hasSize(1)
+            assertThat(routes[0].applications).containsOnly("generic")
 
             cleanupCf(tc, "dewey", "test")
         }

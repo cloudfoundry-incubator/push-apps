@@ -9,9 +9,11 @@ fun main(args: Array<String>) {
     val configPath = ArgumentParser.parseConfigPath(args)
     val (cf, apps, services, userProvidedServices) = ConfigReader.parseConfig(configPath)
 
+    //TODO capture errors and print
     val cloudFoundryClient = targetCf(cf)
 
     if (apps.isEmpty()) {
+        logger.error("No apps were provided in the config")
         System.exit(0)
     }
 
@@ -25,7 +27,7 @@ fun main(args: Array<String>) {
 
     deployApps(apps, cloudFoundryClient, logger)
 
-    println("SUCCESS")
+    logger.info("SUCCESS")
 }
 
 private fun targetCf(cf: CfConfig): CloudFoundryClient {

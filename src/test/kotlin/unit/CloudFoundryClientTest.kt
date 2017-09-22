@@ -8,15 +8,13 @@ import org.cloudfoundry.operations.DefaultCloudFoundryOperations
 import org.cloudfoundry.operations.applications.Applications
 import org.cloudfoundry.operations.organizations.OrganizationSummary
 import org.cloudfoundry.operations.organizations.Organizations
+import org.cloudfoundry.operations.routes.Routes
 import org.cloudfoundry.operations.services.ServiceInstanceSummary
 import org.cloudfoundry.operations.services.ServiceInstanceType
 import org.cloudfoundry.operations.services.Services
 import org.cloudfoundry.operations.spaces.SpaceSummary
 import org.cloudfoundry.operations.spaces.Spaces
-import pushapps.AppConfig
-import pushapps.CloudFoundryClient
-import pushapps.ServiceConfig
-import pushapps.UserProvidedServiceConfig
+import pushapps.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
@@ -27,6 +25,7 @@ class CloudFoundryClientTest : Test({
         val mockServices: Services,
         val mockOrganizations: Organizations,
         val mockSpaces: Spaces,
+        val mockRoutes: Routes,
         val mockCfOperations: CloudFoundryOperations
     )
 
@@ -35,12 +34,14 @@ class CloudFoundryClientTest : Test({
         val mockServices = mock<Services>()
         val mockOrganizations = mock<Organizations>()
         val mockSpaces = mock<Spaces>()
+        val mockRoutes = mock<Routes>()
 
         val mockCfOperations = mock<DefaultCloudFoundryOperations>()
         whenever(mockCfOperations.applications()).thenReturn(mockApplications)
         whenever(mockCfOperations.services()).thenReturn(mockServices)
         whenever(mockCfOperations.organizations()).thenReturn(mockOrganizations)
         whenever(mockCfOperations.spaces()).thenReturn(mockSpaces)
+        whenever(mockCfOperations.routes()).thenReturn(mockRoutes)
 
         val cloudFoundryClient = CloudFoundryClient(
             apiHost = "api.host",
@@ -54,7 +55,8 @@ class CloudFoundryClientTest : Test({
             mockApplications = mockApplications,
             mockServices = mockServices,
             mockOrganizations = mockOrganizations,
-            mockSpaces = mockSpaces
+            mockSpaces = mockSpaces,
+            mockRoutes = mockRoutes
         )
     }
 
@@ -208,6 +210,60 @@ class CloudFoundryClientTest : Test({
 
     describe("#bindServicesToApplication") {
         //TODO
+    }
+
+    describe("#mapRoute") {
+        val tc = buildTestContext()
+        val appConfig = AppConfig(
+            name = "Foo bar",
+            path = "/tmp/foo/bar",
+            environment = mapOf(),
+            domain = "tree",
+            route = Route(
+                hostname = "lemons",
+                path = "citrus"
+            )
+        )
+
+        whenever(tc.mockRoutes.map(any())).thenReturn(Mono.empty())
+
+        tc.cloudFoundryClient.mapRoute(appConfig)
+
+        verify(tc.mockRoutes, times(1)).map(
+            argForWhich {
+                applicationName == appConfig.name &&
+                domain == appConfig.domain &&
+                host == appConfig.route!!.hostname &&
+                path == appConfig.route!!.path
+            }
+        )
+    }
+
+    describe("#unmapRoute") {
+        val tc = buildTestContext()
+        val appConfig = AppConfig(
+            name = "Foo bar",
+            path = "/tmp/foo/bar",
+            environment = mapOf(),
+            domain = "tree",
+            route = Route(
+                hostname = "lemons",
+                path = "citrus"
+            )
+        )
+
+        whenever(tc.mockRoutes.unmap(any())).thenReturn(Mono.empty())
+
+        tc.cloudFoundryClient.unmapRoute(appConfig)
+
+        verify(tc.mockRoutes, times(1)).unmap(
+            argForWhich {
+                applicationName == appConfig.name &&
+                domain == appConfig.domain &&
+                host == appConfig.route!!.hostname &&
+                path == appConfig.route!!.path
+            }
+        )
     }
 
     describe("#createAndTargetOrganization") {

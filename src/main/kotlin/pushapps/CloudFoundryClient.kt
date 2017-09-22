@@ -6,6 +6,8 @@ import org.cloudfoundry.operations.applications.StartApplicationRequest
 import org.cloudfoundry.operations.applications.StopApplicationRequest
 import org.cloudfoundry.operations.organizations.CreateOrganizationRequest
 import org.cloudfoundry.operations.organizations.OrganizationSummary
+import org.cloudfoundry.operations.routes.MapRouteRequest
+import org.cloudfoundry.operations.routes.UnmapRouteRequest
 import org.cloudfoundry.operations.services.*
 import org.cloudfoundry.operations.spaces.CreateSpaceRequest
 import org.cloudfoundry.operations.spaces.SpaceSummary
@@ -131,6 +133,43 @@ class CloudFoundryClient(
                 .serviceInstanceName(serviceName)
                 .build()
         }.toTypedArray()
+    }
+
+    fun mapRoute(appConfig: AppConfig): Mono<Void> {
+        if (appConfig.route === null) {
+            return Mono.empty()
+        }
+
+        //TODO return error mono if domain, hostname, or path don't exist
+        val mapRouteRequestBuilder = MapRouteRequest
+            .builder()
+            .applicationName(appConfig.name)
+            .domain(appConfig.domain)
+            .host(appConfig.route.hostname)
+
+            if (appConfig.route.path !== null) {
+                mapRouteRequestBuilder.path(appConfig.route.path)
+            }
+
+            val mapRouteRequest = mapRouteRequestBuilder.build()
+
+        return cloudFoundryOperations.routes().map(mapRouteRequest).ofType(Void.TYPE)
+    }
+
+    fun unmapRoute(appConfig: AppConfig): Mono<Void> {
+        if (appConfig.route === null) {
+            return Mono.empty()
+        }
+
+        val unmapRouteRequest = UnmapRouteRequest
+            .builder()
+            .applicationName(appConfig.name)
+            .domain(appConfig.domain)
+            .host(appConfig.route.hostname)
+            .path(appConfig.route.path)
+            .build()
+
+        return cloudFoundryOperations.routes().unmap(unmapRouteRequest)
     }
 
     fun createAndTargetOrganization(organizationName: String): CloudFoundryClient {
