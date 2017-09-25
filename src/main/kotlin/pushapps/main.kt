@@ -7,7 +7,7 @@ fun main(args: Array<String>) {
     val logger: Logger = LoggerFactory.getLogger("Push Apps")
 
     val configPath = ArgumentParser.parseConfigPath(args)
-    val (cf, apps, services, userProvidedServices) = ConfigReader.parseConfig(configPath)
+    val (pushApps, cf, apps, services, userProvidedServices) = ConfigReader.parseConfig(configPath)
 
     //TODO capture errors and print
     val cloudFoundryClient = targetCf(cf)
@@ -25,7 +25,7 @@ fun main(args: Array<String>) {
         createOrUpdateUserProvidedServices(userProvidedServices, cloudFoundryClient, logger)
     }
 
-    deployApps(apps, cloudFoundryClient, logger)
+    deployApps(apps, pushApps.appDeployRetryCount, cloudFoundryClient, logger)
 
     logger.info("SUCCESS")
 }
@@ -64,8 +64,8 @@ private fun createOrUpdateUserProvidedServices(userProvidedServices: List<UserPr
     }
 }
 
-private fun deployApps(apps: List<AppConfig>, cloudFoundryClient: CloudFoundryClient, logger: Logger) {
-    val appDeployer = AppDeployer(cloudFoundryClient, apps)
+private fun deployApps(apps: List<AppConfig>, retryCount: Int, cloudFoundryClient: CloudFoundryClient, logger: Logger) {
+    val appDeployer = AppDeployer(cloudFoundryClient, apps, retryCount)
     val results = appDeployer.deployApps()
 
     val didSucceed = didSucceed(results)

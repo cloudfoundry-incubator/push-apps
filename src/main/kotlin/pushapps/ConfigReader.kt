@@ -16,10 +16,15 @@ class ConfigReader {
 }
 
 data class Config(
+    val pushApps: PushApps,
     val cf: CfConfig,
     val apps: List<AppConfig>,
     val services: List<ServiceConfig>? = emptyList(),
     val userProvidedServices: List<UserProvidedServiceConfig>? = emptyList()
+)
+
+data class PushApps(
+    val appDeployRetryCount: Int = 1
 )
 
 data class CfConfig(

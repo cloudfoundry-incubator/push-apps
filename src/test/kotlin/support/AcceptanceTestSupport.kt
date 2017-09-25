@@ -170,7 +170,7 @@ fun writeConfigFile(
     skipSslValidation: Boolean
 ): String {
     val cf = CfConfig(apiHost, username, password, organization, space, skipSslValidation)
-    val config = Config(cf, apps, services, userProvidedServices)
+    val config = Config(PushApps(), cf, apps, services, userProvidedServices)
 
     val objectMapper = ObjectMapper(YAMLFactory()).registerModule(KotlinModule())
 

@@ -1,20 +1,19 @@
 package pushapps
 
 import reactor.core.publisher.Flux
+import reactor.core.publisher.FluxSink
 import reactor.core.publisher.Mono
 import java.util.concurrent.CompletableFuture
 
 class AppDeployer(
     private val cloudFoundryClient: CloudFoundryClient,
-    private val appConfigs: List<AppConfig>
+    private val appConfigs: List<AppConfig>,
+    private val retryCount: Int
 ) {
     fun deployApps(): List<OperationResult> {
         val deployAppsFlux: Flux<OperationResult> = Flux.create { sink ->
             val applicationDeployments = appConfigs.map { appConfig ->
-                deployApplication(appConfig)
-                    .thenApply {
-                        sink.next(it)
-                    }
+                deployApplicationWithRetries(appConfig, sink, 1)
             }
 
             CompletableFuture.allOf(*applicationDeployments
@@ -23,6 +22,17 @@ class AppDeployer(
         }
 
         return deployAppsFlux.toIterable().toList()
+    }
+
+    private fun deployApplicationWithRetries(appConfig: AppConfig, sink: FluxSink<OperationResult>, attemptCount: Int): CompletableFuture<Any> {
+        return deployApplication(appConfig)
+            .thenApply {
+                if (it.didSucceed || attemptCount >= retryCount) {
+                    sink.next(it)
+                } else {
+                    deployApplicationWithRetries(appConfig, sink, attemptCount+1)
+                }
+            }
     }
 
     private fun deployApplication(appConfig: AppConfig): CompletableFuture<OperationResult> {

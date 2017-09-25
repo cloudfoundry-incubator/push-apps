@@ -6,6 +6,11 @@ import pushapps.ConfigReader
 
 class ConfigReaderTest: Test({
     describe("#parseConfig") {
+        test("Parses the pushApps config") {
+            val pushAppsConfig = ConfigReader.parseConfig("src/test/kotlin/support/exampleConfig.yml")
+            assertThat(pushAppsConfig.pushApps.appDeployRetryCount).isEqualTo(3)
+        }
+
         test("Parses the cf config") {
             val pushAppsConfig = ConfigReader.parseConfig("src/test/kotlin/support/exampleConfig.yml")
 
