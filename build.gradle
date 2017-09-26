@@ -14,8 +14,8 @@ plugins {
 
 apply plugin: 'kotlin'
 apply plugin: 'application'
+apply from: "$rootProject.rootDir/version.gradle"
 
-version = '0.0.1'
 
 mainClassName = 'pushapps.MainKt'
 jar {
@@ -98,6 +98,10 @@ task buildSampleApps {
     dependsOn "packageHelloApp", "packageGoodbyeApp"
 }
 
+task bumpPatch(type: UpdatePatchVersionTask) {
+    versionFilePath = "$rootProject.rootDir/version.gradle"
+}
+
 test {
     dependsOn "assemble"
     dependsOn "buildSampleApps"
@@ -109,3 +113,22 @@ test {
     }
 }
 
+class UpdatePatchVersionTask extends DefaultTask {
+    @Input
+    String versionFilePath
+
+
+    @TaskAction
+    def updatePatchVersion() {
+        def versionFile = new File(versionFilePath)
+        def currentVersion = versionFile.text
+        println("**********")
+        println(currentVersion)
+        def versionStringParts = currentVersion.split("\\.")
+        println(versionStringParts)
+        def patchInt = Integer.parseInt(versionStringParts.last().replace("'\n", ""))
+        versionStringParts[versionStringParts.size() - 1] = (patchInt + 1).toString() + "'\n"
+
+        versionFile.text = versionStringParts.join(".")
+    }
+}
