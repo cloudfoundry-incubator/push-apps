@@ -122,10 +122,7 @@ class UpdatePatchVersionTask extends DefaultTask {
     def updatePatchVersion() {
         def versionFile = new File(versionFilePath)
         def currentVersion = versionFile.text
-        println("**********")
-        println(currentVersion)
         def versionStringParts = currentVersion.split("\\.")
-        println(versionStringParts)
         def patchInt = Integer.parseInt(versionStringParts.last().replace("'\n", ""))
         versionStringParts[versionStringParts.size() - 1] = (patchInt + 1).toString() + "'\n"
 

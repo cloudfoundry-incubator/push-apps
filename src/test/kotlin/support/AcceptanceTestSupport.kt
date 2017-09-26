@@ -3,7 +3,6 @@ package support
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.KotlinModule
-import com.sun.javaws.exceptions.InvalidArgumentException
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -30,7 +29,7 @@ data class TestContext(
 fun getEnv(name: String): String {
     val env = System.getenv(name)
     if (env === null || env.isEmpty()) {
-        throw InvalidArgumentException(arrayOf("must provide a $name for pushapps"))
+        throw Exception("must provide a $name for pushapps")
     }
 
     return env
@@ -204,7 +203,7 @@ fun runPushApps(configFilePath: String, debug: Boolean = false): Int {
         pushAppsCommand
     ).inheritIO().start()
 
-    pushAppsProcess.waitFor(60, TimeUnit.SECONDS)
+    pushAppsProcess.waitFor(90, TimeUnit.SECONDS)
 
     if (pushAppsProcess.isAlive) {
         Fail.fail("Process failed to finish within timeout window")
