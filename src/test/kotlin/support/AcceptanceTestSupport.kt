@@ -203,7 +203,7 @@ fun runPushApps(configFilePath: String, debug: Boolean = false): Int {
         pushAppsCommand
     ).inheritIO().start()
 
-    pushAppsProcess.waitFor(90, TimeUnit.SECONDS)
+    pushAppsProcess.waitFor(2, TimeUnit.MINUTES)
 
     if (pushAppsProcess.isAlive) {
         Fail.fail("Process failed to finish within timeout window")
