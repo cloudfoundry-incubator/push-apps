@@ -22,6 +22,7 @@ services:
 - name: some-service-name
   plan: a-good-one
   broker: some-broker
+  optional: true
 userProvidedServices:
 - name: some-user-provided-service-name
   credentials:

@@ -64,7 +64,8 @@ data class Route(
 data class ServiceConfig (
     val name: String,
     val plan: String,
-    val broker: String
+    val broker: String,
+    val optional: Boolean = false
 )
 
 data class UserProvidedServiceConfig(

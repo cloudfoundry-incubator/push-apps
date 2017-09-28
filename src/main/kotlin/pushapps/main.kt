@@ -50,7 +50,7 @@ fun createServices(services: List<ServiceConfig>, cloudFoundryClient: CloudFound
 
     val didSucceed = didSucceed(createServiceResults)
     if (!didSucceed) {
-        handleOperationFailure(createServiceResults, "Creating user provided service", logger)
+        handleOperationFailure(createServiceResults, "Creating service", logger)
     }
 }
 
@@ -80,9 +80,18 @@ private fun didSucceed(results: List<OperationResult>): Boolean {
 }
 
 private fun handleOperationFailure(results: List<OperationResult>, actionName: String, logger: Logger) {
-    results
-        .filterNot(OperationResult::didSucceed)
-        .forEach { (name, _, error) ->
+    val failedResults = results.filterNot(OperationResult::didSucceed)
+
+    failedResults
+        .filter(OperationResult::optional)
+        .forEach { (name, _, error, _) ->
+            logger.warn("$actionName $name was optional and failed with error message: ${error!!.message}")
+        }
+
+    val nonOptionalFailedResults = failedResults.filterNot(OperationResult::optional)
+
+    nonOptionalFailedResults
+        .forEach { (name, _, error, _) ->
             logger.error("$actionName $name failed with error message: ${error!!.message}")
 
             if (logger.isDebugEnabled) {
@@ -90,5 +99,7 @@ private fun handleOperationFailure(results: List<OperationResult>, actionName: S
             }
         }
 
-    System.exit(3)
+    if (nonOptionalFailedResults.isNotEmpty()) {
+        System.exit(3)
+    }
 }

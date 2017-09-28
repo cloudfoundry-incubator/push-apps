@@ -16,6 +16,7 @@ import org.cloudfoundry.operations.services.DeleteServiceInstanceRequest
 import org.cloudfoundry.operations.spaces.DeleteSpaceRequest
 import pushapps.*
 import java.io.File
+import java.io.InputStream
 import java.util.concurrent.TimeUnit
 
 val workingDir = System.getProperty("user.dir")!!
@@ -180,7 +181,10 @@ fun writeConfigFile(
 }
 
 fun runPushApps(configFilePath: String, debug: Boolean = false): Int {
-    val version = getEnv("PUSHAPPS_VERSION")
+    val inputStream: InputStream = File("$workingDir/version.gradle").inputStream()
+    val versionFileString = inputStream.bufferedReader().use { it.readText() }
+
+    val version = versionFileString.removePrefix("version = '").removeSuffix("'\n")
 
     val pushAppsCommand = mutableListOf("java")
 

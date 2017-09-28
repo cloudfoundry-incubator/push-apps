@@ -51,6 +51,7 @@ class ConfigReaderTest: Test({
             assertThat(service.name).isEqualTo("some-service-name")
             assertThat(service.plan).isEqualTo("a-good-one")
             assertThat(service.broker).isEqualTo("some-broker")
+            assertThat(service.optional).isTrue()
         }
 
         test("Parses the user provided services config") {

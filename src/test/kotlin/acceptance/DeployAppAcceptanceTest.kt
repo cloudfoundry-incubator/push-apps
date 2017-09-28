@@ -20,6 +20,13 @@ class DeployAppAcceptanceTest : Test({
         broker = "metrics-forwarder"
     )
 
+    val optionalService = ServiceConfig(
+        name = "optional-service",
+        plan = "some-plan",
+        broker = "something-that-does-not-exist",
+        optional = true
+    )
+
     val helloApp = AppConfig(
         name = "hello",
         path = "$workingDir/src/test/kotlin/support/helloapp.zip",
@@ -68,7 +75,7 @@ class DeployAppAcceptanceTest : Test({
 
     describe("pushApps interacts with applications by") {
         test("pushing every application in the config file") {
-            val tc = buildTestContext("dewey", "test", listOf(helloApp, goodbyeApp), listOf(metricsForwarderService), listOf(complimentService))
+            val tc = buildTestContext("dewey", "test", listOf(helloApp, goodbyeApp), listOf(metricsForwarderService, optionalService), listOf(complimentService))
 
             val exitCode = runPushApps(tc.configFilePath)
             assertThat(exitCode).isEqualTo(0)

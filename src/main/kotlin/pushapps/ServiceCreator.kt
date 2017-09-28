@@ -46,7 +46,8 @@ class ServiceCreator(
                 OperationResult(
                     name = serviceConfig.name,
                     didSucceed = false,
-                    error = error
+                    error = error,
+                    optional = serviceConfig.optional
                 )
             }
     }

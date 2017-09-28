@@ -16,7 +16,13 @@ class ServiceCreatorTest : Test({
     fun buildTestContext(): TestContext {
         val mockCloudFoundryClient = mock<CloudFoundryClient>()
 
-        val serviceConfig = ServiceConfig(name = "some-service", plan = "some-plan", broker = "some-broker")
+        val serviceConfig = ServiceConfig(
+            name = "some-service",
+            plan = "some-plan",
+            broker = "some-broker",
+            optional = true
+        )
+
         val serviceCreator = ServiceCreator(
             cloudFoundryClient = mockCloudFoundryClient,
             serviceConfigs = listOf(serviceConfig))
@@ -53,6 +59,22 @@ class ServiceCreatorTest : Test({
             Assertions.assertThat(result.didSucceed).isFalse()
             Assertions.assertThat(result.name).isEqualTo(tc.serviceConfig.name)
             Assertions.assertThat(result.error!!.message).contains("lemons")
+        }
+
+        test("it includes whether the service was optional in the result") {
+            val tc = buildTestContext()
+            whenever(tc.mockCloudFoundryClient.listServices()).thenReturn(emptyList())
+            whenever(tc.mockCloudFoundryClient.createService(any())).thenReturn(
+                Mono.fromSupplier { throw Exception("lemons") }
+            )
+
+            val results = tc.serviceCreator.createServices()
+            verify(tc.mockCloudFoundryClient, times(1))
+                .createService(tc.serviceConfig)
+
+            Assertions.assertThat(results).hasSize(1)
+            val result = results[0]
+            Assertions.assertThat(result.optional).isTrue()
         }
 
         test("it does not try to create services that already exist") {
