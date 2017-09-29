@@ -209,7 +209,21 @@ class CloudFoundryClientTest : Test({
     }
 
     describe("#bindServicesToApplication") {
-        //TODO
+        test("binds each service to the app") {
+
+            val tc = buildTestContext()
+
+            tc.cloudFoundryClient.bindServicesToApplication("some-app", listOf("some-service", "some-other-service"))
+
+            verify(tc.mockServices, times(1)).bind(argForWhich {
+                applicationName == "some-app" &&
+                    serviceInstanceName == "some-service"
+            })
+            verify(tc.mockServices, times(1)).bind(argForWhich {
+                applicationName == "some-app" &&
+                    serviceInstanceName == "some-other-service"
+            })
+        }
     }
 
     describe("#mapRoute") {
@@ -232,9 +246,9 @@ class CloudFoundryClientTest : Test({
         verify(tc.mockRoutes, times(1)).map(
             argForWhich {
                 applicationName == appConfig.name &&
-                domain == appConfig.domain &&
-                host == appConfig.route!!.hostname &&
-                path == appConfig.route!!.path
+                    domain == appConfig.domain &&
+                    host == appConfig.route!!.hostname &&
+                    path == appConfig.route!!.path
             }
         )
     }
@@ -259,9 +273,9 @@ class CloudFoundryClientTest : Test({
         verify(tc.mockRoutes, times(1)).unmap(
             argForWhich {
                 applicationName == appConfig.name &&
-                domain == appConfig.domain &&
-                host == appConfig.route!!.hostname &&
-                path == appConfig.route!!.path
+                    domain == appConfig.domain &&
+                    host == appConfig.route!!.hostname &&
+                    path == appConfig.route!!.path
             }
         )
     }

@@ -2,12 +2,14 @@ package pushapps
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.*
 
 fun main(args: Array<String>) {
     val logger: Logger = LoggerFactory.getLogger("Push Apps")
 
     val configPath = ArgumentParser.parseConfigPath(args)
     val (pushApps, cf, apps, services, userProvidedServices) = ConfigReader.parseConfig(configPath)
+
 
     //TODO capture errors and print
     val cloudFoundryClient = targetCf(cf)
@@ -17,15 +19,17 @@ fun main(args: Array<String>) {
         System.exit(0)
     }
 
+    var availableServices: List<String> = emptyList()
     if (services !== null) {
-        createServices(services, cloudFoundryClient, logger)
+        availableServices = createServices(services, cloudFoundryClient, logger)
     }
 
     if (userProvidedServices !== null) {
         createOrUpdateUserProvidedServices(userProvidedServices, cloudFoundryClient, logger)
+        availableServices += userProvidedServices.map(UserProvidedServiceConfig::name)
     }
 
-    deployApps(apps, pushApps.appDeployRetryCount, cloudFoundryClient, logger)
+    deployApps(apps, availableServices, pushApps.appDeployRetryCount, cloudFoundryClient, logger)
 
     logger.info("SUCCESS")
 }
@@ -44,7 +48,7 @@ private fun targetCf(cf: CfConfig): CloudFoundryClient {
         .createAndTargetSpace(cf.space)
 }
 
-fun createServices(services: List<ServiceConfig>, cloudFoundryClient: CloudFoundryClient, logger: Logger) {
+fun createServices(services: List<ServiceConfig>, cloudFoundryClient: CloudFoundryClient, logger: Logger): List<String> {
     val serviceCreator = ServiceCreator(cloudFoundryClient, services)
     val createServiceResults = serviceCreator.createServices()
 
@@ -52,6 +56,8 @@ fun createServices(services: List<ServiceConfig>, cloudFoundryClient: CloudFound
     if (!didSucceed) {
         handleOperationFailure(createServiceResults, "Creating service", logger)
     }
+
+    return createServiceResults.filter(OperationResult::didSucceed).map(OperationResult::name)
 }
 
 private fun createOrUpdateUserProvidedServices(userProvidedServices: List<UserProvidedServiceConfig>, cloudFoundryClient: CloudFoundryClient, logger: Logger) {
@@ -64,8 +70,8 @@ private fun createOrUpdateUserProvidedServices(userProvidedServices: List<UserPr
     }
 }
 
-private fun deployApps(apps: List<AppConfig>, retryCount: Int, cloudFoundryClient: CloudFoundryClient, logger: Logger) {
-    val appDeployer = AppDeployer(cloudFoundryClient, apps, retryCount)
+private fun deployApps(apps: List<AppConfig>, availableServices: List<String>, retryCount: Int, cloudFoundryClient: CloudFoundryClient, logger: Logger) {
+    val appDeployer = AppDeployer(cloudFoundryClient, apps, availableServices, retryCount)
     val results = appDeployer.deployApps()
 
     val didSucceed = didSucceed(results)

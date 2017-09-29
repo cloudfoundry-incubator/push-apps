@@ -113,8 +113,8 @@ class CloudFoundryClient(
     }
 
     //TODO should this just return one action at a time?
-    fun bindServicesToApplication(appConfig: AppConfig): List<Mono<Void>> {
-        val bindServiceRequests = generateBindServiceRequests(appConfig)
+    fun bindServicesToApplication(appName: String, serviceNames: List<String>): List<Mono<Void>> {
+        val bindServiceRequests = generateBindServiceRequests(appName, serviceNames)
 
         return bindServiceRequests.map { request ->
             cloudFoundryOperations
@@ -123,13 +123,11 @@ class CloudFoundryClient(
         }
     }
 
-    private fun generateBindServiceRequests(appConfig: AppConfig): Array<BindServiceInstanceRequest> {
-        if (appConfig.serviceNames === null) return emptyArray()
-
-        return appConfig.serviceNames.map { serviceName ->
+    private fun generateBindServiceRequests(appName: String, serviceNames: List<String>): Array<BindServiceInstanceRequest> {
+        return serviceNames.map { serviceName ->
             BindServiceInstanceRequest
                 .builder()
-                .applicationName(appConfig.name)
+                .applicationName(appName)
                 .serviceInstanceName(serviceName)
                 .build()
         }.toTypedArray()

@@ -37,7 +37,8 @@ class DeployAppAcceptanceTest : Test({
         ),
         serviceNames = listOf(
             "compliment-service",
-            "my-mf-service"
+            "my-mf-service",
+            "optional-service"
         )
     )
 
