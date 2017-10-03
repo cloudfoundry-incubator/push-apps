@@ -27,3 +27,11 @@ userProvidedServices:
 - name: some-user-provided-service-name
   credentials:
     username: some-username
+migrations:
+- user: user
+  password: password
+  driver: postgresql
+  host: 10.0.0.1
+  port: 5432
+  schema: metrics
+  migrationDir: /all/the/cool/migrations

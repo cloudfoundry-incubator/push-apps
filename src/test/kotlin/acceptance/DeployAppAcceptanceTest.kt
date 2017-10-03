@@ -76,7 +76,12 @@ class DeployAppAcceptanceTest : Test({
 
     describe("pushApps interacts with applications by") {
         test("pushing every application in the config file") {
-            val tc = buildTestContext("dewey", "test", listOf(helloApp, goodbyeApp), listOf(metricsForwarderService, optionalService), listOf(complimentService))
+            val tc = buildTestContext(organization = "dewey",
+                space = "test",
+                apps = listOf(helloApp, goodbyeApp),
+                services = listOf(metricsForwarderService, optionalService),
+                userProvidedServices = listOf(complimentService), migrations = emptyList()
+            )
 
             val exitCode = runPushApps(tc.configFilePath)
             assertThat(exitCode).isEqualTo(0)
@@ -124,7 +129,13 @@ class DeployAppAcceptanceTest : Test({
         }
 
         test("blue green deploys applications with blue green set to true") {
-            val tc = buildTestContext("dewey", "test", listOf(blueGreenApp), emptyList(), emptyList())
+            val tc = buildTestContext(organization = "dewey",
+                space = "test",
+                apps = listOf(blueGreenApp),
+                services = emptyList(),
+                userProvidedServices = emptyList(),
+                migrations = emptyList()
+            )
 
             val exitCode = runPushApps(tc.configFilePath)
             assertThat(exitCode).isEqualTo(0)
@@ -182,7 +193,13 @@ class DeployAppAcceptanceTest : Test({
                     "NAME" to "Steve"
                 )
             )
-            val tc = buildTestContext("dewey", "test", listOf(badBuildpackApp), emptyList(), emptyList())
+            val tc = buildTestContext(organization = "dewey",
+                space = "test",
+                apps = listOf(badBuildpackApp),
+                services = emptyList(),
+                userProvidedServices = emptyList(),
+                migrations = emptyList()
+            )
 
             val exitCode = runPushApps(tc.configFilePath)
             assertThat(exitCode).isEqualTo(3)

@@ -40,7 +40,8 @@ fun buildTestContext(organization: String,
                      space: String,
                      apps: List<AppConfig>,
                      services: List<ServiceConfig>,
-                     userProvidedServices: List<UserProvidedServiceConfig>
+                     userProvidedServices: List<UserProvidedServiceConfig>,
+                     migrations: List<Migration>?
 ): TestContext {
     val apiHost = getEnv("CF_API")
     val username = getEnv("CF_USERNAME")
@@ -65,6 +66,7 @@ fun buildTestContext(organization: String,
         apps = apps,
         userProvidedServices = userProvidedServices,
         services = services,
+        migrations = migrations,
         skipSslValidation = true
     )
 
@@ -167,10 +169,11 @@ fun writeConfigFile(
     apps: List<AppConfig>,
     userProvidedServices: List<UserProvidedServiceConfig>,
     services: List<ServiceConfig>,
+    migrations: List<Migration>?,
     skipSslValidation: Boolean
 ): String {
     val cf = CfConfig(apiHost, username, password, organization, space, skipSslValidation)
-    val config = Config(PushApps(), cf, apps, services, userProvidedServices)
+    val config = Config(PushApps(), cf, apps, services, userProvidedServices, migrations)
 
     val objectMapper = ObjectMapper(YAMLFactory()).registerModule(KotlinModule())
 
@@ -220,12 +223,16 @@ fun runPushApps(configFilePath: String, debug: Boolean = false): Int {
 }
 
 fun buildCfClient(apiHost: String, username: String, password: String): CloudFoundryClient {
-    return CloudFoundryClient(
-        apiHost,
-        username,
-        password,
-        skipSslValidation = true
+    val config = CfConfig(
+        apiHost = apiHost,
+        username = username,
+        password = password,
+        skipSslValidation = true,
+        organization = "",
+        space = ""
     )
+
+    return CloudFoundryClient(cfConfig = config)
 }
 
 val client = OkHttpClient()

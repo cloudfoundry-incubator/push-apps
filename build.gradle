@@ -1,5 +1,5 @@
 buildscript {
-    ext.kotlin_version = '1.1.4'
+    ext.kotlin_version = '1.1.51'
     repositories {
         mavenCentral()
     }
@@ -47,6 +47,8 @@ dependencies {
     compile 'com.squareup.okhttp3:okhttp:3.8.1'
     compile 'com.fasterxml.jackson.module:jackson-module-kotlin:2.7.1-2'
     compile 'org.slf4j:slf4j-simple:1.7.25'
+    compile 'org.flywaydb:flyway-core:4.2.0'
+    compile 'mysql:mysql-connector-java:5.1.6'
 
     compile 'io.projectreactor:reactor-core'
     compile 'io.projectreactor.ipc:reactor-netty'

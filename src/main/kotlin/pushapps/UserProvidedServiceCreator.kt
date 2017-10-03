@@ -31,20 +31,9 @@ class UserProvidedServiceCreator(
             cloudFoundryClient.createUserProvidedService(serviceConfig)
         }
 
-        return serviceCommand
+        val serviceFuture = serviceCommand
             .toFuture()
-            .thenApply {
-                OperationResult(
-                    name = serviceConfig.name,
-                    didSucceed = true
-                )
-            }
-            .exceptionally { error ->
-                OperationResult(
-                    name = serviceConfig.name,
-                    didSucceed = false,
-                    error = error
-                )
-            }
+
+        return getOperationResult(serviceFuture, serviceConfig.name, false)
     }
 }

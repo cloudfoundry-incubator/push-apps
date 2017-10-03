@@ -20,7 +20,8 @@ data class Config(
     val cf: CfConfig,
     val apps: List<AppConfig>,
     val services: List<ServiceConfig>? = emptyList(),
-    val userProvidedServices: List<UserProvidedServiceConfig>? = emptyList()
+    val userProvidedServices: List<UserProvidedServiceConfig>? = emptyList(),
+    val migrations: List<Migration>? = emptyList()
 )
 
 data class PushApps(
@@ -71,4 +72,14 @@ data class ServiceConfig (
 data class UserProvidedServiceConfig(
     val name: String,
     val credentials: Map<String, Any>
+)
+
+data class Migration(
+    val user: String,
+    val password: String,
+    val driver: String,
+    val host: String,
+    val port: String,
+    val schema: String,
+    val migrationDir: String
 )

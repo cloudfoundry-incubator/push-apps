@@ -43,11 +43,18 @@ class CloudFoundryClientTest : Test({
         whenever(mockCfOperations.spaces()).thenReturn(mockSpaces)
         whenever(mockCfOperations.routes()).thenReturn(mockRoutes)
 
-        val cloudFoundryClient = CloudFoundryClient(
+        val config = CfConfig(
             apiHost = "api.host",
             username = "username",
             password = "password",
-            cloudFoundryOperations = mockCfOperations)
+            organization = "",
+            space = ""
+        )
+
+        val cloudFoundryClient = CloudFoundryClient(
+            cfConfig = config,
+            cloudFoundryOperations = mockCfOperations
+        )
 
         return TestContext(
             cloudFoundryClient = cloudFoundryClient,

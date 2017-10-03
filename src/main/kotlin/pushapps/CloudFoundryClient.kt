@@ -14,19 +14,15 @@ import org.cloudfoundry.operations.spaces.SpaceSummary
 import reactor.core.publisher.Mono
 
 class CloudFoundryClient(
-    apiHost: String,
-    username: String,
-    password: String,
-    skipSslValidation: Boolean = false,
-    dialTimeoutInMillis: Long? = null,
+    private val cfConfig: CfConfig,
 
     private var cloudFoundryOperations: CloudFoundryOperations = cloudFoundryOperationsBuilder()
         .apply {
-            this.apiHost = apiHost
-            this.username = username
-            this.password = password
-            this.skipSslValidation = skipSslValidation
-            this.dialTimeoutInMillis = dialTimeoutInMillis
+            this.apiHost = cfConfig.apiHost
+            this.username = cfConfig.username
+            this.password = cfConfig.password
+            this.skipSslValidation = cfConfig.skipSslValidation
+            this.dialTimeoutInMillis = cfConfig.dialTimeoutInMillis
         }
         .build()
 ) {

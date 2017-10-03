@@ -64,5 +64,21 @@ class ConfigReaderTest: Test({
             assertThat(service.name).isEqualTo("some-user-provided-service-name")
             assertThat(service.credentials).isEqualTo(mapOf("username" to "some-username"))
         }
+
+        test("Parses the db migration config") {
+            val pushAppsConfig = ConfigReader.parseConfig("src/test/kotlin/support/exampleConfig.yml")
+
+            val migrations = pushAppsConfig.migrations
+            assertThat(migrations).hasSize(1)
+
+            val migration = migrations!![0]
+            assertThat(migration.user).isEqualTo("user")
+            assertThat(migration.password).isEqualTo("password")
+            assertThat(migration.driver).isEqualTo("postgresql")
+            assertThat(migration.host).isEqualTo("10.0.0.1")
+            assertThat(migration.port).isEqualTo("5432")
+            assertThat(migration.schema).isEqualTo("metrics")
+            assertThat(migration.migrationDir).isEqualTo("/all/the/cool/migrations")
+        }
     }
 })

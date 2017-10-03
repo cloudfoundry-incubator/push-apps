@@ -43,19 +43,7 @@ class AppDeployer(
             generateDeployApplicationFuture(appConfig)
         }
 
-        return deployAppFuture
-            .thenApply {
-                OperationResult(
-                    name = appConfig.name,
-                    didSucceed = true
-                )
-            }.exceptionally { error ->
-            OperationResult(
-                name = appConfig.name,
-                didSucceed = false,
-                error = error
-            )
-        }
+        return getOperationResult(deployAppFuture, appConfig.name, false)
     }
 
     private fun generateBlueGreenDeployApplicationFuture(appConfig: AppConfig): CompletableFuture<Void> {

@@ -33,22 +33,10 @@ class ServiceCreator(
     }
 
     private fun generateServiceFuture(serviceConfig: ServiceConfig): CompletableFuture<OperationResult> {
-        return cloudFoundryClient
+        val serviceFuture = cloudFoundryClient
             .createService(serviceConfig)
             .toFuture()
-            .thenApply {
-                OperationResult(
-                    name = serviceConfig.name,
-                    didSucceed = true
-                )
-            }
-            .exceptionally { error ->
-                OperationResult(
-                    name = serviceConfig.name,
-                    didSucceed = false,
-                    error = error,
-                    optional = serviceConfig.optional
-                )
-            }
+
+        return getOperationResult(serviceFuture, serviceConfig.name, serviceConfig.optional)
     }
 }

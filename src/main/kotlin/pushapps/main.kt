@@ -2,81 +2,77 @@ package pushapps
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.*
+
+val logger: Logger = LoggerFactory.getLogger("Push Apps")
 
 fun main(args: Array<String>) {
-    val logger: Logger = LoggerFactory.getLogger("Push Apps")
-
     val configPath = ArgumentParser.parseConfigPath(args)
-    val (pushApps, cf, apps, services, userProvidedServices) = ConfigReader.parseConfig(configPath)
+    val (pushApps, cf, apps, services, userProvidedServices, migrations) = ConfigReader.parseConfig(configPath)
 
 
     //TODO capture errors and print
     val cloudFoundryClient = targetCf(cf)
 
-    if (apps.isEmpty()) {
-        logger.error("No apps were provided in the config")
-        System.exit(0)
-    }
-
     var availableServices: List<String> = emptyList()
     if (services !== null) {
-        availableServices = createServices(services, cloudFoundryClient, logger)
+        availableServices = createServices(services, cloudFoundryClient)
     }
 
     if (userProvidedServices !== null) {
-        createOrUpdateUserProvidedServices(userProvidedServices, cloudFoundryClient, logger)
+        createOrUpdateUserProvidedServices(userProvidedServices, cloudFoundryClient)
         availableServices += userProvidedServices.map(UserProvidedServiceConfig::name)
     }
 
-    deployApps(apps, availableServices, pushApps.appDeployRetryCount, cloudFoundryClient, logger)
+    if (migrations !== null) {
+        runMigrations(migrations)
+    }
+
+    deployApps(apps, availableServices, pushApps.appDeployRetryCount, cloudFoundryClient)
 
     logger.info("SUCCESS")
 }
 
 private fun targetCf(cf: CfConfig): CloudFoundryClient {
-    val cloudFoundryClient = CloudFoundryClient(
-        cf.apiHost,
-        cf.username,
-        cf.password,
-        cf.skipSslValidation,
-        cf.dialTimeoutInMillis
-    )
+    val cloudFoundryClient = CloudFoundryClient(cf)
 
     return cloudFoundryClient
         .createAndTargetOrganization(cf.organization)
         .createAndTargetSpace(cf.space)
 }
 
-fun createServices(services: List<ServiceConfig>, cloudFoundryClient: CloudFoundryClient, logger: Logger): List<String> {
+fun createServices(services: List<ServiceConfig>, cloudFoundryClient: CloudFoundryClient): List<String> {
     val serviceCreator = ServiceCreator(cloudFoundryClient, services)
     val createServiceResults = serviceCreator.createServices()
 
-    val didSucceed = didSucceed(createServiceResults)
-    if (!didSucceed) {
-        handleOperationFailure(createServiceResults, "Creating service", logger)
-    }
+    handleOperationResult(createServiceResults, "Creating service")
 
     return createServiceResults.filter(OperationResult::didSucceed).map(OperationResult::name)
 }
 
-private fun createOrUpdateUserProvidedServices(userProvidedServices: List<UserProvidedServiceConfig>, cloudFoundryClient: CloudFoundryClient, logger: Logger) {
+private fun createOrUpdateUserProvidedServices(userProvidedServices: List<UserProvidedServiceConfig>, cloudFoundryClient: CloudFoundryClient) {
     val userProvidedServiceCreator = UserProvidedServiceCreator(cloudFoundryClient, userProvidedServices)
     val createUserServicesResults = userProvidedServiceCreator.createOrUpdateServices()
 
-    val didSucceed = didSucceed(createUserServicesResults)
-    if (!didSucceed) {
-        handleOperationFailure(createUserServicesResults, "Creating user provided service", logger)
-    }
+    handleOperationResult(createUserServicesResults, "Creating user provided service")
 }
 
-private fun deployApps(apps: List<AppConfig>, availableServices: List<String>, retryCount: Int, cloudFoundryClient: CloudFoundryClient, logger: Logger) {
+private fun runMigrations(migrations: List<Migration>) {
+    val databaseMigrationResults = DatabaseMigrator(migrations.toTypedArray()).migrate()
+
+    handleOperationResult(databaseMigrationResults, "Migrating database")
+}
+
+private fun deployApps(apps: List<AppConfig>, availableServices: List<String>, retryCount: Int, cloudFoundryClient: CloudFoundryClient) {
     val appDeployer = AppDeployer(cloudFoundryClient, apps, availableServices, retryCount)
     val results = appDeployer.deployApps()
 
+    handleOperationResult(results, "Deploying application")
+}
+
+private fun handleOperationResult(results: List<OperationResult>, actionName: String) {
     val didSucceed = didSucceed(results)
     if (!didSucceed) {
-        handleOperationFailure(results, "Deploying application", logger)
+        handleOperationFailure(results, actionName)
     }
 }
 
@@ -85,7 +81,7 @@ private fun didSucceed(results: List<OperationResult>): Boolean {
     return didSucceed
 }
 
-private fun handleOperationFailure(results: List<OperationResult>, actionName: String, logger: Logger) {
+private fun handleOperationFailure(results: List<OperationResult>, actionName: String) {
     val failedResults = results.filterNot(OperationResult::didSucceed)
 
     failedResults
