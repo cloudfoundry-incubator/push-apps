@@ -11,10 +11,7 @@ fun startDocker() {
     removeStoppedDockerContainers()
     runDockerCompose()
 
-    var dockerHost = getEnv("INTEGRATION_HOST")
-    if (dockerHost === "") {
-        dockerHost = "127.0.0.1"
-    }
+    val dockerHost = getEnvOrDefault("INTEGRATION_HOST", "127.0.0.1")
 
     waitForMysql(dockerHost, 3338, "root", "supersecret")
 }

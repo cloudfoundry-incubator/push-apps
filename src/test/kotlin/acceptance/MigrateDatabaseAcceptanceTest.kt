@@ -8,7 +8,7 @@ import support.*
 
 class MigrateDatabaseAcceptanceTest : Test({
     val migration = Migration(
-        host = "127.0.0.1",
+        host = getEnvOrDefault("INTEGRATION_HOST", "127.0.0.1"),
         port = "3338",
         user = "root",
         password = "supersecret",

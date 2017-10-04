@@ -36,6 +36,15 @@ fun getEnv(name: String): String {
     return env
 }
 
+fun getEnvOrDefault(name: String, default: String): String {
+    var env = System.getenv(name)
+    if (env === null || env.isEmpty()) {
+        env = default
+    }
+
+    return env
+}
+
 fun buildTestContext(organization: String,
                      space: String,
                      apps: List<AppConfig>,
