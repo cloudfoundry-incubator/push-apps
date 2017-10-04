@@ -7,6 +7,8 @@ import java.util.*
 
 
 fun startDocker() {
+    println("Stopping docker")
+
     val dockerStopCommand = mutableListOf(
         "docker-compose",
         "-f", "$workingDir/src/test/kotlin/support/docker-compose.yml",
@@ -19,6 +21,7 @@ fun startDocker() {
 
     dockerStopProcess.waitFor()
 
+    println("Removing stopped docker containers")
     val dockerRemoveCommand = mutableListOf(
         "docker-compose",
         "-f", "$workingDir/src/test/kotlin/support/docker-compose.yml",
@@ -31,6 +34,7 @@ fun startDocker() {
 
     dockerRemoveProcess.waitFor()
 
+    println("Starting docker")
     val dockerComposeCommand = mutableListOf(
         "docker-compose",
         "-f", "$workingDir/src/test/kotlin/support/docker-compose.yml",
@@ -49,7 +53,9 @@ fun startDocker() {
         dockerHost = "127.0.0.1"
     }
 
+    println("Waiting for mysql to start")
     waitForMysql(dockerHost, 3338, "root", "supersecret")
+    println("Mysql is started")
 }
 
 fun waitForMysql(mysqlHost: String, mysqlPort: Int, mysqlUser: String, mysqlPassword: String) {
