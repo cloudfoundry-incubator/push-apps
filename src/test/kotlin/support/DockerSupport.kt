@@ -13,7 +13,7 @@ fun startDocker() {
 
     val dockerHost = getEnvOrDefault("INTEGRATION_HOST", "127.0.0.1")
 
-    waitForMysql(dockerHost, 3338, "root", "supersecret")
+    waitForMysql(dockerHost, "3338", "root", "supersecret")
 }
 
 private fun stopDocker() {
@@ -68,7 +68,7 @@ private fun runDockerCompose() {
     }
 }
 
-fun waitForMysql(mysqlHost: String, mysqlPort: Int, mysqlUser: String, mysqlPassword: String) {
+fun waitForMysql(mysqlHost: String, mysqlPort: String, mysqlUser: String, mysqlPassword: String) {
     var attempts = 0
     while (attempts < 120) {
         try {
@@ -83,7 +83,7 @@ fun waitForMysql(mysqlHost: String, mysqlPort: Int, mysqlUser: String, mysqlPass
     }
 }
 
-fun connectToMysql(mysqlHost: String, mysqlPort: Int, mysqlUser: String, mysqlPassword: String): Connection? {
+fun connectToMysql(mysqlHost: String, mysqlPort: String, mysqlUser: String, mysqlPassword: String): Connection? {
     var conn: Connection? = null
     val connectionProps = Properties()
     connectionProps.put("user", mysqlUser)

@@ -26,7 +26,7 @@ class MigrateDatabaseAcceptanceTest : Test({
             val exitCode = runPushApps(tc.configFilePath)
             Assertions.assertThat(exitCode).isEqualTo(0)
 
-            val conn = connectToMysql("127.0.0.1", 3338, "root", "supersecret")
+            val conn = connectToMysql(migration.host, migration.port, migration.user, migration.password)
 
             assertThat(checkIfDatabaseExists(conn!!, "new_db")).isTrue()
 
