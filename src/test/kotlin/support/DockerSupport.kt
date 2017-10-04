@@ -7,8 +7,19 @@ import java.util.*
 
 
 fun startDocker() {
-    println("Stopping docker")
+    stopDocker()
+    removeStoppedDockerContainers()
+    runDockerCompose()
 
+    var dockerHost = getEnv("INTEGRATION_HOST")
+    if (dockerHost === "") {
+        dockerHost = "127.0.0.1"
+    }
+
+    waitForMysql(dockerHost, 3338, "root", "supersecret")
+}
+
+private fun stopDocker() {
     val dockerStopCommand = mutableListOf(
         "docker-compose",
         "-f", "$workingDir/src/test/kotlin/support/docker-compose.yml",
@@ -20,8 +31,12 @@ fun startDocker() {
     ).inheritIO().start()
 
     dockerStopProcess.waitFor()
+    if (dockerStopProcess.exitValue() != 0) {
+        throw Exception("unable to run command: " + dockerStopCommand.joinToString(" "))
+    }
+}
 
-    println("Removing stopped docker containers")
+private fun removeStoppedDockerContainers() {
     val dockerRemoveCommand = mutableListOf(
         "docker-compose",
         "-f", "$workingDir/src/test/kotlin/support/docker-compose.yml",
@@ -33,8 +48,12 @@ fun startDocker() {
     ).inheritIO().start()
 
     dockerRemoveProcess.waitFor()
+    if (dockerRemoveProcess.exitValue() != 0) {
+        throw Exception("unable to run command: " + dockerRemoveCommand.joinToString(" "))
+    }
+}
 
-    println("Starting docker")
+private fun runDockerCompose() {
     val dockerComposeCommand = mutableListOf(
         "docker-compose",
         "-f", "$workingDir/src/test/kotlin/support/docker-compose.yml",
@@ -47,23 +66,19 @@ fun startDocker() {
     ).inheritIO().start()
 
     dockerComposeProcess.waitFor()
-
-    var dockerHost = getEnv("INTEGRATION_HOST")
-    if (dockerHost === "") {
-        dockerHost = "127.0.0.1"
+    if (dockerComposeProcess.exitValue() != 0) {
+        throw Exception("unable to run command: " + dockerComposeCommand.joinToString(" "))
     }
-
-    println("Waiting for mysql to start")
-    waitForMysql(dockerHost, 3338, "root", "supersecret")
-    println("Mysql is started")
 }
 
 fun waitForMysql(mysqlHost: String, mysqlPort: Int, mysqlUser: String, mysqlPassword: String) {
-    while (true) {
+    var attempts = 0
+    while (attempts < 120) {
         try {
             connectToMysql(mysqlHost, mysqlPort, mysqlUser, mysqlPassword)
         } catch (ex: Exception) {
             Thread.sleep(1000)
+            attempts++
             continue
         }
 
