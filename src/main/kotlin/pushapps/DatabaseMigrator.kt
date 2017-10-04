@@ -42,7 +42,7 @@ class DatabaseMigrator(
     private fun migrateMysqlDatabase(migration: Migration) {
         val conn = connectToMysql(migration.host, migration.port, migration.user, migration.password)
         if (conn === null) {
-            throw Exception("Unable to connect to mysql")
+            throw Exception("Unable to connect to mysql on ${migration.host}:${migration.port}")
         }
 
         createDatabase(conn, migration.schema)
@@ -63,7 +63,7 @@ class DatabaseMigrator(
 
             return conn
         } catch (ex: Exception) {
-            throw ex
+            throw Exception("Unable to connect to mysql on $mysqlHost:$mysqlPort due to ${ex.message}")
         }
     }
 
