@@ -76,13 +76,12 @@ class DeployAppAcceptanceTest : Test({
 
     describe("pushApps interacts with applications by") {
         test("pushing every application in the config file") {
-            val tc = buildTestContext(organization = "dewey",
+            val tc = buildTestContext(
+                organization = "dewey",
                 space = "test",
                 apps = listOf(helloApp, goodbyeApp),
                 services = listOf(metricsForwarderService, optionalService),
-                userProvidedServices = listOf(complimentService),
-                migrations = emptyList(),
-                securityGroups = emptyList()
+                userProvidedServices = listOf(complimentService)
             )
 
             val exitCode = runPushApps(tc.configFilePath)
@@ -131,13 +130,10 @@ class DeployAppAcceptanceTest : Test({
         }
 
         test("blue green deploys applications with blue green set to true") {
-            val tc = buildTestContext(organization = "dewey",
+            val tc = buildTestContext(
+                organization = "dewey",
                 space = "test",
-                apps = listOf(blueGreenApp),
-                services = emptyList(),
-                userProvidedServices = emptyList(),
-                migrations = emptyList(),
-                securityGroups = emptyList()
+                apps = listOf(blueGreenApp)
             )
 
             val exitCode = runPushApps(tc.configFilePath)
@@ -174,8 +170,9 @@ class DeployAppAcceptanceTest : Test({
             val routes = targetedOperations
                 .routes()
                 .list(listRoutesRequest)
-                .filter { r -> r.domain == blueGreenApp.domain &&
-                    r.host == blueGreenApp.route!!.hostname
+                .filter { r ->
+                    r.domain == blueGreenApp.domain &&
+                        r.host == blueGreenApp.route!!.hostname
                 }
                 .toIterable()
                 .toList()
@@ -196,13 +193,10 @@ class DeployAppAcceptanceTest : Test({
                     "NAME" to "Steve"
                 )
             )
-            val tc = buildTestContext(organization = "dewey",
+            val tc = buildTestContext(
+                organization = "dewey",
                 space = "test",
-                apps = listOf(badBuildpackApp),
-                services = emptyList(),
-                userProvidedServices = emptyList(),
-                migrations = emptyList(),
-                securityGroups = emptyList()
+                apps = listOf(badBuildpackApp)
             )
 
             val exitCode = runPushApps(tc.configFilePath)

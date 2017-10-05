@@ -21,10 +21,6 @@ class SecurityGroupAcceptanceTest : Test({
     val tc = buildTestContext(
         organization = "dewey",
         space = "test",
-        apps = emptyList(),
-        services = emptyList(),
-        userProvidedServices = emptyList(),
-        migrations = emptyList(),
         securityGroups = listOf(securityGroup)
     )
 

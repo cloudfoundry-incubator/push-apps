@@ -19,7 +19,11 @@ class MigrateDatabaseAcceptanceTest : Test({
 
     describe("pushApps interacts with databases by") {
         test("performing the given migrations") {
-            val tc = buildTestContext("dewey", "test", emptyList(), emptyList(), emptyList(), listOf(migration), emptyList())
+            val tc = buildTestContext(
+                organization = "dewey",
+                space = "test",
+                migrations = listOf(migration)
+            )
 
             startDocker()
 

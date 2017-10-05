@@ -2,7 +2,6 @@ package pushapps
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.concurrent.CompletableFuture
 
 val logger: Logger = LoggerFactory.getLogger("Push Apps")
 
@@ -14,7 +13,7 @@ fun main(args: Array<String>) {
     val cloudFoundryClient = targetCf(cf)
 
     if (securityGroups !== null) {
-        createSecurityGroups(cloudFoundryClient, cf, securityGroups)
+        createSecurityGroups(securityGroups, cloudFoundryClient, cf.space)
     }
 
     var availableServices: List<String> = emptyList()
@@ -36,13 +35,11 @@ fun main(args: Array<String>) {
     logger.info("SUCCESS")
 }
 
-private fun createSecurityGroups(cloudFoundryClient: CloudFoundryClient, cf: CfConfig, securityGroups: List<SecurityGroup>) {
-    //TODO get failure output in a sane way
-    val spaceId = cloudFoundryClient.getSpaceId(cf.space)
-    val securityGroupFutures: List<CompletableFuture<Void>> = securityGroups.map { group ->
-        cloudFoundryClient.createSecurityGroup(group, spaceId).toFuture()
-    }
-    CompletableFuture.allOf(*securityGroupFutures.toTypedArray()).get()
+private fun createSecurityGroups(securityGroups: List<SecurityGroup>, cloudFoundryClient: CloudFoundryClient, space: String) {
+    val securityGroupCreator = SecurityGroupCreator(securityGroups, cloudFoundryClient, space)
+    val results = securityGroupCreator.createSecurityGroups()
+
+    handleOperationResult(results, "Creating security group")
 }
 
 private fun targetCf(cf: CfConfig): CloudFoundryClient {

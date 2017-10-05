@@ -51,12 +51,14 @@ fun getEnvOrDefault(name: String, default: String): String {
 fun buildTestContext(
     organization: String,
     space: String,
-    apps: List<AppConfig>,
-    services: List<ServiceConfig>,
-    userProvidedServices: List<UserProvidedServiceConfig>,
-    migrations: List<Migration>?,
-    securityGroups: List<SecurityGroup>?
+    apps: List<AppConfig> = emptyList(),
+    services: List<ServiceConfig> = emptyList(),
+    userProvidedServices: List<UserProvidedServiceConfig> = emptyList(),
+    migrations: List<Migration> = emptyList(),
+    securityGroups: List<SecurityGroup> = emptyList()
 ): TestContext {
+    //TODO create random organization
+
     val apiHost = getEnv("CF_API")
     val username = getEnv("CF_USERNAME")
     val password = getEnv("CF_PASSWORD")
