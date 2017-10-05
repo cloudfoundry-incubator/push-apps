@@ -19,13 +19,12 @@ class SecurityGroupAcceptanceTest : Test({
     )
 
     val tc = buildTestContext(
-        organization = "dewey",
         space = "test",
         securityGroups = listOf(securityGroup)
     )
 
     after {
-        cleanupCf(tc, "dewey", "test")
+        cleanupCf(tc, tc.organization, "test")
     }
 
     describe("create security groups for given organization and space") {

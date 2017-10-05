@@ -19,6 +19,7 @@ import org.cloudfoundry.operations.organizations.OrganizationInfoRequest
 import pushapps.*
 import java.io.File
 import java.io.InputStream
+import java.util.*
 import java.util.concurrent.TimeUnit
 
 val workingDir = System.getProperty("user.dir")!!
@@ -27,7 +28,8 @@ data class TestContext(
     val cfOperations: CloudFoundryOperations,
     val cfClient: CloudFoundryClient,
     val configFilePath: String,
-    val securityGroups: List<SecurityGroup>?
+    val securityGroups: List<SecurityGroup>?,
+    val organization: String
 )
 
 fun getEnv(name: String): String {
@@ -49,7 +51,6 @@ fun getEnvOrDefault(name: String, default: String): String {
 }
 
 fun buildTestContext(
-    organization: String,
     space: String,
     apps: List<AppConfig> = emptyList(),
     services: List<ServiceConfig> = emptyList(),
@@ -57,7 +58,7 @@ fun buildTestContext(
     migrations: List<Migration> = emptyList(),
     securityGroups: List<SecurityGroup> = emptyList()
 ): TestContext {
-    //TODO create random organization
+    val organization = "pushapps_test_${UUID.randomUUID().toString()}"
 
     val apiHost = getEnv("CF_API")
     val username = getEnv("CF_USERNAME")
@@ -87,7 +88,7 @@ fun buildTestContext(
         skipSslValidation = true
     )
 
-    return TestContext(cfOperations, cf, configFilePath, securityGroups)
+    return TestContext(cfOperations, cf, configFilePath, securityGroups, organization)
 }
 
 fun cleanupCf(tc: TestContext?, organization: String, space: String) {

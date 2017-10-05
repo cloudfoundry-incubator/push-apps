@@ -77,7 +77,6 @@ class DeployAppAcceptanceTest : Test({
     describe("pushApps interacts with applications by") {
         test("pushing every application in the config file") {
             val tc = buildTestContext(
-                organization = "dewey",
                 space = "test",
                 apps = listOf(helloApp, goodbyeApp),
                 services = listOf(metricsForwarderService, optionalService),
@@ -93,7 +92,7 @@ class DeployAppAcceptanceTest : Test({
             val targetedOperations = cloudFoundryOperationsBuilder()
                 .fromExistingOperations(tc.cfOperations)
                 .apply {
-                    organization = "dewey"
+                    organization = tc.organization
                     space = "test"
                     skipSslValidation = true
                 }.build()
@@ -126,12 +125,11 @@ class DeployAppAcceptanceTest : Test({
             assertThat(goodbyeResponse.isSuccessful).isTrue()
             assertThat(goodbyeResponse.body()?.string()).contains("goodbye from v1 George")
 
-            cleanupCf(tc, "dewey", "test")
+            cleanupCf(tc, tc.organization, "test")
         }
 
         test("blue green deploys applications with blue green set to true") {
             val tc = buildTestContext(
-                organization = "dewey",
                 space = "test",
                 apps = listOf(blueGreenApp)
             )
@@ -145,7 +143,7 @@ class DeployAppAcceptanceTest : Test({
             val targetedOperations = cloudFoundryOperationsBuilder()
                 .fromExistingOperations(tc.cfOperations)
                 .apply {
-                    organization = "dewey"
+                    organization = tc.organization
                     space = "test"
                     skipSslValidation = true
                 }.build()
@@ -180,7 +178,7 @@ class DeployAppAcceptanceTest : Test({
             assertThat(routes).hasSize(1)
             assertThat(routes[0].applications).containsOnly("generic")
 
-            cleanupCf(tc, "dewey", "test")
+            cleanupCf(tc, tc.organization, "test")
         }
 
         test("returning an error if a deploy fails") {
@@ -194,7 +192,6 @@ class DeployAppAcceptanceTest : Test({
                 )
             )
             val tc = buildTestContext(
-                organization = "dewey",
                 space = "test",
                 apps = listOf(badBuildpackApp)
             )
@@ -202,7 +199,7 @@ class DeployAppAcceptanceTest : Test({
             val exitCode = runPushApps(tc.configFilePath)
             assertThat(exitCode).isEqualTo(3)
 
-            cleanupCf(tc, "dewey", "test")
+            cleanupCf(tc, tc.organization, "test")
         }
     }
 })

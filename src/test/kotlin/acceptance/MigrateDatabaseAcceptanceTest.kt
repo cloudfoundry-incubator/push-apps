@@ -20,7 +20,6 @@ class MigrateDatabaseAcceptanceTest : Test({
     describe("pushApps interacts with databases by") {
         test("performing the given migrations") {
             val tc = buildTestContext(
-                organization = "dewey",
                 space = "test",
                 migrations = listOf(migration)
             )
@@ -37,7 +36,7 @@ class MigrateDatabaseAcceptanceTest : Test({
             assertThat(checkIfTableExists(conn, "new_db", "test_table_1")).isTrue()
             assertThat(checkIfTableExists(conn, "new_db", "test_table_2")).isTrue()
 
-            cleanupCf(tc, "dewey", "test")
+            cleanupCf(tc, tc.organization, "test")
         }
     }
 })
