@@ -49,6 +49,7 @@ dependencies {
     compile 'org.slf4j:slf4j-simple:1.7.25'
     compile 'org.flywaydb:flyway-core:4.2.0'
     compile 'mysql:mysql-connector-java:5.1.6'
+    compile 'org.postgresql:postgresql:42.1.4'
 
     compile 'io.projectreactor:reactor-core'
     compile 'io.projectreactor.ipc:reactor-netty'
