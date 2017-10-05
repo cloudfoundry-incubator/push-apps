@@ -1,6 +1,11 @@
 package pushapps
 
+import org.cloudfoundry.client.v2.securitygroups.CreateSecurityGroupRequest
+import org.cloudfoundry.client.v2.securitygroups.Protocol
+import org.cloudfoundry.client.v2.securitygroups.RuleEntity
+import org.cloudfoundry.client.v2.securitygroups.SecurityGroupResource
 import org.cloudfoundry.operations.CloudFoundryOperations
+import org.cloudfoundry.operations.DefaultCloudFoundryOperations
 import org.cloudfoundry.operations.applications.SetEnvironmentVariableApplicationRequest
 import org.cloudfoundry.operations.applications.StartApplicationRequest
 import org.cloudfoundry.operations.applications.StopApplicationRequest
@@ -10,6 +15,8 @@ import org.cloudfoundry.operations.routes.MapRouteRequest
 import org.cloudfoundry.operations.routes.UnmapRouteRequest
 import org.cloudfoundry.operations.services.*
 import org.cloudfoundry.operations.spaces.CreateSpaceRequest
+import org.cloudfoundry.operations.spaces.GetSpaceRequest
+import org.cloudfoundry.operations.spaces.SpaceDetail
 import org.cloudfoundry.operations.spaces.SpaceSummary
 import reactor.core.publisher.Mono
 
@@ -166,6 +173,27 @@ class CloudFoundryClient(
         return cloudFoundryOperations.routes().unmap(unmapRouteRequest)
     }
 
+    fun createSecurityGroup(securityGroup: SecurityGroup, spaceId: String): Mono<Void> {
+        val rule = RuleEntity
+            .builder()
+            .destination(securityGroup.destination)
+            .protocol(Protocol.from(securityGroup.protocol))
+            .build()
+
+        val createSecurityGroupRequest = CreateSecurityGroupRequest
+            .builder()
+            .name(securityGroup.name)
+            .rule(rule)
+            .spaceId(spaceId)
+            .build()
+
+        val defaultCloudFoundryOperations = cloudFoundryOperations as DefaultCloudFoundryOperations
+        return defaultCloudFoundryOperations.cloudFoundryClient
+            .securityGroups()
+            .create(createSecurityGroupRequest)
+            .ofType(Void.TYPE)
+    }
+
     fun createAndTargetOrganization(organizationName: String): CloudFoundryClient {
         createOrganizationIfDoesNotExist(organizationName)
         return targetOrganization(organizationName)
@@ -261,5 +289,20 @@ class CloudFoundryClient(
         return serviceInstanceFlux
             .toIterable()
             .toList()
+    }
+
+    fun getSpaceId(spaceName: String): String {
+        val spaceRequest = GetSpaceRequest
+            .builder()
+            .name(spaceName)
+            .build()
+
+        val spaceId = cloudFoundryOperations
+            .spaces()
+            .get(spaceRequest)
+            .map(SpaceDetail::getId)
+            .block()
+
+        return spaceId
     }
 }

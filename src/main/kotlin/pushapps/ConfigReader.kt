@@ -21,7 +21,8 @@ data class Config(
     val apps: List<AppConfig>,
     val services: List<ServiceConfig>? = emptyList(),
     val userProvidedServices: List<UserProvidedServiceConfig>? = emptyList(),
-    val migrations: List<Migration>? = emptyList()
+    val migrations: List<Migration>? = emptyList(),
+    val securityGroups: List<SecurityGroup>? = emptyList()
 )
 
 data class PushApps(
@@ -82,4 +83,10 @@ data class Migration(
     val port: String,
     val schema: String,
     val migrationDir: String
+)
+
+data class SecurityGroup(
+    val name: String,
+    val destination: String,
+    val protocol: String
 )

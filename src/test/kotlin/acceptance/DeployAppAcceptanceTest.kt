@@ -80,7 +80,9 @@ class DeployAppAcceptanceTest : Test({
                 space = "test",
                 apps = listOf(helloApp, goodbyeApp),
                 services = listOf(metricsForwarderService, optionalService),
-                userProvidedServices = listOf(complimentService), migrations = emptyList()
+                userProvidedServices = listOf(complimentService),
+                migrations = emptyList(),
+                securityGroups = emptyList()
             )
 
             val exitCode = runPushApps(tc.configFilePath)
@@ -134,7 +136,8 @@ class DeployAppAcceptanceTest : Test({
                 apps = listOf(blueGreenApp),
                 services = emptyList(),
                 userProvidedServices = emptyList(),
-                migrations = emptyList()
+                migrations = emptyList(),
+                securityGroups = emptyList()
             )
 
             val exitCode = runPushApps(tc.configFilePath)
@@ -198,7 +201,8 @@ class DeployAppAcceptanceTest : Test({
                 apps = listOf(badBuildpackApp),
                 services = emptyList(),
                 userProvidedServices = emptyList(),
-                migrations = emptyList()
+                migrations = emptyList(),
+                securityGroups = emptyList()
             )
 
             val exitCode = runPushApps(tc.configFilePath)

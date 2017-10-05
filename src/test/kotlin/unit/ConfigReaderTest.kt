@@ -54,6 +54,18 @@ class ConfigReaderTest: Test({
             assertThat(service.optional).isTrue()
         }
 
+        test("Parses the security group config") {
+            val pushAppsConfig = ConfigReader.parseConfig("src/test/kotlin/support/exampleConfig.yml")
+
+            val securityGroups = pushAppsConfig.securityGroups
+            assertThat(securityGroups).hasSize(1)
+
+            val securityGroup = securityGroups!![0]
+            assertThat(securityGroup.name).isEqualTo("some-group")
+            assertThat(securityGroup.destination).isEqualTo("some-destination")
+            assertThat(securityGroup.protocol).isEqualTo("all")
+        }
+
         test("Parses the user provided services config") {
             val pushAppsConfig = ConfigReader.parseConfig("src/test/kotlin/support/exampleConfig.yml")
 

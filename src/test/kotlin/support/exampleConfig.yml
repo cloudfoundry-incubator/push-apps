@@ -35,3 +35,7 @@ migrations:
   port: 5432
   schema: metrics
   migrationDir: /all/the/cool/migrations
+securityGroups:
+- name: some-group
+  destination: some-destination
+  protocol: all

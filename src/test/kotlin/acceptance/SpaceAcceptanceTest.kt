@@ -12,7 +12,8 @@ class SpaceAcceptanceTest : Test({
         apps = emptyList(),
         services = emptyList(),
         userProvidedServices = emptyList(),
-        migrations = emptyList()
+        migrations = emptyList(),
+        securityGroups = emptyList()
     )
 
     after {

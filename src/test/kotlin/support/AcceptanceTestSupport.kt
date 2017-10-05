@@ -7,13 +7,15 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import org.assertj.core.api.Fail
+import org.cloudfoundry.client.v2.organizations.DeleteOrganizationRequest
+import org.cloudfoundry.client.v2.securitygroups.DeleteSecurityGroupRequest
+import org.cloudfoundry.client.v2.securitygroups.ListSecurityGroupsRequest
+import org.cloudfoundry.client.v2.securitygroups.ListSecurityGroupsResponse
+import org.cloudfoundry.client.v2.securitygroups.SecurityGroupResource
 import org.cloudfoundry.operations.CloudFoundryOperations
-import org.cloudfoundry.operations.applications.ApplicationSummary
-import org.cloudfoundry.operations.applications.DeleteApplicationRequest
-import org.cloudfoundry.operations.organizations.DeleteOrganizationRequest
-import org.cloudfoundry.operations.routes.DeleteOrphanedRoutesRequest
-import org.cloudfoundry.operations.services.DeleteServiceInstanceRequest
-import org.cloudfoundry.operations.spaces.DeleteSpaceRequest
+import org.cloudfoundry.operations.DefaultCloudFoundryOperations
+import org.cloudfoundry.operations.organizations.OrganizationDetail
+import org.cloudfoundry.operations.organizations.OrganizationInfoRequest
 import pushapps.*
 import java.io.File
 import java.io.InputStream
@@ -24,7 +26,8 @@ val workingDir = System.getProperty("user.dir")!!
 data class TestContext(
     val cfOperations: CloudFoundryOperations,
     val cfClient: CloudFoundryClient,
-    val configFilePath: String
+    val configFilePath: String,
+    val securityGroups: List<SecurityGroup>?
 )
 
 fun getEnv(name: String): String {
@@ -45,12 +48,14 @@ fun getEnvOrDefault(name: String, default: String): String {
     return env
 }
 
-fun buildTestContext(organization: String,
-                     space: String,
-                     apps: List<AppConfig>,
-                     services: List<ServiceConfig>,
-                     userProvidedServices: List<UserProvidedServiceConfig>,
-                     migrations: List<Migration>?
+fun buildTestContext(
+    organization: String,
+    space: String,
+    apps: List<AppConfig>,
+    services: List<ServiceConfig>,
+    userProvidedServices: List<UserProvidedServiceConfig>,
+    migrations: List<Migration>?,
+    securityGroups: List<SecurityGroup>?
 ): TestContext {
     val apiHost = getEnv("CF_API")
     val username = getEnv("CF_USERNAME")
@@ -76,10 +81,11 @@ fun buildTestContext(organization: String,
         userProvidedServices = userProvidedServices,
         services = services,
         migrations = migrations,
+        securityGroups = securityGroups,
         skipSslValidation = true
     )
 
-    return TestContext(cfOperations, cf, configFilePath)
+    return TestContext(cfOperations, cf, configFilePath, securityGroups)
 }
 
 fun cleanupCf(tc: TestContext?, organization: String, space: String) {
@@ -99,6 +105,79 @@ fun cleanupCf(tc: TestContext?, organization: String, space: String) {
 
     cfClient.createAndTargetSpace(space)
 
+    val targetedOperations = getTargetedOperations(tc.cfOperations, organization, space)
+    deleteOrganization(organization, targetedOperations)
+    deleteSecurityGroups(targetedOperations, tc.securityGroups)
+}
+
+private fun deleteOrganization(organizationName: String, newOperations: CloudFoundryOperations) {
+    val getOrganizationRequest = OrganizationInfoRequest
+        .builder()
+        .name(organizationName)
+        .build()
+
+    val organizationId = newOperations
+        .organizations()
+        .get(getOrganizationRequest)
+        .map(OrganizationDetail::getId)
+        .block()
+
+    val deleteOrganizationRequest = DeleteOrganizationRequest
+        .builder()
+        .organizationId(organizationId)
+        .recursive(true)
+        .build()
+
+    val reactiveCloudFoundryClient = (newOperations as DefaultCloudFoundryOperations)
+        .cloudFoundryClient
+
+    reactiveCloudFoundryClient
+        .organizations()
+        .delete(deleteOrganizationRequest)
+        .block()
+}
+
+private fun deleteSecurityGroups(newOperations: CloudFoundryOperations, securityGroups: List<SecurityGroup>?) {
+    if (securityGroups === null) return
+
+    val reactiveCloudFoundryClient = (newOperations as DefaultCloudFoundryOperations)
+        .cloudFoundryClient
+
+    val securityGroupResources = listSecurityGroupResources(reactiveCloudFoundryClient, securityGroups)
+
+    securityGroupResources.forEach { group ->
+        val securityGroupId = group.metadata.id
+
+        val deleteSecurityGroupRequest = DeleteSecurityGroupRequest
+            .builder()
+            .securityGroupId(securityGroupId)
+            .build()
+
+        reactiveCloudFoundryClient
+            .securityGroups()
+            .delete(deleteSecurityGroupRequest)
+            .block()
+    }
+}
+
+fun listSecurityGroupResources(
+    reactiveCloudFoundryClient: org.cloudfoundry.client.CloudFoundryClient,
+    securityGroups: List<SecurityGroup>
+): List<SecurityGroupResource> {
+    val securityGroupsRequest = ListSecurityGroupsRequest
+        .builder()
+        .names(securityGroups.map(SecurityGroup::name))
+        .build()
+
+    val securityGroupResources = reactiveCloudFoundryClient
+        .securityGroups()
+        .list(securityGroupsRequest)
+        .map(ListSecurityGroupsResponse::getResources)
+        .block()
+    return securityGroupResources
+}
+
+private fun getTargetedOperations(cfOperations: CloudFoundryOperations, organization: String, space: String): CloudFoundryOperations {
     val targetedOperations = cloudFoundryOperationsBuilder()
         .fromExistingOperations(cfOperations)
         .apply {
@@ -106,67 +185,7 @@ fun cleanupCf(tc: TestContext?, organization: String, space: String) {
             this.space = space
             this.skipSslValidation = true
         }.build()
-
-    deleteApplications(targetedOperations)
-
-    deleteRoutes(targetedOperations)
-
-    deleteServices(cfClient, targetedOperations)
-
-    deleteSpace(space, targetedOperations)
-
-    deleteOrganization(organization, targetedOperations)
-}
-
-private fun deleteApplications(targetedOperations: CloudFoundryOperations) {
-    val appNames: List<String> = targetedOperations
-        .applications()
-        .list()
-        .map(ApplicationSummary::getName)
-        .toIterable()
-        .toList()
-
-    appNames.forEach { appName ->
-        val deleteApplicationRequest = DeleteApplicationRequest
-            .builder()
-            .name(appName)
-            .deleteRoutes(true)
-            .build()
-        targetedOperations.applications().delete(deleteApplicationRequest).block()
-    }
-}
-
-private fun deleteRoutes(targetedOperations: CloudFoundryOperations) {
-    val deleteRouteRequest = DeleteOrphanedRoutesRequest
-        .builder()
-        .build()
-    targetedOperations.routes().deleteOrphanedRoutes(deleteRouteRequest).block()
-}
-
-private fun deleteServices(cfClient: CloudFoundryClient, newOperations: CloudFoundryOperations) {
-    cfClient.listServices().forEach { serviceName ->
-        val deleteServiceInstanceRequest = DeleteServiceInstanceRequest
-            .builder()
-            .name(serviceName)
-            .build()
-        newOperations.services().deleteInstance(deleteServiceInstanceRequest).block()
-    }
-}
-
-private fun deleteSpace(space: String, newOperations: CloudFoundryOperations) {
-    val deleteSpaceRequest = DeleteSpaceRequest
-        .builder()
-        .name(space)
-        .build()
-    newOperations.spaces().delete(deleteSpaceRequest).block()
-}
-
-private fun deleteOrganization(organization: String, newOperations: CloudFoundryOperations) {
-    val deleteOrganizationRequest = DeleteOrganizationRequest
-        .builder()
-        .name(organization)
-        .build()
-    newOperations.organizations().delete(deleteOrganizationRequest).block()
+    return targetedOperations
 }
 
 fun writeConfigFile(
@@ -179,10 +198,11 @@ fun writeConfigFile(
     userProvidedServices: List<UserProvidedServiceConfig>,
     services: List<ServiceConfig>,
     migrations: List<Migration>?,
+    securityGroups: List<SecurityGroup>?,
     skipSslValidation: Boolean
 ): String {
     val cf = CfConfig(apiHost, username, password, organization, space, skipSslValidation)
-    val config = Config(PushApps(), cf, apps, services, userProvidedServices, migrations)
+    val config = Config(PushApps(), cf, apps, services, userProvidedServices, migrations, securityGroups)
 
     val objectMapper = ObjectMapper(YAMLFactory()).registerModule(KotlinModule())
 

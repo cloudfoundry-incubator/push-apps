@@ -2,16 +2,20 @@ package pushapps
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.concurrent.CompletableFuture
 
 val logger: Logger = LoggerFactory.getLogger("Push Apps")
 
 fun main(args: Array<String>) {
     val configPath = ArgumentParser.parseConfigPath(args)
-    val (pushApps, cf, apps, services, userProvidedServices, migrations) = ConfigReader.parseConfig(configPath)
-
+    val (pushApps, cf, apps, services, userProvidedServices, migrations, securityGroups) = ConfigReader.parseConfig(configPath)
 
     //TODO capture errors and print
     val cloudFoundryClient = targetCf(cf)
+
+    if (securityGroups !== null) {
+        createSecurityGroups(cloudFoundryClient, cf, securityGroups)
+    }
 
     var availableServices: List<String> = emptyList()
     if (services !== null) {
@@ -30,6 +34,15 @@ fun main(args: Array<String>) {
     deployApps(apps, availableServices, pushApps.appDeployRetryCount, cloudFoundryClient)
 
     logger.info("SUCCESS")
+}
+
+private fun createSecurityGroups(cloudFoundryClient: CloudFoundryClient, cf: CfConfig, securityGroups: List<SecurityGroup>) {
+    //TODO get failure output in a sane way
+    val spaceId = cloudFoundryClient.getSpaceId(cf.space)
+    val securityGroupFutures: List<CompletableFuture<Void>> = securityGroups.map { group ->
+        cloudFoundryClient.createSecurityGroup(group, spaceId).toFuture()
+    }
+    CompletableFuture.allOf(*securityGroupFutures.toTypedArray()).get()
 }
 
 private fun targetCf(cf: CfConfig): CloudFoundryClient {

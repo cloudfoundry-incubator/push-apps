@@ -3,6 +3,8 @@ package unit
 import com.nhaarman.mockito_kotlin.*
 import io.damo.aspen.Test
 import org.assertj.core.api.Assertions.assertThat
+import org.cloudfoundry.client.v2.securitygroups.Protocol
+import org.cloudfoundry.client.v2.securitygroups.SecurityGroups
 import org.cloudfoundry.operations.CloudFoundryOperations
 import org.cloudfoundry.operations.DefaultCloudFoundryOperations
 import org.cloudfoundry.operations.applications.Applications
@@ -12,6 +14,7 @@ import org.cloudfoundry.operations.routes.Routes
 import org.cloudfoundry.operations.services.ServiceInstanceSummary
 import org.cloudfoundry.operations.services.ServiceInstanceType
 import org.cloudfoundry.operations.services.Services
+import org.cloudfoundry.operations.spaces.SpaceDetail
 import org.cloudfoundry.operations.spaces.SpaceSummary
 import org.cloudfoundry.operations.spaces.Spaces
 import pushapps.*
@@ -26,7 +29,8 @@ class CloudFoundryClientTest : Test({
         val mockOrganizations: Organizations,
         val mockSpaces: Spaces,
         val mockRoutes: Routes,
-        val mockCfOperations: CloudFoundryOperations
+        val mockCfOperations: CloudFoundryOperations,
+        val mockSecurityGroups: SecurityGroups
     )
 
     fun buildTestContext(): TestContext {
@@ -35,13 +39,18 @@ class CloudFoundryClientTest : Test({
         val mockOrganizations = mock<Organizations>()
         val mockSpaces = mock<Spaces>()
         val mockRoutes = mock<Routes>()
+        val mockSecurityGroups = mock<SecurityGroups>()
 
+        val mockCfClient = mock<org.cloudfoundry.client.CloudFoundryClient>()
         val mockCfOperations = mock<DefaultCloudFoundryOperations>()
         whenever(mockCfOperations.applications()).thenReturn(mockApplications)
         whenever(mockCfOperations.services()).thenReturn(mockServices)
         whenever(mockCfOperations.organizations()).thenReturn(mockOrganizations)
         whenever(mockCfOperations.spaces()).thenReturn(mockSpaces)
         whenever(mockCfOperations.routes()).thenReturn(mockRoutes)
+        whenever(mockCfOperations.cloudFoundryClient).thenReturn(mockCfClient)
+
+        whenever(mockCfClient.securityGroups()).thenReturn(mockSecurityGroups)
 
         val config = CfConfig(
             apiHost = "api.host",
@@ -63,7 +72,8 @@ class CloudFoundryClientTest : Test({
             mockServices = mockServices,
             mockOrganizations = mockOrganizations,
             mockSpaces = mockSpaces,
-            mockRoutes = mockRoutes
+            mockRoutes = mockRoutes,
+            mockSecurityGroups = mockSecurityGroups
         )
     }
 
@@ -217,7 +227,6 @@ class CloudFoundryClientTest : Test({
 
     describe("#bindServicesToApplication") {
         test("binds each service to the app") {
-
             val tc = buildTestContext()
 
             tc.cloudFoundryClient.bindServicesToApplication("some-app", listOf("some-service", "some-other-service"))
@@ -234,30 +243,32 @@ class CloudFoundryClientTest : Test({
     }
 
     describe("#mapRoute") {
-        val tc = buildTestContext()
-        val appConfig = AppConfig(
-            name = "Foo bar",
-            path = "/tmp/foo/bar",
-            environment = mapOf(),
-            domain = "tree",
-            route = Route(
-                hostname = "lemons",
-                path = "citrus"
+        test("it maps the routes") {
+            val tc = buildTestContext()
+            val appConfig = AppConfig(
+                name = "Foo bar",
+                path = "/tmp/foo/bar",
+                environment = mapOf(),
+                domain = "tree",
+                route = Route(
+                    hostname = "lemons",
+                    path = "citrus"
+                )
             )
-        )
 
-        whenever(tc.mockRoutes.map(any())).thenReturn(Mono.empty())
+            whenever(tc.mockRoutes.map(any())).thenReturn(Mono.empty())
 
-        tc.cloudFoundryClient.mapRoute(appConfig)
+            tc.cloudFoundryClient.mapRoute(appConfig)
 
-        verify(tc.mockRoutes, times(1)).map(
-            argForWhich {
-                applicationName == appConfig.name &&
-                    domain == appConfig.domain &&
-                    host == appConfig.route!!.hostname &&
-                    path == appConfig.route!!.path
-            }
-        )
+            verify(tc.mockRoutes, times(1)).map(
+                argForWhich {
+                    applicationName == appConfig.name &&
+                        domain == appConfig.domain &&
+                        host == appConfig.route!!.hostname &&
+                        path == appConfig.route!!.path
+                }
+            )
+        }
     }
 
     describe("#unmapRoute") {
@@ -283,6 +294,29 @@ class CloudFoundryClientTest : Test({
                     domain == appConfig.domain &&
                     host == appConfig.route!!.hostname &&
                     path == appConfig.route!!.path
+            }
+        )
+    }
+
+    describe("#createSecurityGroup") {
+        val tc = buildTestContext()
+        val securityConfig = SecurityGroup(
+            name = "Foo bar",
+            destination = "destination somewhere",
+            protocol = "all"
+        )
+
+        whenever(tc.mockSecurityGroups.create(any())).thenReturn(Mono.empty())
+
+        tc.cloudFoundryClient.createSecurityGroup(securityConfig, "some-space")
+
+        verify(tc.mockSecurityGroups, times(1)).create(
+            argForWhich {
+                spaceIds.size == 1 &&
+                    spaceIds[0] == "some-space" &&
+                    rules.size == 1 &&
+                    rules[0].destination == "destination somewhere" &&
+                    rules[0].protocol == Protocol.ALL
             }
         )
     }
@@ -336,5 +370,28 @@ class CloudFoundryClientTest : Test({
 
         val serviceResults = tc.cloudFoundryClient.listServices()
         assertThat(serviceResults).isEqualTo(listOf("some-name"))
+    }
+
+    describe("#getSpace") {
+        test("it uses cloud foundry operations to get the space") {
+            val tc = buildTestContext()
+
+            val spaceDetail = SpaceDetail
+                .builder()
+                .id("pamplemousse")
+                .name("")
+                .organization("")
+                .build()
+
+            whenever(tc.mockSpaces.get(any())).thenReturn(Mono.just(spaceDetail))
+
+            val spaceId = tc.cloudFoundryClient.getSpaceId("some-space")
+            verify(tc.mockSpaces, times(1)).get(
+                argForWhich {
+                    name == "some-space"
+                }
+            )
+            assertThat(spaceId).isEqualTo("pamplemousse")
+        }
     }
 })
