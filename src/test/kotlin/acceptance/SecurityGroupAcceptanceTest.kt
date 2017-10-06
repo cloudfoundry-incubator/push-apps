@@ -44,5 +44,28 @@ class SecurityGroupAcceptanceTest : Test({
                 }
             }
         }
+
+        test("it does not fail if the security group already exists") {
+            tc.cfClient.createAndTargetOrganization(tc.organization)
+            tc.cfClient.createAndTargetSpace("test")
+
+            val spaceId = tc.cfClient.getSpaceId("test")
+            tc.cfClient.createSecurityGroup(securityGroup, spaceId).block()
+
+            val exitCode = runPushApps(tc.configFilePath)
+            Assertions.assertThat(exitCode).isEqualTo(0)
+
+            val reactiveCfClient = (tc.cfOperations as DefaultCloudFoundryOperations).cloudFoundryClient
+            val cfSecurityGroups = listSecurityGroupResources(reactiveCfClient, tc.securityGroups!!)
+
+            Assertions.assertThat(cfSecurityGroups).anySatisfy { group ->
+                assertThat(group.entity.name).isEqualTo(securityGroup.name)
+
+                assertThat(group.entity.rules).hasOnlyOneElementSatisfying { rule ->
+                    assertThat(rule.protocol).isEqualTo(Protocol.ALL)
+                    assertThat(rule.destination).isEqualTo(securityGroup.destination)
+                }
+            }
+        }
     }
 })
