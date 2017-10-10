@@ -1,7 +1,37 @@
+pushApps:
+  appDeployRetryCount: 2
 cf:
   apiHost: "api.example.com"
   password: secret
   username: user
   organization: some-organization
   space: some-space
-apps: []
+apps: 
+- name: some-app-name
+  path: "<dirname>/some-app.zip"
+  buildpack: binary_buildpack
+  healthCheckType: none
+  instances: < app instance count: 1 >
+  memory: < app memory: 1G >
+  noRoute: true
+  blueGreenDeploy: true
+  command: < command to run: ./some-app/bin/run >
+  domain: < cfapps.io >
+  timeout: 180
+  route:
+    hostname: < some-app >
+  environment:
+    NODE_ENV: production
+    CLIENT_PASSWORD: abc123
+migrations:
+- driver: mysql
+  user: some-mysql-user
+  password: some-password
+  host: < mysql_host >
+  port: < port 3306 >
+  schema: < database name >
+  migrationDir: < /dir-to/flyway/migration/ >
+securityGroups:
+- name: some-security-group
+  destination: "0.0.0.0-255.255.255.255"
+  protocol: all
