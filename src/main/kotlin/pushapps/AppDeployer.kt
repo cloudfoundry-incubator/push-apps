@@ -50,6 +50,7 @@ class AppDeployer(
         val blueAppConfig = appConfig.copy(name = appConfig.name + "-blue")
 
         return generateDeployApplicationFuture(blueAppConfig)
+            .thenCompose { cloudFoundryClient.unmapRoute(appConfig).toFuture() }
             .thenCompose { generateDeployApplicationFuture(appConfig) }
             .thenCompose { cloudFoundryClient.unmapRoute(blueAppConfig).toFuture() }
             .thenCompose { cloudFoundryClient.stopApplication(blueAppConfig.name).toFuture() }
