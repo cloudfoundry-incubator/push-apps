@@ -1,4 +1,4 @@
-package pushapps
+package io.pivotal.pushapps
 
 import reactor.core.publisher.Flux
 import reactor.core.publisher.FluxSink
@@ -17,8 +17,7 @@ class AppDeployer(
                 deployApplicationWithRetries(appConfig, sink, 1)
             }
 
-            CompletableFuture.allOf(*applicationDeployments
-                .toTypedArray())
+            CompletableFuture.allOf(*applicationDeployments.toTypedArray())
                 .thenApply { sink.complete() }
         }
 

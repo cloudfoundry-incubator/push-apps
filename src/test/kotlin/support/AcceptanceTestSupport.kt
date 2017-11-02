@@ -3,6 +3,7 @@ package support
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import io.pivotal.pushapps.*
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -16,7 +17,6 @@ import org.cloudfoundry.operations.CloudFoundryOperations
 import org.cloudfoundry.operations.DefaultCloudFoundryOperations
 import org.cloudfoundry.operations.organizations.OrganizationDetail
 import org.cloudfoundry.operations.organizations.OrganizationInfoRequest
-import pushapps.*
 import java.io.File
 import java.io.InputStream
 import java.util.*
@@ -205,7 +205,7 @@ fun writeConfigFile(
     skipSslValidation: Boolean
 ): String {
     val cf = CfConfig(apiHost, username, password, organization, space, skipSslValidation)
-    val config = Config(PushApps(), cf, apps, services, userProvidedServices, migrations, securityGroups)
+    val config = Config(PushAppsConfig(), cf, apps, services, userProvidedServices, migrations, securityGroups)
 
     val objectMapper = ObjectMapper(YAMLFactory()).registerModule(KotlinModule())
 
@@ -225,8 +225,7 @@ fun runPushApps(configFilePath: String, debug: Boolean = false): Int {
 
     if (debug) pushAppsCommand.addAll(
         listOf(
-            "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005",
-            "-Dorg.slf4j.simpleLogger.defaultLogLevel=debug"
+            "-agentlib:jdwp=transport=dt_socket,server=n,address=127.0.0.1:5005,suspend=y"
         )
     )
 
@@ -238,10 +237,13 @@ fun runPushApps(configFilePath: String, debug: Boolean = false): Int {
         )
     )
 
-    val pushAppsProcess = ProcessBuilder(
+    val pushAppsProcessBuilder = ProcessBuilder(
         pushAppsCommand
-    ).inheritIO().start()
+    ).inheritIO()
 
+    if (debug) pushAppsProcessBuilder.environment().put("LOG_LEVEL", "debug")
+
+    val pushAppsProcess = pushAppsProcessBuilder.start()
     pushAppsProcess.waitFor(2, TimeUnit.MINUTES)
 
     if (pushAppsProcess.isAlive) {

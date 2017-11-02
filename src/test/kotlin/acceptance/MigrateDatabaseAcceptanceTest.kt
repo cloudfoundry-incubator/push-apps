@@ -3,7 +3,7 @@ package acceptance
 import io.damo.aspen.Test
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
-import pushapps.Migration
+import io.pivotal.pushapps.Migration
 import support.*
 
 class MigrateDatabaseAcceptanceTest : Test({

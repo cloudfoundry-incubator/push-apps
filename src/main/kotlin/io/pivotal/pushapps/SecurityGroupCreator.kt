@@ -1,4 +1,4 @@
-package pushapps
+package io.pivotal.pushapps
 
 import org.cloudfoundry.client.v2.ClientV2Exception
 import reactor.core.publisher.Flux

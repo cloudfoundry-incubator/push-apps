@@ -1,4 +1,4 @@
-package pushapps
+package io.pivotal.pushapps
 
 import org.cloudfoundry.operations.CloudFoundryOperations
 import org.cloudfoundry.operations.DefaultCloudFoundryOperations

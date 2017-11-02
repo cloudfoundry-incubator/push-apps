@@ -1,4 +1,4 @@
-package pushapps
+package io.pivotal.pushapps
 
 import org.cloudfoundry.operations.CloudFoundryOperations
 import org.cloudfoundry.operations.applications.ApplicationHealthCheck
@@ -15,6 +15,7 @@ class PushApplication(
             .builder()
             .name(appConfig.name)
             .path(File(appConfig.path).toPath())
+            .noRoute(appConfig.noRoute)
             .noStart(true)
 
         builder = setOptionalBuilderParams(builder)

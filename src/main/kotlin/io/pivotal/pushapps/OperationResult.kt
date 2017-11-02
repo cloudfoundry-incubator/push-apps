@@ -1,4 +1,4 @@
-package pushapps
+package io.pivotal.pushapps
 
 import java.util.concurrent.CompletableFuture
 

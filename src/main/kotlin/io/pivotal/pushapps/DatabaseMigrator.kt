@@ -1,4 +1,4 @@
-package pushapps
+package io.pivotal.pushapps
 
 import org.flywaydb.core.Flyway
 import reactor.core.publisher.Flux

@@ -1,4 +1,4 @@
-package pushapps
+package io.pivotal.pushapps
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
@@ -16,7 +16,7 @@ class ConfigReader {
 }
 
 data class Config(
-    val pushApps: PushApps,
+    val pushApps: PushAppsConfig,
     val cf: CfConfig,
     val apps: List<AppConfig>,
     val services: List<ServiceConfig>? = emptyList(),
@@ -25,7 +25,7 @@ data class Config(
     val securityGroups: List<SecurityGroup>? = emptyList()
 )
 
-data class PushApps(
+data class PushAppsConfig(
     val appDeployRetryCount: Int = 1
 )
 

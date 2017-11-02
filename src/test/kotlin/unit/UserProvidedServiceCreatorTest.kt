@@ -3,10 +3,10 @@ package unit
 import com.nhaarman.mockito_kotlin.*
 import io.damo.aspen.Test
 import org.assertj.core.api.Assertions.assertThat
-import pushapps.CloudFoundryClient
-import pushapps.OperationResult
-import pushapps.UserProvidedServiceConfig
-import pushapps.UserProvidedServiceCreator
+import io.pivotal.pushapps.CloudFoundryClient
+import io.pivotal.pushapps.OperationResult
+import io.pivotal.pushapps.UserProvidedServiceConfig
+import io.pivotal.pushapps.UserProvidedServiceCreator
 import reactor.core.publisher.Mono
 
 class UserProvidedServiceCreatorTest : Test({

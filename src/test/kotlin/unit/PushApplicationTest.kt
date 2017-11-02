@@ -5,8 +5,8 @@ import io.damo.aspen.Test
 import org.cloudfoundry.operations.CloudFoundryOperations
 import org.cloudfoundry.operations.applications.ApplicationHealthCheck
 import org.cloudfoundry.operations.applications.Applications
-import pushapps.AppConfig
-import pushapps.PushApplication
+import io.pivotal.pushapps.AppConfig
+import io.pivotal.pushapps.PushApplication
 import reactor.core.publisher.Mono
 
 

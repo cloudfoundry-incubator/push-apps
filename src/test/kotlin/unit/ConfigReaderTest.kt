@@ -2,11 +2,11 @@ package unit
 
 import io.damo.aspen.Test
 import org.assertj.core.api.Assertions.assertThat
-import pushapps.ConfigReader
+import io.pivotal.pushapps.ConfigReader
 
 class ConfigReaderTest: Test({
     describe("#parseConfig") {
-        test("Parses the pushApps config") {
+        test("Parses the pushAppsConfig config") {
             val pushAppsConfig = ConfigReader.parseConfig("src/test/kotlin/support/exampleConfig.yml")
             assertThat(pushAppsConfig.pushApps.appDeployRetryCount).isEqualTo(3)
         }

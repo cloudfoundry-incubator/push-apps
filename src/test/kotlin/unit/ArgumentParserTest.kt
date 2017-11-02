@@ -2,7 +2,7 @@ package unit
 
 import io.damo.aspen.Test
 import org.assertj.core.api.Assertions.*
-import pushapps.ArgumentParser
+import io.pivotal.pushapps.ArgumentParser
 
 class ArgumentParserTest : Test({
     describe("#parseConfigPath") {

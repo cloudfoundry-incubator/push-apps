@@ -5,7 +5,7 @@ import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.cloudfoundry.client.v2.securitygroups.Protocol
 import org.cloudfoundry.operations.DefaultCloudFoundryOperations
-import pushapps.SecurityGroup
+import io.pivotal.pushapps.SecurityGroup
 import support.buildTestContext
 import support.cleanupCf
 import support.listSecurityGroupResources

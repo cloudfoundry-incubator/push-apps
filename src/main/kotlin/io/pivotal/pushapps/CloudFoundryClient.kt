@@ -1,9 +1,9 @@
-package pushapps
+package io.pivotal.pushapps
 
+import org.apache.logging.log4j.LogManager
 import org.cloudfoundry.client.v2.securitygroups.CreateSecurityGroupRequest
 import org.cloudfoundry.client.v2.securitygroups.Protocol
 import org.cloudfoundry.client.v2.securitygroups.RuleEntity
-import org.cloudfoundry.client.v2.securitygroups.SecurityGroupResource
 import org.cloudfoundry.operations.CloudFoundryOperations
 import org.cloudfoundry.operations.DefaultCloudFoundryOperations
 import org.cloudfoundry.operations.applications.SetEnvironmentVariableApplicationRequest
@@ -19,6 +19,7 @@ import org.cloudfoundry.operations.spaces.GetSpaceRequest
 import org.cloudfoundry.operations.spaces.SpaceDetail
 import org.cloudfoundry.operations.spaces.SpaceSummary
 import reactor.core.publisher.Mono
+import java.time.Duration
 
 class CloudFoundryClient(
     private val cfConfig: CfConfig,
@@ -33,6 +34,7 @@ class CloudFoundryClient(
         }
         .build()
 ) {
+    private val logger = LogManager.getLogger(CloudFoundryClient::class.java)
 
     fun createService(serviceConfig: ServiceConfig): Mono<Void> {
         val createServiceRequest = CreateServiceInstanceRequest
@@ -77,7 +79,11 @@ class CloudFoundryClient(
     }
 
     fun startApplication(appName: String): Mono<Void> {
-        val startApplicationRequest = StartApplicationRequest.builder().name(appName).build()
+        val startApplicationRequest = StartApplicationRequest
+            .builder()
+            .name(appName)
+            .stagingTimeout(Duration.ofMinutes(10))
+            .build()
         return cloudFoundryOperations.applications().start(startApplicationRequest)
     }
 
@@ -148,11 +154,11 @@ class CloudFoundryClient(
             .domain(appConfig.domain)
             .host(appConfig.route.hostname)
 
-            if (appConfig.route.path !== null) {
-                mapRouteRequestBuilder.path(appConfig.route.path)
-            }
+        if (appConfig.route.path !== null) {
+            mapRouteRequestBuilder.path(appConfig.route.path)
+        }
 
-            val mapRouteRequest = mapRouteRequestBuilder.build()
+        val mapRouteRequest = mapRouteRequestBuilder.build()
 
         return cloudFoundryOperations.routes().map(mapRouteRequest).ofType(Void.TYPE)
     }

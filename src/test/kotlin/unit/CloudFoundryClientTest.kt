@@ -2,6 +2,7 @@ package unit
 
 import com.nhaarman.mockito_kotlin.*
 import io.damo.aspen.Test
+import io.pivotal.pushapps.*
 import org.assertj.core.api.Assertions.assertThat
 import org.cloudfoundry.client.v2.securitygroups.Protocol
 import org.cloudfoundry.client.v2.securitygroups.SecurityGroups
@@ -17,7 +18,6 @@ import org.cloudfoundry.operations.services.Services
 import org.cloudfoundry.operations.spaces.SpaceDetail
 import org.cloudfoundry.operations.spaces.SpaceSummary
 import org.cloudfoundry.operations.spaces.Spaces
-import pushapps.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 

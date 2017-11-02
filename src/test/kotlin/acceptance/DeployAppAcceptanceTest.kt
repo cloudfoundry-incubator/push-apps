@@ -1,11 +1,11 @@
 package acceptance
 
 import io.damo.aspen.Test
+import io.pivotal.pushapps.*
 import org.assertj.core.api.Assertions.assertThat
 import org.cloudfoundry.operations.applications.GetApplicationRequest
 import org.cloudfoundry.operations.routes.Level
 import org.cloudfoundry.operations.routes.ListRoutesRequest
-import pushapps.*
 import support.*
 
 class DeployAppAcceptanceTest : Test({
