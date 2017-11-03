@@ -1,17 +1,18 @@
 package unit
 
 import com.nhaarman.mockito_kotlin.*
-import io.damo.aspen.Test
+import io.pivotal.pushapps.AppConfig
+import io.pivotal.pushapps.PushApplication
 import org.cloudfoundry.operations.CloudFoundryOperations
 import org.cloudfoundry.operations.applications.ApplicationHealthCheck
 import org.cloudfoundry.operations.applications.Applications
-import io.pivotal.pushapps.AppConfig
-import io.pivotal.pushapps.PushApplication
+import org.jetbrains.spek.api.Spek
+import org.jetbrains.spek.api.dsl.describe
+import org.jetbrains.spek.api.dsl.it
 import reactor.core.publisher.Mono
 
 
-
-class PushApplicationTest : Test({
+class PushApplicationTest : Spek({
     data class TestContext(
         val pushApplication: PushApplication,
         val mockApplications: Applications
@@ -36,7 +37,7 @@ class PushApplicationTest : Test({
         //TODO test other things than optional config vars
 
         describe("optional app config variables") {
-            test("sets buildpack variable if present in config") {
+            it("sets buildpack variable if present in config") {
                 val appConfig = AppConfig(
                     name = "Foo bar",
                     path = "/tmp/foo/bar",
@@ -51,7 +52,7 @@ class PushApplicationTest : Test({
                 )
             }
 
-            test("sets command variable if present in config") {
+            it("sets command variable if present in config") {
                 val appConfig = AppConfig(
                     name = "Foo bar",
                     path = "/tmp/foo/bar",
@@ -66,7 +67,7 @@ class PushApplicationTest : Test({
                 )
             }
 
-            test("sets instances variable if present in config") {
+            it("sets instances variable if present in config") {
                 val appConfig = AppConfig(
                     name = "Foo bar",
                     path = "/tmp/foo/bar",
@@ -81,7 +82,7 @@ class PushApplicationTest : Test({
                 )
             }
 
-            test("sets disk quota variable if present in config") {
+            it("sets disk quota variable if present in config") {
                 val appConfig = AppConfig(
                     name = "Foo bar",
                     path = "/tmp/foo/bar",
@@ -96,7 +97,7 @@ class PushApplicationTest : Test({
                 )
             }
 
-            test("sets memory variable if present in config") {
+            it("sets memory variable if present in config") {
                 val appConfig = AppConfig(
                     name = "Foo bar",
                     path = "/tmp/foo/bar",
@@ -111,7 +112,7 @@ class PushApplicationTest : Test({
                 )
             }
 
-            test("sets noHostname variable if present in config") {
+            it("sets noHostname variable if present in config") {
                 val appConfig = AppConfig(
                     name = "Foo bar",
                     path = "/tmp/foo/bar",
@@ -126,7 +127,7 @@ class PushApplicationTest : Test({
                 )
             }
 
-            test("sets noRoute variable if present in config") {
+            it("sets noRoute variable if present in config") {
                 val appConfig = AppConfig(
                     name = "Foo bar",
                     path = "/tmp/foo/bar",
@@ -141,7 +142,7 @@ class PushApplicationTest : Test({
                 )
             }
 
-            test("sets timeout variable if present in config") {
+            it("sets timeout variable if present in config") {
                 val appConfig = AppConfig(
                     name = "Foo bar",
                     path = "/tmp/foo/bar",
@@ -156,7 +157,7 @@ class PushApplicationTest : Test({
                 )
             }
 
-            test("sets domain variable if present in config") {
+            it("sets domain variable if present in config") {
                 val appConfig = AppConfig(
                     name = "Foo bar",
                     path = "/tmp/foo/bar",
@@ -171,7 +172,7 @@ class PushApplicationTest : Test({
                 )
             }
 
-            test("sets healthcheck type if present in config") {
+            it("sets healthcheck type if present in config") {
                 val appConfig = AppConfig(
                     name = "Foo bar",
                     path = "/tmp/foo/bar",

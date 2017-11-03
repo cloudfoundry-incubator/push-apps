@@ -6,6 +6,7 @@ import org.cloudfoundry.client.v2.securitygroups.Protocol
 import org.cloudfoundry.client.v2.securitygroups.RuleEntity
 import org.cloudfoundry.operations.CloudFoundryOperations
 import org.cloudfoundry.operations.DefaultCloudFoundryOperations
+import org.cloudfoundry.operations.applications.ApplicationSummary
 import org.cloudfoundry.operations.applications.SetEnvironmentVariableApplicationRequest
 import org.cloudfoundry.operations.applications.StartApplicationRequest
 import org.cloudfoundry.operations.applications.StopApplicationRequest
@@ -22,17 +23,9 @@ import reactor.core.publisher.Mono
 import java.time.Duration
 
 class CloudFoundryClient(
-    private val cfConfig: CfConfig,
+    private var cloudFoundryOperations: CloudFoundryOperations,
+    private val cloudFoundryOperationsBuilder: CloudFoundryOperationsBuilder
 
-    private var cloudFoundryOperations: CloudFoundryOperations = cloudFoundryOperationsBuilder()
-        .apply {
-            this.apiHost = cfConfig.apiHost
-            this.username = cfConfig.username
-            this.password = cfConfig.password
-            this.skipSslValidation = cfConfig.skipSslValidation
-            this.dialTimeoutInMillis = cfConfig.dialTimeoutInMillis
-        }
-        .build()
 ) {
     private val logger = LogManager.getLogger(CloudFoundryClient::class.java)
 
@@ -223,7 +216,7 @@ class CloudFoundryClient(
     }
 
     private fun targetOrganization(organizationName: String): CloudFoundryClient {
-        cloudFoundryOperations = cloudFoundryOperationsBuilder()
+        cloudFoundryOperations = cloudFoundryOperationsBuilder
             .fromExistingOperations(cloudFoundryOperations)
             .apply {
                 this.organization = organizationName
@@ -255,7 +248,7 @@ class CloudFoundryClient(
     }
 
     private fun targetSpace(space: String): CloudFoundryClient {
-        cloudFoundryOperations = cloudFoundryOperationsBuilder()
+        cloudFoundryOperations = cloudFoundryOperationsBuilder
             .fromExistingOperations(cloudFoundryOperations)
             .apply {
                 this.space = space
@@ -295,6 +288,15 @@ class CloudFoundryClient(
         return serviceInstanceFlux
             .toIterable()
             .toList()
+    }
+
+    fun listApplications(): List<String> {
+        val applicationListFlux = cloudFoundryOperations
+            .applications()
+            .list()
+            .map(ApplicationSummary::getName)
+
+        return applicationListFlux.toIterable().toList()
     }
 
     fun getSpaceId(spaceName: String): String {

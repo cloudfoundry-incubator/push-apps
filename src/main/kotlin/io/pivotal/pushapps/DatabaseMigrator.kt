@@ -1,21 +1,34 @@
 package io.pivotal.pushapps
 
+import org.apache.logging.log4j.LogManager
 import org.flywaydb.core.Flyway
 import reactor.core.publisher.Flux
 import java.sql.Connection
-import java.sql.DriverManager
-import java.util.*
+import java.sql.SQLException
 import java.util.concurrent.CompletableFuture
+import javax.sql.DataSource
 
 class DatabaseMigrator(
-    private val migrations: Array<Migration>
+    private val migrations: Array<Migration>,
+    private val flyway: Flyway,
+    private val dataSourceFactory: DataSourceFactory
 ) {
+    private val logger = LogManager.getLogger(DatabaseMigrator::class.java)
 
     //TODO add retries
     fun migrate(): List<OperationResult> {
         val migrateDatabasesFlux: Flux<OperationResult> = Flux.create { sink ->
             val migrateDatabaseFutures = migrations.map { migration ->
-                val migrateDatabaseFuture = migrateDatabase(migration)
+                val migrateDatabaseFuture = CompletableFuture.runAsync {
+                    val dataSource = dataSourceFactory.buildDataSource(migration)
+
+                    if (dataSource === null) {
+                        logger.error("Unsupported database driver ${migration.driver}")
+                        throw UnsupportedOperationException("Unsupported database driver ${migration.driver}")
+                    }
+
+                    migrateDatabase(dataSource, migration)
+                }
 
                 getOperationResult(migrateDatabaseFuture, migration.schema, false)
                     .thenApply { sink.next(it) }
@@ -29,63 +42,25 @@ class DatabaseMigrator(
         return migrateDatabasesFlux.toIterable().toList()
     }
 
-    fun migrateDatabase(migration: Migration): CompletableFuture<Void> {
-        return CompletableFuture.runAsync {
-            if (migration.driver == "mysql") {
-                migrateMysqlDatabase(migration)
-            }
-
-            runFlyway(migration)
-        }
+    private fun migrateDatabase(dataSource: DataSource, migration: Migration) {
+        createDatabaseIfAbsent(dataSource.connection, migration.schema)
+        runFlyway(dataSource, migration)
     }
 
-    private fun migrateMysqlDatabase(migration: Migration) {
-        val conn = connectToMysql(migration.host, migration.port, migration.user, migration.password)
-        if (conn === null) {
-            throw Exception("Unable to connect to mysql on ${migration.host}:${migration.port}")
-        }
-
-        createDatabase(conn, migration.schema)
-    }
-
-    private fun connectToMysql(mysqlHost: String, mysqlPort: String, mysqlUser: String, mysqlPassword: String): Connection? {
-        val connectionProps = Properties()
-        connectionProps.put("user", mysqlUser)
-        connectionProps.put("password", mysqlPassword)
-        try {
-            Class.forName("com.mysql.jdbc.Driver").newInstance()
-            val conn = DriverManager.getConnection(
-                "jdbc:" + "mysql" + "://" +
-                    mysqlHost +
-                    ":" + mysqlPort + "/" +
-                    "",
-                connectionProps)
-
-            return conn
-        } catch (ex: Exception) {
-            throw Exception("Unable to connect to mysql on $mysqlHost:$mysqlPort due to ${ex.message}")
-        }
-    }
-
-    private fun createDatabase(conn: Connection, dbName: String) {
+    private fun createDatabaseIfAbsent(conn: Connection, dbName: String) {
         try {
             val stmt = conn.createStatement()
 
-            stmt.execute("CREATE DATABASE IF NOT EXISTS " + dbName + ";")
-        } catch (ex: Exception) {
-            throw ex
+            stmt.execute("CREATE DATABASE IF NOT EXISTS $dbName;")
+        } catch (ex: SQLException) {
+            logger.error("Unable to create database $dbName. Caught exception: ${ex.message}")
         }
     }
 
-    private fun runFlyway(migration: Migration) {
-        val flyway = Flyway()
-        val url = "jdbc:${migration.driver}://${migration.host}:${migration.port}/${migration.schema}"
-
-        flyway.setDataSource(url, migration.user, migration.password)
+    private fun runFlyway(dataSource: DataSource, migration: Migration) {
+        flyway.dataSource = dataSource
         flyway.setLocations("filesystem:" + migration.migrationDir)
 
         flyway.migrate()
     }
-
-
 }

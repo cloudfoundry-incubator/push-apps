@@ -46,10 +46,18 @@ class AppDeployer(
     }
 
     private fun generateBlueGreenDeployApplicationFuture(appConfig: AppConfig): CompletableFuture<Void> {
+        val applications = cloudFoundryClient.listApplications()
         val blueAppConfig = appConfig.copy(name = appConfig.name + "-blue")
 
-        return generateDeployApplicationFuture(blueAppConfig)
-            .thenCompose { cloudFoundryClient.unmapRoute(appConfig).toFuture() }
+        var deployApplicationFuture = generateDeployApplicationFuture(blueAppConfig)
+
+        if (applications.contains(appConfig.name)) {
+            deployApplicationFuture = deployApplicationFuture.thenCompose {
+                cloudFoundryClient.unmapRoute(appConfig).toFuture()
+            }
+        }
+
+        return deployApplicationFuture
             .thenCompose { generateDeployApplicationFuture(appConfig) }
             .thenCompose { cloudFoundryClient.unmapRoute(blueAppConfig).toFuture() }
             .thenCompose { cloudFoundryClient.stopApplication(blueAppConfig.name).toFuture() }

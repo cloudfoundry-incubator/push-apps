@@ -1,10 +1,16 @@
 package io.pivotal.pushapps
 
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.databind.DeserializationContext
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import java.io.File
+
 
 val mapper: ObjectMapper = ObjectMapper(YAMLFactory())
     .registerModule(KotlinModule())
@@ -63,7 +69,7 @@ data class Route(
     val path: String? = null
 )
 
-data class ServiceConfig (
+data class ServiceConfig(
     val name: String,
     val plan: String,
     val broker: String,
@@ -75,15 +81,51 @@ data class UserProvidedServiceConfig(
     val credentials: Map<String, Any>
 )
 
+sealed class DatabaseDriver(val driver: String) {
+    class MySql : DatabaseDriver("mysql")
+    class Postgres : DatabaseDriver("postgres")
+}
+
+@JsonDeserialize(using = MigrationDeserializer::class)
 data class Migration(
     val user: String,
     val password: String,
-    val driver: String,
+    val driver: DatabaseDriver,
     val host: String,
     val port: String,
     val schema: String,
     val migrationDir: String
 )
+
+class MigrationDeserializer : StdDeserializer<Migration>(Migration::class.java) {
+    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): Migration {
+        val node = p.codec.readTree<JsonNode>(p)
+
+        val user = node.get("user").asText()
+        val password = node.get("password").asText()
+        val host = node.get("host").asText()
+        val port = node.get("port").asText()
+        val schema = node.get("schema").asText()
+        val migrationDir = node.get("migrationDir").asText()
+
+        val driverString = node.get("driver").asText()
+        val driver = when (driverString) {
+            "mysql" -> DatabaseDriver.MySql()
+            else -> DatabaseDriver.Postgres()
+        }
+
+        return Migration(
+            user,
+            password,
+            driver,
+            host,
+            port,
+            schema,
+            migrationDir
+        )
+    }
+
+}
 
 data class SecurityGroup(
     val name: String,

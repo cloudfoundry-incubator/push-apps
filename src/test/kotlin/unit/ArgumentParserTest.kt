@@ -1,17 +1,20 @@
 package unit
 
-import io.damo.aspen.Test
-import org.assertj.core.api.Assertions.*
 import io.pivotal.pushapps.ArgumentParser
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.jetbrains.spek.api.Spek
+import org.jetbrains.spek.api.dsl.describe
+import org.jetbrains.spek.api.dsl.it
 
-class ArgumentParserTest : Test({
+class ArgumentParserTest : Spek({
     describe("#parseConfigPath") {
-        test("Parses the arguments from command line") {
+        it("Parses the arguments from command line") {
             val configPath = ArgumentParser.parseConfigPath(arrayOf("-c", "example.yml"))
             assertThat(configPath).isEqualTo("example.yml")
         }
 
-        test("Raises an exception if it cannot parse config path") {
+        it("Raises an exception if it cannot parse config path") {
             assertThatThrownBy { ArgumentParser.parseConfigPath(arrayOf("-q", "")) }
                 .hasMessage("Couldn't parseConfigPath command line args")
         }

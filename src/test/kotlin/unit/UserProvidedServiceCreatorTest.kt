@@ -1,15 +1,17 @@
 package unit
 
 import com.nhaarman.mockito_kotlin.*
-import io.damo.aspen.Test
-import org.assertj.core.api.Assertions.assertThat
 import io.pivotal.pushapps.CloudFoundryClient
 import io.pivotal.pushapps.OperationResult
 import io.pivotal.pushapps.UserProvidedServiceConfig
 import io.pivotal.pushapps.UserProvidedServiceCreator
+import org.assertj.core.api.Assertions.assertThat
+import org.jetbrains.spek.api.Spek
+import org.jetbrains.spek.api.dsl.describe
+import org.jetbrains.spek.api.dsl.it
 import reactor.core.publisher.Mono
 
-class UserProvidedServiceCreatorTest : Test({
+class UserProvidedServiceCreatorTest : Spek({
     data class TestContext(
         val serviceCreator: UserProvidedServiceCreator,
         val mockCloudFoundryClient: CloudFoundryClient,
@@ -28,7 +30,7 @@ class UserProvidedServiceCreatorTest : Test({
     }
 
     describe("#createOrUpdateServices") {
-        test("it creates the services and returns a success result") {
+        it("it creates the services and returns a success result") {
             val tc = buildTestContext()
             whenever(tc.mockCloudFoundryClient.listServices()).thenReturn(emptyList())
             whenever(tc.mockCloudFoundryClient.createUserProvidedService(any())).thenReturn(Mono.empty())
@@ -40,7 +42,7 @@ class UserProvidedServiceCreatorTest : Test({
             assertThat(results).containsOnly(OperationResult(tc.serviceConfig.name, didSucceed = true))
         }
 
-        test("it returns a failure result when creating a service fails") {
+        it("it returns a failure result when creating a service fails") {
             val tc = buildTestContext()
             whenever(tc.mockCloudFoundryClient.listServices()).thenReturn(emptyList())
             whenever(tc.mockCloudFoundryClient.createUserProvidedService(any())).thenReturn(
@@ -58,7 +60,7 @@ class UserProvidedServiceCreatorTest : Test({
             assertThat(result.error!!.message).contains("lemons")
         }
 
-        test("it updates services that already exist") {
+        it("it updates services that already exist") {
             val tc = buildTestContext()
             whenever(tc.mockCloudFoundryClient.listServices()).thenReturn(listOf(tc.serviceConfig.name))
             whenever(tc.mockCloudFoundryClient.updateUserProvidedService(any())).thenReturn(Mono.empty())

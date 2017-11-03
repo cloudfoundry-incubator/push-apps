@@ -1,5 +1,7 @@
 package support
 
+import acceptance.getEnvOrDefault
+import acceptance.workingDir
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.SQLException
@@ -84,23 +86,16 @@ fun waitForMysql(mysqlHost: String, mysqlPort: String, mysqlUser: String, mysqlP
 }
 
 fun connectToMysql(mysqlHost: String, mysqlPort: String, mysqlUser: String, mysqlPassword: String): Connection? {
-    var conn: Connection? = null
     val connectionProps = Properties()
     connectionProps.put("user", mysqlUser)
     connectionProps.put("password", mysqlPassword)
-    try {
-        Class.forName("com.mysql.jdbc.Driver").newInstance()
-        conn = DriverManager.getConnection(
-            "jdbc:" + "mysql" + "://" +
-                mysqlHost +
-                ":" + mysqlPort + "/" +
-                "",
-            connectionProps)
-    } catch (ex: Exception) {
-        throw ex
-    }
-
-    return conn
+    Class.forName("com.mysql.jdbc.Driver").newInstance()
+    return DriverManager.getConnection(
+        "jdbc:" + "mysql" + "://" +
+            mysqlHost +
+            ":" + mysqlPort + "/" +
+            "",
+        connectionProps)
 }
 
 fun checkIfDatabaseExists(conn: Connection, dbName: String): Boolean {

@@ -1,9 +1,10 @@
-package support
+package acceptance
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.pivotal.pushapps.*
+import io.pivotal.pushapps.CloudFoundryOperationsBuilder.Companion.cloudFoundryOperationsBuilder
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -19,18 +20,12 @@ import org.cloudfoundry.operations.organizations.OrganizationDetail
 import org.cloudfoundry.operations.organizations.OrganizationInfoRequest
 import java.io.File
 import java.io.InputStream
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.util.*
 import java.util.concurrent.TimeUnit
 
 val workingDir = System.getProperty("user.dir")!!
-
-data class TestContext(
-    val cfOperations: CloudFoundryOperations,
-    val cfClient: CloudFoundryClient,
-    val configFilePath: String,
-    val securityGroups: List<SecurityGroup>?,
-    val organization: String
-)
 
 fun getEnv(name: String): String {
     val env = System.getenv(name)
@@ -50,6 +45,14 @@ fun getEnvOrDefault(name: String, default: String): String {
     return env
 }
 
+data class AcceptanceTestContext(
+    val cfOperations: CloudFoundryOperations,
+    val cfClient: CloudFoundryClient,
+    val configFilePath: String,
+    val securityGroups: List<SecurityGroup>?,
+    val organization: String
+)
+
 fun buildTestContext(
     space: String,
     apps: List<AppConfig> = emptyList(),
@@ -57,7 +60,7 @@ fun buildTestContext(
     userProvidedServices: List<UserProvidedServiceConfig> = emptyList(),
     migrations: List<Migration> = emptyList(),
     securityGroups: List<SecurityGroup> = emptyList()
-): TestContext {
+): AcceptanceTestContext {
     val organization = "pushapps_test_${UUID.randomUUID().toString()}"
 
     val apiHost = getEnv("CF_API")
@@ -88,18 +91,18 @@ fun buildTestContext(
         skipSslValidation = true
     )
 
-    return TestContext(cfOperations, cf, configFilePath, securityGroups, organization)
+    return AcceptanceTestContext(cfOperations, cf, configFilePath, securityGroups, organization)
 }
 
-fun cleanupCf(tc: TestContext?, organization: String, space: String) {
+fun cleanupCf(tc: AcceptanceTestContext?, organization: String?, space: String) {
     if (tc === null) {
         return
     }
 
-    val (cfOperations, cfClient, _) = tc
+    val cfClient = tc.cfClient
 
     val organizations = cfClient.listOrganizations()
-    if (!organizations.contains(organization)) return
+    if (!organizations.contains(organization) || organization === null) return
 
     cfClient.createAndTargetOrganization(organization)
 
@@ -111,6 +114,8 @@ fun cleanupCf(tc: TestContext?, organization: String, space: String) {
     val targetedOperations = getTargetedOperations(tc.cfOperations, organization, space)
     deleteOrganization(organization, targetedOperations)
     deleteSecurityGroups(targetedOperations, tc.securityGroups)
+
+    Files.deleteIfExists(Paths.get(tc.configFilePath))
 }
 
 private fun deleteOrganization(organizationName: String, newOperations: CloudFoundryOperations) {
@@ -244,7 +249,7 @@ fun runPushApps(configFilePath: String, debug: Boolean = false): Int {
     if (debug) pushAppsProcessBuilder.environment().put("LOG_LEVEL", "debug")
 
     val pushAppsProcess = pushAppsProcessBuilder.start()
-    pushAppsProcess.waitFor(2, TimeUnit.MINUTES)
+    pushAppsProcess.waitFor(5, TimeUnit.MINUTES)
 
     if (pushAppsProcess.isAlive) {
         Fail.fail("Process failed to finish within timeout window")
@@ -266,7 +271,16 @@ fun buildCfClient(apiHost: String, username: String, password: String): CloudFou
         space = ""
     )
 
-    return CloudFoundryClient(cfConfig = config)
+    val cloudFoundryOperations = cloudFoundryOperationsBuilder()
+        .apply {
+            this.apiHost = config.apiHost
+            this.username = config.username
+            this.password = config.password
+            this.skipSslValidation = config.skipSslValidation
+            this.dialTimeoutInMillis = config.dialTimeoutInMillis
+        }.build()
+
+    return CloudFoundryClient(cloudFoundryOperations, cloudFoundryOperationsBuilder())
 }
 
 val client = OkHttpClient()

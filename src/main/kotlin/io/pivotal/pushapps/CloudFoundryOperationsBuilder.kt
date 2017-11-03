@@ -11,9 +11,7 @@ import org.cloudfoundry.reactor.tokenprovider.PasswordGrantTokenProvider
 import org.cloudfoundry.reactor.uaa.ReactorUaaClient
 import java.time.Duration
 
-fun cloudFoundryOperationsBuilder(): CloudFoundryOperationsBuilder {
-    return CloudFoundryOperationsBuilder()
-}
+
 
 class CloudFoundryOperationsBuilder {
     var apiHost: String? = null
@@ -24,6 +22,13 @@ class CloudFoundryOperationsBuilder {
     var skipSslValidation: Boolean = false
     var existingCloudFoundryOperations: CloudFoundryOperations? = null
     var dialTimeoutInMillis: Long? = null
+
+    companion object {
+        @JvmStatic
+        fun cloudFoundryOperationsBuilder(): CloudFoundryOperationsBuilder {
+            return CloudFoundryOperationsBuilder()
+        }
+    }
 
     fun build(): CloudFoundryOperations {
         if (existingCloudFoundryOperations !== null) {

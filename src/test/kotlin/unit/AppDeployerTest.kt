@@ -1,14 +1,16 @@
 package unit
 
 import com.nhaarman.mockito_kotlin.*
-import io.damo.aspen.Test
 import io.pivotal.pushapps.AppConfig
 import io.pivotal.pushapps.AppDeployer
 import io.pivotal.pushapps.CloudFoundryClient
 import io.pivotal.pushapps.Route
+import org.jetbrains.spek.api.Spek
+import org.jetbrains.spek.api.dsl.describe
+import org.jetbrains.spek.api.dsl.it
 import reactor.core.publisher.Mono
 
-class AppDeployerTest : Test({
+class AppDeployerTest : Spek({
     data class TestContext(
         val appDeployer: AppDeployer,
         val mockCfClient: CloudFoundryClient
@@ -29,7 +31,7 @@ class AppDeployerTest : Test({
 
 
     describe("#deployApps") {
-        test("Deploys the apps") {
+        it("Deploys the apps") {
             val appConfig = AppConfig(
                 name = "Foo bar",
                 path = "/tmp/foo/bar",
@@ -55,7 +57,7 @@ class AppDeployerTest : Test({
             verify(tc.mockCfClient, times(1)).mapRoute(appConfig)
         }
 
-        test("Deploys the app despite unavailable services") {
+        it("Deploys the app despite unavailable services") {
             val appConfig = AppConfig(
                 name = "Foo bar",
                 path = "/tmp/foo/bar",
@@ -84,7 +86,7 @@ class AppDeployerTest : Test({
 
         //TODO single failure
 
-        test("Retries Deploying Failed App") {
+        it("Retries Deploying Failed App") {
             val appConfig = AppConfig(
                 name = "Foo bar",
                 path = "/tmp/foo/bar",

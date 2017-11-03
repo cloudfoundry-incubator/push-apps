@@ -1,17 +1,20 @@
 package unit
 
-import io.damo.aspen.Test
-import org.assertj.core.api.Assertions.assertThat
 import io.pivotal.pushapps.ConfigReader
+import io.pivotal.pushapps.DatabaseDriver
+import org.assertj.core.api.Assertions.assertThat
+import org.jetbrains.spek.api.Spek
+import org.jetbrains.spek.api.dsl.describe
+import org.jetbrains.spek.api.dsl.it
 
-class ConfigReaderTest: Test({
+class ConfigReaderTest : Spek({
     describe("#parseConfig") {
-        test("Parses the pushAppsConfig config") {
+        it("Parses the pushAppsConfig config") {
             val pushAppsConfig = ConfigReader.parseConfig("src/test/kotlin/support/exampleConfig.yml")
             assertThat(pushAppsConfig.pushApps.appDeployRetryCount).isEqualTo(3)
         }
 
-        test("Parses the cf config") {
+        it("Parses the cf config") {
             val pushAppsConfig = ConfigReader.parseConfig("src/test/kotlin/support/exampleConfig.yml")
 
             assertThat(pushAppsConfig.cf.apiHost).isEqualTo("api.example.com")
@@ -23,7 +26,7 @@ class ConfigReaderTest: Test({
             assertThat(pushAppsConfig.cf.dialTimeoutInMillis).isEqualTo(1000)
         }
 
-        test("Parses the apps config") {
+        it("Parses the apps config") {
             val pushAppsConfig = ConfigReader.parseConfig("src/test/kotlin/support/exampleConfig.yml")
 
             val apps = pushAppsConfig.apps
@@ -41,7 +44,7 @@ class ConfigReaderTest: Test({
             assertThat(app1.route!!.path).isEqualTo("/citrus")
         }
 
-        test("Parses the services config") {
+        it("Parses the services config") {
             val pushAppsConfig = ConfigReader.parseConfig("src/test/kotlin/support/exampleConfig.yml")
 
             val services = pushAppsConfig.services
@@ -54,7 +57,7 @@ class ConfigReaderTest: Test({
             assertThat(service.optional).isTrue()
         }
 
-        test("Parses the security group config") {
+        it("Parses the security group config") {
             val pushAppsConfig = ConfigReader.parseConfig("src/test/kotlin/support/exampleConfig.yml")
 
             val securityGroups = pushAppsConfig.securityGroups
@@ -66,7 +69,7 @@ class ConfigReaderTest: Test({
             assertThat(securityGroup.protocol).isEqualTo("all")
         }
 
-        test("Parses the user provided services config") {
+        it("Parses the user provided services config") {
             val pushAppsConfig = ConfigReader.parseConfig("src/test/kotlin/support/exampleConfig.yml")
 
             val userProvidedServices = pushAppsConfig.userProvidedServices
@@ -77,7 +80,7 @@ class ConfigReaderTest: Test({
             assertThat(service.credentials).isEqualTo(mapOf("username" to "some-username"))
         }
 
-        test("Parses the db migration config") {
+        it("Parses the db migration config") {
             val pushAppsConfig = ConfigReader.parseConfig("src/test/kotlin/support/exampleConfig.yml")
 
             val migrations = pushAppsConfig.migrations
@@ -86,7 +89,7 @@ class ConfigReaderTest: Test({
             val migration = migrations!![0]
             assertThat(migration.user).isEqualTo("user")
             assertThat(migration.password).isEqualTo("password")
-            assertThat(migration.driver).isEqualTo("postgresql")
+            assertThat(migration.driver).isInstanceOfAny(DatabaseDriver.Postgres::class.java)
             assertThat(migration.host).isEqualTo("10.0.0.1")
             assertThat(migration.port).isEqualTo("5432")
             assertThat(migration.schema).isEqualTo("metrics")

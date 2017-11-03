@@ -24,13 +24,14 @@ import reactor.core.publisher.Mono
 class CloudFoundryClientTest : Test({
     data class TestContext(
         val cloudFoundryClient: CloudFoundryClient,
-        val mockApplications: Applications,
-        val mockServices: Services,
-        val mockOrganizations: Organizations,
-        val mockSpaces: Spaces,
-        val mockRoutes: Routes,
-        val mockCfOperations: CloudFoundryOperations,
-        val mockSecurityGroups: SecurityGroups
+        val applications: Applications,
+        val services: Services,
+        val organizations: Organizations,
+        val spaces: Spaces,
+        val routes: Routes,
+        val cfOperations: CloudFoundryOperations,
+        val cfOperationsBuilder: CloudFoundryOperationsBuilder,
+        val securityGroups: SecurityGroups
     )
 
     fun buildTestContext(): TestContext {
@@ -43,6 +44,8 @@ class CloudFoundryClientTest : Test({
 
         val mockCfClient = mock<org.cloudfoundry.client.CloudFoundryClient>()
         val mockCfOperations = mock<DefaultCloudFoundryOperations>()
+        val mockCfOperationsBuilder = mock<CloudFoundryOperationsBuilder>()
+
         whenever(mockCfOperations.applications()).thenReturn(mockApplications)
         whenever(mockCfOperations.services()).thenReturn(mockServices)
         whenever(mockCfOperations.organizations()).thenReturn(mockOrganizations)
@@ -52,35 +55,28 @@ class CloudFoundryClientTest : Test({
 
         whenever(mockCfClient.securityGroups()).thenReturn(mockSecurityGroups)
 
-        val config = CfConfig(
-            apiHost = "api.host",
-            username = "username",
-            password = "password",
-            organization = "",
-            space = ""
-        )
-
         val cloudFoundryClient = CloudFoundryClient(
-            cfConfig = config,
-            cloudFoundryOperations = mockCfOperations
+            cloudFoundryOperations = mockCfOperations,
+            cloudFoundryOperationsBuilder = mockCfOperationsBuilder
         )
 
         return TestContext(
             cloudFoundryClient = cloudFoundryClient,
-            mockCfOperations = mockCfOperations,
-            mockApplications = mockApplications,
-            mockServices = mockServices,
-            mockOrganizations = mockOrganizations,
-            mockSpaces = mockSpaces,
-            mockRoutes = mockRoutes,
-            mockSecurityGroups = mockSecurityGroups
+            cfOperations = mockCfOperations,
+            cfOperationsBuilder = mockCfOperationsBuilder,
+            applications = mockApplications,
+            services = mockServices,
+            organizations = mockOrganizations,
+            spaces = mockSpaces,
+            routes = mockRoutes,
+            securityGroups = mockSecurityGroups
         )
     }
 
     describe("#createService") {
         test("creates the given service") {
             val tc = buildTestContext()
-            whenever(tc.mockServices.createInstance(any())).thenReturn(Mono.empty())
+            whenever(tc.services.createInstance(any())).thenReturn(Mono.empty())
 
             val serviceConfig = ServiceConfig(
                 name = "some-service",
@@ -90,7 +86,7 @@ class CloudFoundryClientTest : Test({
 
             tc.cloudFoundryClient.createService(serviceConfig)
 
-            verify(tc.mockServices, times(1)).createInstance(
+            verify(tc.services, times(1)).createInstance(
                 argForWhich {
                     serviceInstanceName == serviceConfig.name &&
                         planName == serviceConfig.plan &&
@@ -103,7 +99,7 @@ class CloudFoundryClientTest : Test({
     describe("#createUserProvidedService") {
         test("creates the given service") {
             val tc = buildTestContext()
-            whenever(tc.mockServices.createUserProvidedInstance(any())).thenReturn(Mono.empty())
+            whenever(tc.services.createUserProvidedInstance(any())).thenReturn(Mono.empty())
 
             val serviceConfig = UserProvidedServiceConfig(
                 name = "Foo bar",
@@ -115,7 +111,7 @@ class CloudFoundryClientTest : Test({
 
             tc.cloudFoundryClient.createUserProvidedService(serviceConfig)
 
-            verify(tc.mockServices, times(1)).createUserProvidedInstance(
+            verify(tc.services, times(1)).createUserProvidedInstance(
                 argForWhich {
                     name == serviceConfig.name &&
                         credentials == serviceConfig.credentials
@@ -127,7 +123,7 @@ class CloudFoundryClientTest : Test({
     describe("#updateUserProvidedService") {
         test("updates the given service") {
             val tc = buildTestContext()
-            whenever(tc.mockServices.updateUserProvidedInstance(any())).thenReturn(Mono.empty())
+            whenever(tc.services.updateUserProvidedInstance(any())).thenReturn(Mono.empty())
 
             val serviceConfig = UserProvidedServiceConfig(
                 name = "Foo bar",
@@ -139,7 +135,7 @@ class CloudFoundryClientTest : Test({
 
             tc.cloudFoundryClient.updateUserProvidedService(serviceConfig)
 
-            verify(tc.mockServices, times(1)).updateUserProvidedInstance(
+            verify(tc.services, times(1)).updateUserProvidedInstance(
                 argForWhich {
                     userProvidedServiceInstanceName == serviceConfig.name &&
                         credentials == serviceConfig.credentials
@@ -154,11 +150,11 @@ class CloudFoundryClientTest : Test({
 
     describe("#startApplication") {
         val tc = buildTestContext()
-        whenever(tc.mockApplications.start(any())).thenReturn(Mono.empty())
+        whenever(tc.applications.start(any())).thenReturn(Mono.empty())
 
         tc.cloudFoundryClient.startApplication("some-app")
 
-        verify(tc.mockApplications, times(1)).start(
+        verify(tc.applications, times(1)).start(
             argForWhich {
                 name == "some-app"
             }
@@ -167,11 +163,11 @@ class CloudFoundryClientTest : Test({
 
     describe("#stopApplication") {
         val tc = buildTestContext()
-        whenever(tc.mockApplications.stop(any())).thenReturn(Mono.empty())
+        whenever(tc.applications.stop(any())).thenReturn(Mono.empty())
 
         tc.cloudFoundryClient.stopApplication("some-app")
 
-        verify(tc.mockApplications, times(1)).stop(
+        verify(tc.applications, times(1)).stop(
             argForWhich {
                 name == "some-app"
             }
@@ -181,7 +177,7 @@ class CloudFoundryClientTest : Test({
     describe("#setApplicationEnvironment") {
         test("sets environment variables if present in config") {
             val tc = buildTestContext()
-            whenever(tc.mockApplications.setEnvironmentVariable(any())).thenReturn(Mono.empty())
+            whenever(tc.applications.setEnvironmentVariable(any())).thenReturn(Mono.empty())
 
             val appConfig = AppConfig(
                 name = "Foo bar",
@@ -194,7 +190,7 @@ class CloudFoundryClientTest : Test({
 
             tc.cloudFoundryClient.setApplicationEnvironment(appConfig)
 
-            verify(tc.mockApplications, times(1)).setEnvironmentVariable(
+            verify(tc.applications, times(1)).setEnvironmentVariable(
                 argForWhich {
                     name == appConfig.name &&
                         variableName == "FOO" &&
@@ -202,7 +198,7 @@ class CloudFoundryClientTest : Test({
                 }
             )
 
-            verify(tc.mockApplications, times(1)).setEnvironmentVariable(
+            verify(tc.applications, times(1)).setEnvironmentVariable(
                 argForWhich {
                     name == appConfig.name &&
                         variableName == "BAR" &&
@@ -221,7 +217,7 @@ class CloudFoundryClientTest : Test({
 
             tc.cloudFoundryClient.setApplicationEnvironment(appConfig)
 
-            verify(tc.mockApplications, times(0)).setEnvironmentVariable(any())
+            verify(tc.applications, times(0)).setEnvironmentVariable(any())
         }
     }
 
@@ -231,11 +227,11 @@ class CloudFoundryClientTest : Test({
 
             tc.cloudFoundryClient.bindServicesToApplication("some-app", listOf("some-service", "some-other-service"))
 
-            verify(tc.mockServices, times(1)).bind(argForWhich {
+            verify(tc.services, times(1)).bind(argForWhich {
                 applicationName == "some-app" &&
                     serviceInstanceName == "some-service"
             })
-            verify(tc.mockServices, times(1)).bind(argForWhich {
+            verify(tc.services, times(1)).bind(argForWhich {
                 applicationName == "some-app" &&
                     serviceInstanceName == "some-other-service"
             })
@@ -256,11 +252,11 @@ class CloudFoundryClientTest : Test({
                 )
             )
 
-            whenever(tc.mockRoutes.map(any())).thenReturn(Mono.empty())
+            whenever(tc.routes.map(any())).thenReturn(Mono.empty())
 
             tc.cloudFoundryClient.mapRoute(appConfig)
 
-            verify(tc.mockRoutes, times(1)).map(
+            verify(tc.routes, times(1)).map(
                 argForWhich {
                     applicationName == appConfig.name &&
                         domain == appConfig.domain &&
@@ -284,11 +280,11 @@ class CloudFoundryClientTest : Test({
             )
         )
 
-        whenever(tc.mockRoutes.unmap(any())).thenReturn(Mono.empty())
+        whenever(tc.routes.unmap(any())).thenReturn(Mono.empty())
 
         tc.cloudFoundryClient.unmapRoute(appConfig)
 
-        verify(tc.mockRoutes, times(1)).unmap(
+        verify(tc.routes, times(1)).unmap(
             argForWhich {
                 applicationName == appConfig.name &&
                     domain == appConfig.domain &&
@@ -306,17 +302,17 @@ class CloudFoundryClientTest : Test({
             protocol = "all"
         )
 
-        whenever(tc.mockSecurityGroups.create(any())).thenReturn(Mono.empty())
+        whenever(tc.securityGroups.create(any())).thenReturn(Mono.empty())
 
         tc.cloudFoundryClient.createSecurityGroup(securityConfig, "some-space")
 
-        verify(tc.mockSecurityGroups, times(1)).create(
+        verify(tc.securityGroups, times(1)).create(
             argForWhich {
                 spaceIds.size == 1 &&
                     spaceIds[0] == "some-space" &&
                     rules.size == 1 &&
                     rules[0].destination == "destination somewhere" &&
-                    rules[0].protocol == Protocol.ALL
+                    rules[0].protocol == Protocol.from("all")
             }
         )
     }
@@ -336,7 +332,7 @@ class CloudFoundryClientTest : Test({
             .id("some-id")
             .build()
 
-        whenever(tc.mockOrganizations.list()).thenReturn(
+        whenever(tc.organizations.list()).thenReturn(
             Flux.fromArray(arrayOf(orgSummary)))
 
         val orgResults = tc.cloudFoundryClient.listOrganizations()
@@ -350,7 +346,7 @@ class CloudFoundryClientTest : Test({
             .id("some-id")
             .build()
 
-        whenever(tc.mockSpaces.list()).thenReturn(
+        whenever(tc.spaces.list()).thenReturn(
             Flux.fromArray(arrayOf(spaceSummary)))
 
         val spaceResults = tc.cloudFoundryClient.listSpaces()
@@ -365,7 +361,7 @@ class CloudFoundryClientTest : Test({
             .type(ServiceInstanceType.MANAGED)
             .build()
 
-        whenever(tc.mockServices.listInstances()).thenReturn(
+        whenever(tc.services.listInstances()).thenReturn(
             Flux.fromArray(arrayOf(serviceSummary)))
 
         val serviceResults = tc.cloudFoundryClient.listServices()
@@ -383,10 +379,10 @@ class CloudFoundryClientTest : Test({
                 .organization("")
                 .build()
 
-            whenever(tc.mockSpaces.get(any())).thenReturn(Mono.just(spaceDetail))
+            whenever(tc.spaces.get(any())).thenReturn(Mono.just(spaceDetail))
 
             val spaceId = tc.cloudFoundryClient.getSpaceId("some-space")
-            verify(tc.mockSpaces, times(1)).get(
+            verify(tc.spaces, times(1)).get(
                 argForWhich {
                     name == "some-space"
                 }

@@ -1,15 +1,17 @@
 package unit
 
 import com.nhaarman.mockito_kotlin.*
-import io.damo.aspen.Test
 import io.pivotal.pushapps.CloudFoundryClient
 import io.pivotal.pushapps.OperationResult
 import io.pivotal.pushapps.ServiceConfig
 import io.pivotal.pushapps.ServiceCreator
 import org.assertj.core.api.Assertions
+import org.jetbrains.spek.api.Spek
+import org.jetbrains.spek.api.dsl.describe
+import org.jetbrains.spek.api.dsl.it
 import reactor.core.publisher.Mono
 
-class ServiceCreatorTest : Test({
+class ServiceCreatorTest : Spek({
     data class TestContext(
         val serviceCreator: ServiceCreator,
         val mockCloudFoundryClient: CloudFoundryClient,
@@ -34,7 +36,7 @@ class ServiceCreatorTest : Test({
     }
 
     describe("#createServices") {
-        test("it creates the services and returns a success result") {
+        it("it creates the services and returns a success result") {
             val tc = buildTestContext()
             whenever(tc.mockCloudFoundryClient.listServices()).thenReturn(emptyList())
             whenever(tc.mockCloudFoundryClient.createService(any())).thenReturn(Mono.empty())
@@ -46,7 +48,7 @@ class ServiceCreatorTest : Test({
             Assertions.assertThat(results).containsOnly(OperationResult(tc.serviceConfig.name, didSucceed = true))
         }
 
-        test("it returns a failure result when creating a service fails") {
+        it("it returns a failure result when creating a service fails") {
             val tc = buildTestContext()
             whenever(tc.mockCloudFoundryClient.listServices()).thenReturn(emptyList())
             whenever(tc.mockCloudFoundryClient.createService(any())).thenReturn(
@@ -64,7 +66,7 @@ class ServiceCreatorTest : Test({
             Assertions.assertThat(result.error!!.message).contains("lemons")
         }
 
-        test("it includes whether the service was optional in the result") {
+        it("it includes whether the service was optional in the result") {
             val tc = buildTestContext()
             whenever(tc.mockCloudFoundryClient.listServices()).thenReturn(emptyList())
             whenever(tc.mockCloudFoundryClient.createService(any())).thenReturn(
@@ -80,7 +82,7 @@ class ServiceCreatorTest : Test({
             Assertions.assertThat(result.optional).isTrue()
         }
 
-        test("it does not try to create services that already exist") {
+        it("it does not try to create services that already exist") {
             val tc = buildTestContext()
             whenever(tc.mockCloudFoundryClient.listServices()).thenReturn(listOf(tc.serviceConfig.name))
 
