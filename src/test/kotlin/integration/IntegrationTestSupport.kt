@@ -17,6 +17,7 @@ import org.cloudfoundry.operations.services.Services
 import org.cloudfoundry.operations.spaces.SpaceDetail
 import org.cloudfoundry.operations.spaces.Spaces
 import org.flywaydb.core.Flyway
+import org.flywaydb.core.api.callback.FlywayCallback
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import javax.sql.DataSource
@@ -44,7 +45,7 @@ fun buildTestContext(
     val cfOperations = buildMockCfOperations()
     val cfOperationsBuilder = buildMockCfOperationsBuilder(cfOperations)
     val cfClientBuilder = buildMockCfClientBuilder(cfOperations, cfOperationsBuilder)
-    val flyway = buildMockFlyway()
+    val flyway = mock<Flyway>()
     val (dataSourceFactory, dataSource) = buildDataSourceFactory()
 
     val config = createConfig(
@@ -76,18 +77,9 @@ fun buildDataSourceFactory(): Pair<DataSourceFactory, DataSource> {
     val dataSource = mock<DataSource>()
 
     whenever(dataSourceFactory.buildDataSource(any())).thenReturn(dataSource)
+    whenever(dataSourceFactory.addDatabaseNameToDataSource(any(), any())).thenReturn(dataSource)
 
     return Pair(dataSourceFactory, dataSource)
-}
-
-fun buildMockFlyway(): Flyway {
-    val flyway = mock<Flyway>()
-
-//    whenever(flyway.setDataSource(any<String>(), any<String>(), any<String>()))
-//    whenever(flyway.setLocations(any<String>()))
-//    whenever(flyway.migrate())
-
-    return flyway
 }
 
 fun buildMockCfClientBuilder(cfOperations: CloudFoundryOperations, cfOperationsBuilder: CloudFoundryOperationsBuilder): CloudFoundryClientBuilder {
