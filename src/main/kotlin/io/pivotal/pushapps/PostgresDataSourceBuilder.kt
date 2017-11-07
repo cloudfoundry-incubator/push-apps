@@ -1,22 +1,32 @@
 package io.pivotal.pushapps
 
 import org.postgresql.ds.PGSimpleDataSource
+import javax.sql.DataSource
 
-class PostgresDataSourceBuilder() {
-    var user: String? = null
-    var host: String? = null
-    var databaseName: String? = null
-    var password: String? = null
-    var port: Int = 0
+fun postgresDataSourceBuilder(): PostgresDataSourceBuilder {
+    return PostgresDataSourceBuilder()
+}
 
-    companion object {
-        @JvmStatic
-        fun postgresDataSourceBuilder(): PostgresDataSourceBuilder {
-            return PostgresDataSourceBuilder()
-        }
-    }
+fun postgresDataSourceFromExisting(dataSource: DataSource): PostgresDataSourceBuilder {
+    val ds = dataSource as PGSimpleDataSource
+    val builder = PostgresDataSourceBuilder()
 
-    fun build(): PGSimpleDataSource {
+    builder.user = ds.user
+    builder.host = ds.serverName
+    builder.databaseName = ds.databaseName
+    builder.port = ds.portNumber
+
+    return builder
+}
+
+class PostgresDataSourceBuilder: DataSourceBuilder {
+    override var user: String? = null
+    override var host: String? = null
+    override var databaseName: String? = null
+    override var password: String? = null
+    override var port: Int = 0
+
+    override fun build(): PGSimpleDataSource {
         val dataSource = PGSimpleDataSource()
 
         if (user !== null) dataSource.user = user

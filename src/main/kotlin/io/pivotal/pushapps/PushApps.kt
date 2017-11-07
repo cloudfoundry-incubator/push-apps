@@ -2,9 +2,8 @@ package io.pivotal.pushapps
 
 import io.pivotal.pushapps.CloudFoundryClientBuilder.Companion.cloudFoundryClientBuilder
 import io.pivotal.pushapps.CloudFoundryOperationsBuilder.Companion.cloudFoundryOperationsBuilder
-import io.pivotal.pushapps.MySqlDataSourceBuilder.Companion.mySqlDataSourceBuilder
-import io.pivotal.pushapps.PostgresDataSourceBuilder.Companion.postgresDataSourceBuilder
 import org.apache.logging.log4j.LogManager
+import org.cloudfoundry.UnknownCloudFoundryException
 import org.flywaydb.core.Flyway
 
 class PushApps(
@@ -158,11 +157,23 @@ class PushApps(
 
         nonOptionalFailedResults
             .forEach { (name, _, error, _) ->
-                logger.error("$actionName $name failed with error message: ${error!!.message}")
+                val messages = mutableListOf<String>()
 
-                if (logger.isDebugEnabled) {
-                    error.printStackTrace()
+                if (error !== null) {
+                    messages.add(error.message!!)
+
+                    val cause = error.cause
+                    when(cause) {
+                        is UnknownCloudFoundryException -> messages.add("UnknownCloudFoundryException thrown with a statusCode:${cause.statusCode}, and message: ${cause.message}")
+                        is IllegalStateException -> messages.add("IllegalStateException with message: ${cause.message}")
+                    }
+
+                    if (logger.isDebugEnabled) {
+                        error.printStackTrace()
+                    }
                 }
+
+                logger.error("$actionName $name failed with error messages: [${messages.joinToString(", ")}]")
             }
 
         return nonOptionalFailedResults.isEmpty()

@@ -1,22 +1,32 @@
 package io.pivotal.pushapps
 
 import com.mysql.jdbc.jdbc2.optional.MysqlConnectionPoolDataSource
+import javax.sql.DataSource
 
-class MySqlDataSourceBuilder() {
-    var user: String? = null
-    var host: String? = null
-    var databaseName: String? = null
-    var password: String? = null
-    var port: Int = 0
+fun mysqlDataSourceFromExisting(dataSource: DataSource): MySqlDataSourceBuilder {
+    val ds = dataSource as MysqlConnectionPoolDataSource
+    val builder = MySqlDataSourceBuilder()
 
-    companion object {
-        @JvmStatic
-        fun mySqlDataSourceBuilder(): MySqlDataSourceBuilder {
-            return MySqlDataSourceBuilder()
-        }
-    }
+    builder.user = ds.user
+    builder.host = ds.serverName
+    builder.databaseName = ds.databaseName
+    builder.port = ds.port
 
-    fun build(): MysqlConnectionPoolDataSource {
+    return builder
+}
+
+fun mySqlDataSourceBuilder(): MySqlDataSourceBuilder {
+    return MySqlDataSourceBuilder()
+}
+
+class MySqlDataSourceBuilder : DataSourceBuilder {
+    override var user: String? = null
+    override var host: String? = null
+    override var databaseName: String? = null
+    override var password: String? = null
+    override var port: Int = 0
+
+    override fun build(): DataSource {
         val dataSource = MysqlConnectionPoolDataSource()
 
         if (user !== null) dataSource.user = user

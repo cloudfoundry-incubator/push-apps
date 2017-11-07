@@ -21,12 +21,6 @@ class DatabaseMigrator(
             val migrateDatabaseFutures = migrations.map { migration ->
                 val migrateDatabaseFuture = CompletableFuture.runAsync {
                     val dataSource = dataSourceFactory.buildDataSource(migration)
-
-                    if (dataSource === null) {
-                        logger.error("Unsupported database driver ${migration.driver}")
-                        throw UnsupportedOperationException("Unsupported database driver ${migration.driver}")
-                    }
-
                     migrateDatabase(dataSource, migration)
                 }
 
@@ -44,7 +38,8 @@ class DatabaseMigrator(
 
     private fun migrateDatabase(dataSource: DataSource, migration: Migration) {
         createDatabaseIfAbsent(dataSource.connection, migration.schema)
-        runFlyway(dataSource, migration)
+        val newDataSource = dataSourceFactory.addDatabaseNameToDataSource(dataSource, migration)
+        runFlyway(newDataSource, migration)
     }
 
     private fun createDatabaseIfAbsent(conn: Connection, dbName: String) {

@@ -1,11 +1,15 @@
 package io.pivotal.pushapps
 
+import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer
+import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -87,6 +91,7 @@ sealed class DatabaseDriver(val driver: String) {
 }
 
 @JsonDeserialize(using = MigrationDeserializer::class)
+@JsonSerialize(using = MigrationSerializer::class)
 data class Migration(
     val user: String,
     val password: String,
@@ -124,7 +129,28 @@ class MigrationDeserializer : StdDeserializer<Migration>(Migration::class.java) 
             migrationDir
         )
     }
+}
 
+//TODO: this is only used for test, consider another approach
+class MigrationSerializer : StdSerializer<Migration>(Migration::class.java) {
+    override fun serialize(value: Migration, gen: JsonGenerator, provider: SerializerProvider) {
+        gen.writeStartObject();
+        gen.writeStringField("user", value.user);
+        gen.writeStringField("password", value.password);
+        gen.writeStringField("host", value.host);
+        gen.writeStringField("port", value.port);
+        gen.writeStringField("schema", value.schema);
+        gen.writeStringField("migrationDir", value.migrationDir);
+
+        val driver = when(value.driver) {
+            is DatabaseDriver.MySql -> "mysql"
+            is DatabaseDriver.Postgres -> "postgres"
+        }
+
+        gen.writeStringField("driver", driver);
+
+        gen.writeEndObject();
+    }
 }
 
 data class SecurityGroup(

@@ -73,9 +73,10 @@ fun buildTestContext(
             this.username = username
             this.password = password
             this.skipSslValidation = true
+            this.organization = organization
         }.build()
 
-    val cf = buildCfClient(apiHost, username, password)
+    val cf = buildCfClient(apiHost, username, password, organization)
 
     val configFilePath = writeConfigFile(
         apiHost = apiHost,
@@ -261,13 +262,13 @@ fun runPushApps(configFilePath: String, debug: Boolean = false): Int {
     return exitValue
 }
 
-fun buildCfClient(apiHost: String, username: String, password: String): CloudFoundryClient {
+fun buildCfClient(apiHost: String, username: String, password: String, organization: String): CloudFoundryClient {
     val config = CfConfig(
         apiHost = apiHost,
         username = username,
         password = password,
         skipSslValidation = true,
-        organization = "",
+        organization = organization,
         space = ""
     )
 
@@ -278,6 +279,7 @@ fun buildCfClient(apiHost: String, username: String, password: String): CloudFou
             this.password = config.password
             this.skipSslValidation = config.skipSslValidation
             this.dialTimeoutInMillis = config.dialTimeoutInMillis
+            this.organization = config.organization
         }.build()
 
     return CloudFoundryClient(cloudFoundryOperations, cloudFoundryOperationsBuilder())

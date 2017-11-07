@@ -38,7 +38,7 @@ class EndToEndAcceptanceTest : Spek({
 
             val helloApp = AppConfig(
                 name = "hello",
-                path = "${workingDir}/src/test/kotlin/support/helloapp.zip",
+                path = "$workingDir/src/test/kotlin/support/helloapp.zip",
                 buildpack = "binary_buildpack",
                 command = "./helloapp",
                 environment = mapOf(
@@ -53,7 +53,7 @@ class EndToEndAcceptanceTest : Spek({
 
             val blueGreenApp = AppConfig(
                 name = "generic",
-                path = "${workingDir}/src/test/kotlin/support/goodbyeapp.zip",
+                path = "$workingDir/src/test/kotlin/support/goodbyeapp.zip",
                 buildpack = "binary_buildpack",
                 command = "./goodbyeapp",
                 environment = mapOf(
@@ -93,7 +93,6 @@ class EndToEndAcceptanceTest : Spek({
             }
 
             it("pushes all the apps in the config, creates and binds services, creates org, space, and security groups, and runs migrations") {
-                println("starting test")
                 acceptanceTestContext = buildTestContext(
                     space = "test",
                     apps = listOf(helloApp, blueGreenApp),
@@ -109,9 +108,7 @@ class EndToEndAcceptanceTest : Spek({
                     return@it
                 }
 
-                println("checkpoint about to start docker")
                 startDocker()
-                println("checkpoint docker started")
 
                 val conn = connectToMysql(migration.host, migration.port, migration.user, migration.password)
                 if (conn === null) {
@@ -122,9 +119,7 @@ class EndToEndAcceptanceTest : Spek({
                 var organizations = tc.cfClient.listOrganizations()
                 assertThat(organizations).doesNotContain(tc.organization)
 
-                println("about to run push apps")
                 val exitCode = runPushApps(tc.configFilePath)
-                println("push apps finished")
                 assertThat(exitCode).isEqualTo(0)
 
                 val getHelloApplicationReq = GetApplicationRequest.builder().name("hello").build()

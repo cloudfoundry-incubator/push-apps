@@ -1,9 +1,7 @@
 package unit
 
 import com.mysql.jdbc.jdbc2.optional.MysqlConnectionPoolDataSource
-import com.nhaarman.mockito_kotlin.mock
-import com.nhaarman.mockito_kotlin.verify
-import com.nhaarman.mockito_kotlin.whenever
+import com.nhaarman.mockito_kotlin.*
 import io.pivotal.pushapps.*
 import org.assertj.core.api.Assertions.assertThat
 import org.jetbrains.spek.api.Spek
@@ -11,6 +9,7 @@ import org.jetbrains.spek.api.dsl.context
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
 import org.postgresql.ds.PGSimpleDataSource
+import javax.sql.DataSource
 
 class DataSourceFactoryTest : Spek({
     describe("#buildDataSource") {
@@ -19,7 +18,7 @@ class DataSourceFactoryTest : Spek({
 
         context("when database driver is mysql") {
             it("builds a mysql data source") {
-                val mysqlDataSource = mock<MysqlConnectionPoolDataSource>()
+                val mysqlDataSource = mock<DataSource>()
                 whenever(mysqlDataSourceBuilder.build()).thenReturn(mysqlDataSource)
 
                 val migration = Migration(
@@ -32,13 +31,15 @@ class DataSourceFactoryTest : Spek({
                     migrationDir = "/tmp"
                 )
 
-                val dataSourceFactory = DataSourceFactory(mysqlDataSourceBuilder, postgresDataSourceBuilder)
+                val dataSourceFactory = DataSourceFactory(
+                    mysqlDataSourceBuilder,
+                    postgresDataSourceBuilder
+                )
                 val dataSource = dataSourceFactory.buildDataSource(migration)
 
                 verify(mysqlDataSourceBuilder).user = "metrics"
                 verify(mysqlDataSourceBuilder).host = "localhost"
                 verify(mysqlDataSourceBuilder).port = 42
-                verify(mysqlDataSourceBuilder).databaseName = "metrics"
                 verify(mysqlDataSourceBuilder).password = "secret"
                 verify(mysqlDataSourceBuilder).build()
                 assertThat(dataSource).isEqualTo(mysqlDataSource)
@@ -66,7 +67,6 @@ class DataSourceFactoryTest : Spek({
                 verify(postgresDataSourceBuilder).user = "metrics"
                 verify(postgresDataSourceBuilder).host = "localhost"
                 verify(postgresDataSourceBuilder).port = 42
-                verify(postgresDataSourceBuilder).databaseName = "metrics"
                 verify(postgresDataSourceBuilder).password = "secret"
                 verify(postgresDataSourceBuilder).build()
                 assertThat(dataSource).isEqualTo(postgresDataSource)
