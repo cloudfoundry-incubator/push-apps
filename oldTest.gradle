@@ -1,0 +1,65 @@
+junitPlatform {
+    filters {
+        engines {
+            include 'spek'
+        }
+    }
+}
+
+test {
+    dependsOn "assemble"
+    dependsOn "buildSampleApps"
+    environment([
+            "PUSHAPPS_VERSION": "$version"
+    ])
+    testLogging {
+        exceptionFormat = 'full'
+    }
+}
+
+task unitTest(
+        type: JavaExec,
+        description: 'Runs unit tests.',
+        group: 'Verification'
+) {
+    dependsOn 'classes'
+    dependsOn 'testClasses'
+
+    classpath = sourceSets.test.runtimeClasspath
+
+    main = 'org.junit.platform.console.ConsoleLauncher'
+    args = ["-p", "unit", "-e", "spek"]
+}
+
+task integrationTest(
+        type: JavaExec,
+        description: 'Runs integration tests.',
+        group: 'Verification'
+) {
+    dependsOn 'classes'
+    dependsOn 'testClasses'
+
+    classpath = sourceSets.test.runtimeClasspath
+
+    main = 'org.junit.platform.console.ConsoleLauncher'
+    args = ["-p", "integration", "-e", "spek"]
+}
+
+task acceptanceTest(
+        type: JavaExec,
+        description: 'Runs acceptance tests.',
+        group: 'Verification'
+) {
+    dependsOn "assemble"
+    dependsOn 'testClasses'
+    dependsOn "buildSampleApps"
+
+    environment([
+            "PUSHAPPS_VERSION": "$version"
+    ])
+
+    classpath = sourceSets.test.runtimeClasspath
+
+    main = 'org.junit.platform.console.ConsoleLauncher'
+    args = ["-p", "acceptance", "-e", "spek"]
+}

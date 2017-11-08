@@ -1,1 +1,10 @@
 rootProject.name = "push-apps"
+
+//Applications
+include ":applications:cli"
+include ":applications:acceptance-tests"
+include ":applications:integration-tests"
+
+//Components
+include ":components:push-apps"
+include ":components:push-apps-unit-tests"
