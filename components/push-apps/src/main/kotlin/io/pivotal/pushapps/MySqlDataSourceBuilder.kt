@@ -3,19 +3,19 @@ package io.pivotal.pushapps
 import com.mysql.jdbc.jdbc2.optional.MysqlConnectionPoolDataSource
 import javax.sql.DataSource
 
-fun mysqlDataSourceFromExisting(dataSource: DataSource): MySqlDataSourceBuilder {
-    val ds = dataSource as MysqlConnectionPoolDataSource
-    val builder = MySqlDataSourceBuilder()
+fun mySqlDataSourceBuilder(dataSource: DataSource?): MySqlDataSourceBuilder {
+    if (dataSource !== null) {
+        val ds = dataSource as MysqlConnectionPoolDataSource
+        val builder = MySqlDataSourceBuilder()
 
-    builder.user = ds.user
-    builder.host = ds.serverName
-    builder.databaseName = ds.databaseName
-    builder.port = ds.port
+        builder.user = ds.user
+        builder.host = ds.serverName
+        builder.databaseName = ds.databaseName
+        builder.port = ds.port
 
-    return builder
-}
+        return builder
+    }
 
-fun mySqlDataSourceBuilder(): MySqlDataSourceBuilder {
     return MySqlDataSourceBuilder()
 }
 

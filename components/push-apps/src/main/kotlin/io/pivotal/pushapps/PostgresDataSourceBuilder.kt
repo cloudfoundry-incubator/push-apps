@@ -3,20 +3,20 @@ package io.pivotal.pushapps
 import org.postgresql.ds.PGSimpleDataSource
 import javax.sql.DataSource
 
-fun postgresDataSourceBuilder(): PostgresDataSourceBuilder {
+fun postgresDataSourceBuilder(dataSource: DataSource?): PostgresDataSourceBuilder {
+    if (dataSource !== null) {
+        val ds = dataSource as PGSimpleDataSource
+        val builder = PostgresDataSourceBuilder()
+
+        builder.user = ds.user
+        builder.host = ds.serverName
+        builder.databaseName = ds.databaseName
+        builder.port = ds.portNumber
+
+        return builder
+    }
+
     return PostgresDataSourceBuilder()
-}
-
-fun postgresDataSourceFromExisting(dataSource: DataSource): PostgresDataSourceBuilder {
-    val ds = dataSource as PGSimpleDataSource
-    val builder = PostgresDataSourceBuilder()
-
-    builder.user = ds.user
-    builder.host = ds.serverName
-    builder.databaseName = ds.databaseName
-    builder.port = ds.portNumber
-
-    return builder
 }
 
 class PostgresDataSourceBuilder: DataSourceBuilder {

@@ -304,7 +304,7 @@ class AcceptanceTestSupport {
 
     fun httpGet(url: String): Mono<String> {
         return Mono.create<String> { sink ->
-            val request: Request = Fuel.get(url).responseString { request, response, result ->
+            val request: Request = Fuel.get(url).responseString { _, _, result ->
                 result.fold(sink::success, sink::error)
             }
         }

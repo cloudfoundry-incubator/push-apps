@@ -11,8 +11,8 @@ class PushApps(
     private val cloudFoundryClientBuilder: CloudFoundryClientBuilder,
     private val flyway: Flyway = Flyway(),
     private val dataSourceFactory: DataSourceFactory = DataSourceFactory(
-        mySqlDataSourceBuilder = mySqlDataSourceBuilder(),
-        postgresDataSourceBuilder = postgresDataSourceBuilder()
+        { mySqlDataSourceBuilder(it) },
+        { postgresDataSourceBuilder(it) }
     )
 ) {
     private val logger = LogManager.getLogger(PushApps::class.java)

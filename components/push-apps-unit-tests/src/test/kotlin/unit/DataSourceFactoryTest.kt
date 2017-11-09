@@ -1,6 +1,9 @@
 package unit
 
-import com.nhaarman.mockito_kotlin.*
+import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.verify
+import com.nhaarman.mockito_kotlin.verifyNoMoreInteractions
+import com.nhaarman.mockito_kotlin.whenever
 import io.pivotal.pushapps.*
 import org.assertj.core.api.Assertions.assertThat
 import org.jetbrains.spek.api.Spek
@@ -11,14 +14,20 @@ import org.postgresql.ds.PGSimpleDataSource
 import javax.sql.DataSource
 
 class DataSourceFactoryTest : Spek({
-    describe("#buildDataSource") {
-        val mysqlDataSourceBuilder = mock<MySqlDataSourceBuilder>()
+    fun buildTextContext(): Pair<MySqlDataSourceBuilder, PostgresDataSourceBuilder> {
+        val mySqlDataSourceBuilder = mock<MySqlDataSourceBuilder>()
         val postgresDataSourceBuilder = mock<PostgresDataSourceBuilder>()
 
+        return Pair(mySqlDataSourceBuilder, postgresDataSourceBuilder)
+    }
+
+    describe("#buildDataSource") {
         context("when database driver is mysql") {
             it("builds a mysql data source") {
+                val (mySqlDataSourceBuilder, postgresDataSourceBuilder) = buildTextContext()
+
                 val mysqlDataSource = mock<DataSource>()
-                whenever(mysqlDataSourceBuilder.build()).thenReturn(mysqlDataSource)
+                whenever(mySqlDataSourceBuilder.build()).thenReturn(mysqlDataSource)
 
                 val migration = Migration(
                     driver = DatabaseDriver.MySql(),
@@ -31,22 +40,32 @@ class DataSourceFactoryTest : Spek({
                 )
 
                 val dataSourceFactory = DataSourceFactory(
-                    mysqlDataSourceBuilder,
-                    postgresDataSourceBuilder
+                    { mySqlDataSourceBuilder },
+                    { postgresDataSourceBuilder }
                 )
                 val dataSource = dataSourceFactory.buildDataSource(migration)
 
-                verify(mysqlDataSourceBuilder).user = "metrics"
-                verify(mysqlDataSourceBuilder).host = "localhost"
-                verify(mysqlDataSourceBuilder).port = 42
-                verify(mysqlDataSourceBuilder).password = "secret"
-                verify(mysqlDataSourceBuilder).build()
+                verify(mySqlDataSourceBuilder).user = "metrics"
+                verify(mySqlDataSourceBuilder).host = "localhost"
+                verify(mySqlDataSourceBuilder).port = 42
+                verify(mySqlDataSourceBuilder).password = "secret"
+                verify(mySqlDataSourceBuilder).build()
+                verifyNoMoreInteractions(mySqlDataSourceBuilder)
                 assertThat(dataSource).isEqualTo(mysqlDataSource)
             }
         }
 
         context("when database driver is postgres") {
-            it("builds a postgres data source") {
+            data class PostgresTestContext(
+                val migration: Migration,
+                val postgresDataSource: PGSimpleDataSource,
+                val dataSourceFactory: DataSourceFactory
+            )
+
+            fun buildPostgresTextContext(
+                mySqlDataSourceBuilder: MySqlDataSourceBuilder,
+                postgresDataSourceBuilder: PostgresDataSourceBuilder
+            ): PostgresTestContext {
                 val postgresDataSource = mock<PGSimpleDataSource>()
                 whenever(postgresDataSourceBuilder.build()).thenReturn(postgresDataSource)
 
@@ -60,7 +79,23 @@ class DataSourceFactoryTest : Spek({
                     migrationDir = "/tmp"
                 )
 
-                val dataSourceFactory = DataSourceFactory(mysqlDataSourceBuilder, postgresDataSourceBuilder)
+                val dataSourceFactory = DataSourceFactory(
+                    { mySqlDataSourceBuilder },
+                    { postgresDataSourceBuilder }
+                )
+
+                return PostgresTestContext(
+                    migration,
+                    postgresDataSource,
+                    dataSourceFactory
+                )
+            }
+
+            it("builds a postgres data source") {
+                val (mySqlDataSourceBuilder, postgresDataSourceBuilder) = buildTextContext()
+                val (migration, postgresDataSource, dataSourceFactory) =
+                    buildPostgresTextContext(mySqlDataSourceBuilder, postgresDataSourceBuilder)
+
                 val dataSource = dataSourceFactory.buildDataSource(migration)
 
                 verify(postgresDataSourceBuilder).user = "metrics"
@@ -70,6 +105,78 @@ class DataSourceFactoryTest : Spek({
                 verify(postgresDataSourceBuilder).build()
                 assertThat(dataSource).isEqualTo(postgresDataSource)
             }
+
+            it("adds the database name") {
+                val (mySqlDataSourceBuilder, postgresDataSourceBuilder) = buildTextContext()
+                val (migration, postgresDataSource, dataSourceFactory) =
+                    buildPostgresTextContext(mySqlDataSourceBuilder, postgresDataSourceBuilder)
+
+                dataSourceFactory.buildDataSource(migration)
+                verify(postgresDataSourceBuilder).databaseName = "metrics"
+            }
+        }
+    }
+
+    describe("#addDatabaseNameToDataSource") {
+        it("creates a new data source builder from existing data source") {
+            val (mySqlDataSourceBuilder, postgresDataSourceBuilder) = buildTextContext()
+
+            val dataSource = mock<DataSource>()
+            val newDataSource = mock<DataSource>()
+
+            whenever(mySqlDataSourceBuilder.build()).thenReturn(newDataSource)
+
+            val migration = Migration(
+                driver = DatabaseDriver.MySql(),
+                port = "42",
+                host = "localhost",
+                schema = "metrics",
+                user = "metrics",
+                password = "secret",
+                migrationDir = "/tmp"
+            )
+
+            var passedDataSource: DataSource? = null
+            val dataSourceFactory = DataSourceFactory(
+                {
+                    passedDataSource = it
+                    mySqlDataSourceBuilder
+                },
+                { postgresDataSourceBuilder }
+            )
+
+            val dataSourceWithDbName = dataSourceFactory.addDatabaseNameToDataSource(dataSource, migration)
+
+            assertThat(passedDataSource).isEqualTo(dataSource)
+            assertThat(dataSourceWithDbName).isEqualTo(newDataSource)
+        }
+
+        it("add databaseName and password to the new builder") {
+            val (mySqlDataSourceBuilder, postgresDataSourceBuilder) = buildTextContext()
+
+            val dataSource = mock<DataSource>()
+            val newDataSource = mock<DataSource>()
+
+            whenever(mySqlDataSourceBuilder.build()).thenReturn(newDataSource)
+
+            val migration = Migration(
+                driver = DatabaseDriver.MySql(),
+                port = "42",
+                host = "localhost",
+                schema = "metrics",
+                user = "metrics",
+                password = "secret",
+                migrationDir = "/tmp"
+            )
+
+            val dataSourceFactory = DataSourceFactory(
+                { mySqlDataSourceBuilder },
+                { postgresDataSourceBuilder }
+            )
+
+            dataSourceFactory.addDatabaseNameToDataSource(dataSource, migration)
+            verify(mySqlDataSourceBuilder).password = "secret"
+            verify(mySqlDataSourceBuilder).databaseName = "metrics"
         }
     }
 })

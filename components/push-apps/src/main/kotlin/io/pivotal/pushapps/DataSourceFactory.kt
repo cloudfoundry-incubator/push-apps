@@ -2,9 +2,11 @@ package io.pivotal.pushapps
 
 import javax.sql.DataSource
 
+typealias GetDataSourceBuilder = (dataSource: DataSource?) -> DataSourceBuilder
+
 class DataSourceFactory(
-    val mySqlDataSourceBuilder: MySqlDataSourceBuilder = mySqlDataSourceBuilder(),
-    val postgresDataSourceBuilder: PostgresDataSourceBuilder = postgresDataSourceBuilder()
+    private inline val mySqlBuilder: GetDataSourceBuilder = { mySqlDataSourceBuilder(it) },
+    private inline val postgresBuilder: GetDataSourceBuilder = { postgresDataSourceBuilder(it) }
 ) {
     fun buildDataSource(migration: Migration): DataSource {
         return when (migration.driver) {
@@ -15,8 +17,8 @@ class DataSourceFactory(
 
     fun addDatabaseNameToDataSource(dataSource: DataSource, migration: Migration): DataSource {
         val builder = when(migration.driver) {
-            is DatabaseDriver.MySql -> mysqlDataSourceFromExisting(dataSource)
-            is DatabaseDriver.Postgres -> postgresDataSourceFromExisting(dataSource)
+            is DatabaseDriver.MySql -> mySqlBuilder(dataSource)
+            is DatabaseDriver.Postgres -> postgresBuilder(dataSource)
         }
 
         return builder.apply {
@@ -26,7 +28,7 @@ class DataSourceFactory(
     }
 
     private fun buildMysqlDataSource(migration: Migration): DataSource {
-        return mySqlDataSourceBuilder.apply {
+        return mySqlBuilder(null).apply {
             user = migration.user
             host = migration.host
             port = migration.port.toInt()
@@ -35,12 +37,12 @@ class DataSourceFactory(
     }
 
     private fun buildPostgresDataSource(migration: Migration): DataSource {
-        return postgresDataSourceBuilder.apply {
+        return postgresBuilder(null).apply {
             user = migration.user
             host = migration.host
             port = migration.port.toInt()
+            databaseName = migration.schema
             password = migration.password
         }.build()
     }
-
 }
