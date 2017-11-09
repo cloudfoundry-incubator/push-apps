@@ -18,7 +18,7 @@ task wrapper(type: Wrapper) {
 }
 
 task bumpPatch(type: UpdatePatchVersionTask) {
-    versionFilePath = "$rootProject.rootDir/version.gradle"
+    versionFilePath = "$rootProject.rootDir/gradle/version.gradle"
 }
 
 class UpdatePatchVersionTask extends DefaultTask {
