@@ -1,4 +1,4 @@
-package io.pivotal.pushapps
+package io.pivotal.pushappscli
 
 import com.beust.jcommander.JCommander
 import com.beust.jcommander.Parameter

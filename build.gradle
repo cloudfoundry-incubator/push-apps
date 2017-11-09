@@ -10,7 +10,8 @@ buildscript {
     }
 }
 
-apply from: "$rootProject.rootDir/version.gradle"
+apply from: "$rootProject.rootDir/gradle/version.gradle"
+apply from: "$rootProject.rootDir/gradle/idea.gradle"
 
 task wrapper(type: Wrapper) {
     gradleVersion = '4.3.1'

@@ -1,6 +1,5 @@
 package io.pivotal.pushappscli
 
-import io.pivotal.pushapps.ArgumentParser
 import io.pivotal.pushapps.CloudFoundryClientBuilder.Companion.cloudFoundryClientBuilder
 import io.pivotal.pushapps.ConfigReader
 import io.pivotal.pushapps.PushApps

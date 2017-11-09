@@ -1,10 +1,5 @@
-apply from: "$rootProject.rootDir/kotlin.gradle"
-apply plugin: 'kotlin'
-
-repositories {
-    mavenCentral()
-    jcenter()
-}
+apply from: "$rootProject.rootDir/gradle/kotlin.gradle"
+apply from: "$rootProject.rootDir/gradle/idea.gradle"
 
 dependencies {
     compile 'com.beust:jcommander:1.72'
@@ -16,28 +11,4 @@ dependencies {
     compile 'org.flywaydb:flyway-core:4.2.0'
     compile 'mysql:mysql-connector-java:5.1.6'
     compile 'org.postgresql:postgresql:42.1.4'
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
-
-//    compile 'com.squareup.okhttp3:okhttp:3.8.1'
-//    compile 'io.projectreactor:reactor-core'
-//    compile 'io.projectreactor.ipc:reactor-netty'
-}
-buildscript {
-    ext.kotlin_version = '1.1.51'
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-    }
-}
-compileKotlin {
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
-}
-compileTestKotlin {
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
 }

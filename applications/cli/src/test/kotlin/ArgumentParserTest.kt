@@ -1,6 +1,4 @@
-package unit
-
-import io.pivotal.pushapps.ArgumentParser
+import io.pivotal.pushappscli.ArgumentParser
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.jetbrains.spek.api.Spek
