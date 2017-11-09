@@ -239,7 +239,7 @@ class AcceptanceTestSupport {
     }
 
     fun runPushApps(configFilePath: String, debug: Boolean = false): Int {
-        val inputStream: InputStream = File("$pushAppsRootDir/version.gradle").inputStream()
+        val inputStream: InputStream = File("$pushAppsRootDir/gradle/version.gradle").inputStream()
         val versionFileString = inputStream.bufferedReader().use { it.readText() }
 
         val version = versionFileString.removePrefix("version = '").removeSuffix("'\n")
