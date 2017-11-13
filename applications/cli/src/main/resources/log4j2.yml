@@ -20,6 +20,11 @@ configuration:
       additivity: false
       AppenderRef:
         ref: STDOUT
+    - name: io.pivotal.pushappscli
+      level: ${env:LOG_LEVEL}
+      additivity: false
+      AppenderRef:
+        ref: STDOUT
     - name: org.cloudfoundry.cloudfoundry-client-reactor
       level: ${env:LOG_LEVEL}
       additivity: false

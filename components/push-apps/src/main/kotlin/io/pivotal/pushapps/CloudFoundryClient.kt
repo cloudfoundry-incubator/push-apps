@@ -165,6 +165,9 @@ class CloudFoundryClient(
             return Mono.empty()
         }
 
+        val route = "http://${appConfig.route.hostname}.${appConfig.domain}"
+        logger.debug("Building request to unmap route $route for application ${appConfig.name}")
+
         val unmapRouteRequest = UnmapRouteRequest
             .builder()
             .applicationName(appConfig.name)

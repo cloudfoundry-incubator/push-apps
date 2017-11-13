@@ -68,7 +68,15 @@ class AppDeployer(
         return deployApplicationFuture
             .thenCompose { generateDeployApplicationFuture(appConfig) }
             .thenCompose { cloudFoundryClient.unmapRoute(blueAppConfig).toFuture() }
-            .thenCompose { cloudFoundryClient.stopApplication(blueAppConfig.name).toFuture() }
+            .thenCompose {
+                cloudFoundryClient
+                    .stopApplication(blueAppConfig.name)
+                    .toFuture()
+                    .thenApply {
+                        logger.debug("Stopped application ${blueAppConfig.name}")
+                        it
+                    }
+            }
     }
 
     private fun generateDeployApplicationFuture(appConfig: AppConfig): CompletableFuture<Void> {
@@ -118,10 +126,6 @@ class AppDeployer(
                 cloudFoundryClient
                     .mapRoute(appConfig)
                     .toFuture()
-                    .thenApply {
-                        logger.debug("Mapped routes for ${appConfig.name}")
-                        it
-                    }
             }
     }
 

@@ -1,6 +1,5 @@
 package io.pivotal.pushapps
 
-import io.pivotal.pushapps.CloudFoundryClientBuilder.Companion.cloudFoundryClientBuilder
 import io.pivotal.pushapps.CloudFoundryOperationsBuilder.Companion.cloudFoundryOperationsBuilder
 import org.apache.logging.log4j.LogManager
 import org.cloudfoundry.UnknownCloudFoundryException
@@ -149,7 +148,7 @@ class PushApps(
                     messages.add(error.message!!)
 
                     val cause = error.cause
-                    when(cause) {
+                    when (cause) {
                         is UnknownCloudFoundryException -> messages.add("UnknownCloudFoundryException thrown with a statusCode:${cause.statusCode}, and message: ${cause.message}")
                         is IllegalStateException -> messages.add("IllegalStateException with message: ${cause.message}")
                     }

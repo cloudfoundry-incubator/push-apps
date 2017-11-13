@@ -1,6 +1,5 @@
 package io.pivotal.pushapps
 
-import org.apache.logging.log4j.LogManager
 import org.cloudfoundry.operations.CloudFoundryOperations
 import org.cloudfoundry.operations.applications.ApplicationHealthCheck
 import org.cloudfoundry.operations.applications.PushApplicationRequest

@@ -2,6 +2,7 @@ package integration
 
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.verify
+import com.nhaarman.mockito_kotlin.verifyNoMoreInteractions
 import com.nhaarman.mockito_kotlin.whenever
 import io.pivotal.pushapps.DatabaseDriver
 import io.pivotal.pushapps.Migration
@@ -51,6 +52,36 @@ class MigrateDatabaseTest : Spek({
             verify(tc.flyway).dataSource = tc.dataSource
             verify(tc.flyway).setLocations("filesystem:" + migration.migrationDir)
             verify(tc.flyway).migrate()
+        }
+
+        it("does not create the database if postgres") {
+            val postgresMigration = Migration(
+                host = "example.com",
+                port = "3338",
+                user = "root",
+                password = "supersecret",
+                schema = "new_db",
+                driver = DatabaseDriver.Postgres(),
+                migrationDir = "$workingDir/src/test/kotlin/support/dbmigrations"
+            )
+
+            val tc = buildTestContext(
+                migrations = listOf(postgresMigration), organization = "foo_bar_org"
+            )
+
+            val mockConnection = mock<Connection>()
+
+            whenever(tc.dataSource.connection).thenReturn(mockConnection)
+
+            val pushApps = PushApps(
+                tc.config,
+                tc.cfClientBuilder,
+                tc.flyway,
+                tc.dataSourceFactory
+            )
+
+            pushApps.pushApps()
+            verifyNoMoreInteractions(mockConnection)
         }
     }
 })
