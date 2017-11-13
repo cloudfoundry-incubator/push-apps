@@ -23,24 +23,32 @@ class PushApps(
         val cloudFoundryClient = targetCf(cf)
 
         if (securityGroups !== null) {
+            val securityGroupNames = securityGroups.map(SecurityGroup::name)
+            logger.info("Creating security groups: ${securityGroupNames.joinToString(", ")}.")
             val success = createSecurityGroups(securityGroups, cloudFoundryClient, cf.space)
             if (!success) return false
         }
 
         var availableServices: List<String> = emptyList()
         if (services !== null) {
+            val serviceNames = services.map(ServiceConfig::name)
+            logger.info("Creating services: ${serviceNames.joinToString(", ")}.")
             val (success, servicesAvailable) = createServices(services, cloudFoundryClient)
             if (!success) return false
             availableServices = servicesAvailable
         }
 
         if (userProvidedServices !== null) {
+            val userProvidedServiceNames = userProvidedServices.map(UserProvidedServiceConfig::name)
+            logger.info("Creating user provided services: ${userProvidedServiceNames.joinToString(", ")}")
             val success = createOrUpdateUserProvidedServices(userProvidedServices, cloudFoundryClient)
             if (!success) return false
-            availableServices += userProvidedServices.map(UserProvidedServiceConfig::name)
+            availableServices += userProvidedServiceNames
         }
 
         if (migrations !== null) {
+            val migrationDescriptions = migrations.map { "${it.driver} migration for schema ${it.schema}" }
+            logger.info("Running migrations: ${migrationDescriptions.joinToString(", ")}")
             val success = runMigrations(migrations)
             if (!success) return false
         }

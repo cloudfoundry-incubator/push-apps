@@ -14,6 +14,7 @@ class PushAppsCli {
             val configPath: String = ArgumentParser.parseConfigPath(args)
             val config = ConfigReader.parseConfig(configPath)
 
+            logger.info("Pushing applications to the platform")
             val pushApps = PushApps(
                 config,
                 cloudFoundryClientBuilder()

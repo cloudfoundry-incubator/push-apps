@@ -7,7 +7,7 @@ configuration:
     Console:
       name: STDOUT
       PatternLayout:
-        Pattern: "%d %p %C{-5} [%t] %m%n"
+        Pattern: "%style{%d{yyyy-MM-dd HH:mm:ss}}{bright} %highlight{%p} %style{%c{2}}{dim} [%t] %m%n"
 
   loggers:
     root:

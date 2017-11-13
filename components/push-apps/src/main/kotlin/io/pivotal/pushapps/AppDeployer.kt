@@ -1,5 +1,8 @@
 package io.pivotal.pushapps
 
+import io.netty.util.concurrent.CompleteFuture
+import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.Logger
 import reactor.core.publisher.Flux
 import reactor.core.publisher.FluxSink
 import reactor.core.publisher.Mono
@@ -11,7 +14,12 @@ class AppDeployer(
     private val availableServices: List<String>,
     private val retryCount: Int
 ) {
+    private val logger: Logger = LogManager.getLogger(AppDeployer::class.java)
+
     fun deployApps(): List<OperationResult> {
+        val appNames = appConfigs.map(AppConfig::name)
+        logger.info("Deploying applications: ${appNames.joinToString(", ")}")
+
         val deployAppsFlux: Flux<OperationResult> = Flux.create { sink ->
             val applicationDeployments = appConfigs.map { appConfig ->
                 deployApplicationWithRetries(appConfig, sink, 1)
@@ -67,20 +75,54 @@ class AppDeployer(
         val pushAppAction = generatePushAppAction(appConfig)
         val setEnvActions = cloudFoundryClient.setApplicationEnvironment(appConfig)
 
-        val pushAppWithEnvFuture = setEnvActions
-            .fold(pushAppAction.toFuture()) { acc, setEnvAction ->
+        logger.debug("Pushing ${appConfig.name}.")
+        val pushAppActionFuture = pushAppAction
+            .toFuture()
+            .thenApply {
+                logger.debug("Pushed ${appConfig.name}, setting environment variables.")
+                it
+            }
+
+        val pushAppWithEnvFuture = setEnvActions.fold(pushAppActionFuture) { acc, setEnvAction ->
                 acc.thenCompose { setEnvAction.toFuture() }
             }
 
+        val environmentSetFuture = pushAppWithEnvFuture.thenApply {
+            logger.debug("Set environment variables for ${appConfig.name}, binding services.")
+            it
+        }
+
+
         val bindServiceActions: List<Mono<Void>> = generateBindServiceActions(appConfig)
-        val deployAppFuture = bindServiceActions
-            .fold(pushAppWithEnvFuture) { acc, bindServiceAction ->
+        val bindServicesFuture = bindServiceActions
+            .fold(environmentSetFuture) { acc, bindServiceAction ->
                 acc.thenCompose { bindServiceAction.toFuture() }
             }
 
-        return deployAppFuture
-            .thenCompose { cloudFoundryClient.startApplication(appConfig.name).toFuture() }
-            .thenCompose { cloudFoundryClient.mapRoute(appConfig).toFuture() }
+        val servicesBoundFuture = bindServicesFuture.thenApply {
+            logger.debug("Bound services for ${appConfig.name}, starting application.")
+            it
+        }
+
+        return servicesBoundFuture
+            .thenCompose {
+                cloudFoundryClient
+                    .startApplication(appConfig.name)
+                    .toFuture()
+                    .thenApply {
+                        logger.debug("Started ${appConfig.name}, mapping routes.")
+                        it
+                    }
+            }
+            .thenCompose {
+                cloudFoundryClient
+                    .mapRoute(appConfig)
+                    .toFuture()
+                    .thenApply {
+                        logger.debug("Mapped routes for ${appConfig.name}")
+                        it
+                    }
+            }
     }
 
     private fun generatePushAppAction(appConfig: AppConfig): Mono<Void> {

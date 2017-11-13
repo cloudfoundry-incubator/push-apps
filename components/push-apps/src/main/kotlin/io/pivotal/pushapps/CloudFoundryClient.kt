@@ -141,6 +141,8 @@ class CloudFoundryClient(
         }
 
         //TODO return error mono if domain, hostname, or path don't exist
+        var route = "http://${appConfig.route.hostname}.${appConfig.domain}"
+
         val mapRouteRequestBuilder = MapRouteRequest
             .builder()
             .applicationName(appConfig.name)
@@ -149,10 +151,12 @@ class CloudFoundryClient(
 
         if (appConfig.route.path !== null) {
             mapRouteRequestBuilder.path(appConfig.route.path)
+            route += "/${appConfig.route.path}"
         }
 
         val mapRouteRequest = mapRouteRequestBuilder.build()
 
+        logger.debug("Building request to map route $route for application ${appConfig.name}")
         return cloudFoundryOperations.routes().map(mapRouteRequest).ofType(Void.TYPE)
     }
 
