@@ -4,7 +4,7 @@ import org.apache.logging.log4j.LogManager
 import org.cloudfoundry.UnknownCloudFoundryException
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
-import java.util.concurrent.BlockingQueue
+import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 import java.util.concurrent.ExecutionException
@@ -12,7 +12,7 @@ import java.util.concurrent.ExecutionException
 class AppDeploymentScheduler(
     val maxInFlight: Int,
     val appDeployer: (AppConfig) -> CompletableFuture<OperationResult>,
-    val appConfigQueue: BlockingQueue<AppConfig>,
+    val appConfigQueue: Queue<AppConfig>,
     val cloudFoundryClient: CloudFoundryClient,
     val retries: Int = 0
 ) : Subscriber<AppConfig> {
@@ -84,7 +84,7 @@ class AppDeploymentScheduler(
 
         when (cause) {
             is RetryError -> {
-                appConfigQueue.put(cause.appConfig)
+                appConfigQueue.offer(cause.appConfig)
             }
         }
 

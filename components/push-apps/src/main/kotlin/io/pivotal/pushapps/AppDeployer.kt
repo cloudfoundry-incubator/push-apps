@@ -5,7 +5,7 @@ import org.apache.logging.log4j.Logger
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.ConcurrentLinkedQueue
 
 class RetryError(val appConfig: AppConfig) : Throwable()
 
@@ -22,11 +22,10 @@ class AppDeployer(
         val appNames = appConfigs.map(AppConfig::name)
         logger.info("Deploying applications: ${appNames.joinToString(", ")}")
 
-        //FIXME: replace with thread safe queue, doesn't need to block
-        val queue = LinkedBlockingQueue<AppConfig>()
+        val queue = ConcurrentLinkedQueue<AppConfig>()
         queue.addAll(appConfigs)
 
-        val deploymentFunction = {appConfig: AppConfig ->
+        val deploymentFunction = { appConfig: AppConfig ->
             deployApplication(appConfig)
         }
 
@@ -43,10 +42,11 @@ class AppDeployer(
             sink.onRequest({ n: Long ->
                 if (queue.isEmpty()) sink.complete()
 
-                val appConfigs = queue.take(n.toInt())
-                appConfigs.forEach { appConfig ->
-                    val wasRemoved = queue.remove(appConfig)
-                    if (wasRemoved) sink.next(appConfig)
+                (1..n).forEach {
+                    val appConfig = queue.poll()
+                    if (appConfig !== null) {
+                        sink.next(appConfig)
+                    }
                 }
             })
         })

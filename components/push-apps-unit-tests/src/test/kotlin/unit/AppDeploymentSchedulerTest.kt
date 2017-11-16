@@ -14,10 +14,11 @@ import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
 import org.reactivestreams.Subscription
 import reactor.core.publisher.Flux
+import java.util.*
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
-import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.ConcurrentLinkedQueue
 
 class AppDeploymentSchedulerTest : Spek({
     val appConfig = mock<AppConfig>()
@@ -38,7 +39,7 @@ class AppDeploymentSchedulerTest : Spek({
             val scheduler = AppDeploymentScheduler(
                 maxInFlight = 4,
                 appDeployer = appDeployer,
-                appConfigQueue = LinkedBlockingQueue<AppConfig>(),
+                appConfigQueue = mock<Queue<AppConfig>>(),
                 cloudFoundryClient = mock<CloudFoundryClient>()
             )
             scheduler.onSubscribe(subscription)
@@ -52,7 +53,7 @@ class AppDeploymentSchedulerTest : Spek({
             val scheduler = AppDeploymentScheduler(
                 maxInFlight = 4,
                 appDeployer = appDeployer,
-                appConfigQueue = LinkedBlockingQueue<AppConfig>(),
+                appConfigQueue = mock<Queue<AppConfig>>(),
                 cloudFoundryClient = mock<CloudFoundryClient>()
             )
             scheduler.onSubscribe(subscription)
@@ -84,7 +85,7 @@ class AppDeploymentSchedulerTest : Spek({
             val scheduler = AppDeploymentScheduler(
                 maxInFlight = 4,
                 appDeployer = deployer,
-                appConfigQueue = LinkedBlockingQueue<AppConfig>(),
+                appConfigQueue = mock<Queue<AppConfig>>(),
                 cloudFoundryClient = mock<CloudFoundryClient>()
             )
             scheduler.onSubscribe(subscription)
@@ -121,7 +122,7 @@ class AppDeploymentSchedulerTest : Spek({
                 }
 
                 exceptionalFuture.completeExceptionally(CompletionException(UnknownCloudFoundryException(502)))
-                val queue = LinkedBlockingQueue<AppConfig>()
+                val queue = ConcurrentLinkedQueue<AppConfig>()
 
                 val scheduler = AppDeploymentScheduler(
                     maxInFlight = 1,
@@ -134,7 +135,7 @@ class AppDeploymentSchedulerTest : Spek({
                 scheduler.onNext(appConfig)
 
                 assertThat(queue).hasSize(1)
-                assertThat(queue.take()).isEqualTo(appConfig)
+                assertThat(queue.poll()).isEqualTo(appConfig)
             }
 
             it("only retries failed deployments, and does not lose successful ones") {
@@ -208,7 +209,7 @@ class AppDeploymentSchedulerTest : Spek({
 
                     scheduler.onNext(appConfig)
 
-                    verify(queue).put(appConfig)
+                    verify(queue).offer(appConfig)
 
                     scheduler.onNext(appConfig)
 
@@ -281,7 +282,7 @@ class AppDeploymentSchedulerTest : Spek({
                     val scheduler = AppDeploymentScheduler(
                         maxInFlight = 1,
                         appDeployer = deployer,
-                        appConfigQueue = LinkedBlockingQueue<AppConfig>(),
+                        appConfigQueue = mock<Queue<AppConfig>>(),
                         cloudFoundryClient = cloudFoundryClient,
                         retries = 0
                     )
