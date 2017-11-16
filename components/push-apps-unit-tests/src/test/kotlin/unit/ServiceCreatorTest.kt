@@ -2,10 +2,10 @@ package unit
 
 import com.nhaarman.mockito_kotlin.*
 import io.pivotal.pushapps.CloudFoundryClient
-import io.pivotal.pushapps.OperationResult
 import io.pivotal.pushapps.ServiceConfig
 import io.pivotal.pushapps.ServiceCreator
 import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
@@ -45,7 +45,12 @@ class ServiceCreatorTest : Spek({
             verify(tc.mockCloudFoundryClient, times(1))
                 .createService(tc.serviceConfig)
 
-            Assertions.assertThat(results).containsOnly(OperationResult(tc.serviceConfig.name, didSucceed = true))
+            assertThat(results).hasSize(1)
+
+            val firstResult = results[0]
+            assertThat(firstResult.name).isEqualTo(tc.serviceConfig.name)
+            assertThat(firstResult.didSucceed).isTrue()
+
         }
 
         it("it returns a failure result when creating a service fails") {

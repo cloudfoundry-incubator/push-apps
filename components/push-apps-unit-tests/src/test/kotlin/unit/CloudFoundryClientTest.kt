@@ -5,6 +5,7 @@ import io.pivotal.pushapps.*
 import org.assertj.core.api.Assertions.assertThat
 import org.cloudfoundry.client.v2.securitygroups.Protocol
 import org.cloudfoundry.client.v2.securitygroups.SecurityGroups
+import org.cloudfoundry.doppler.LogMessage
 import org.cloudfoundry.operations.CloudFoundryOperations
 import org.cloudfoundry.operations.DefaultCloudFoundryOperations
 import org.cloudfoundry.operations.applications.Applications
@@ -390,6 +391,27 @@ class CloudFoundryClientTest : Spek({
                 }
             )
             assertThat(spaceId).isEqualTo("pamplemousse")
+        }
+    }
+
+    describe("#fetchRecentLogsForAsync") {
+        it("uses cloud found operations to fetch recent logs") {
+            val tc = buildTestContext()
+            val logMessage = mock<LogMessage>()
+
+
+            whenever(tc.applications.logs(any())).thenReturn(Flux.fromIterable(listOf(logMessage)))
+
+            val logs = tc.cloudFoundryClient.fetchRecentLogsForAsync("some-app")
+            verify(tc.applications, times(1)).logs(
+                argForWhich {
+                    name == "some-app" &&
+                        recent == true
+                }
+            )
+            val logsList = logs.toIterable().toList()
+            assertThat(logsList).hasSize(1)
+            assertThat(logsList[0]).isEqualTo(logMessage)
         }
     }
 })

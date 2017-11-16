@@ -103,7 +103,9 @@ class EndToEndAcceptanceTest : Spek({
                     services = listOf(metricsForwarderService, optionalService),
                     userProvidedServices = listOf(complimentService),
                     migrations = listOf(migration),
-                    securityGroups = listOf(securityGroup)
+                    securityGroups = listOf(securityGroup),
+                    retryCount = 0,
+                    maxInFlight = 4
                 )
 
                 val tc = acceptanceTestContext

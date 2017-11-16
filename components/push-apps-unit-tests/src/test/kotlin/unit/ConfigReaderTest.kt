@@ -2,20 +2,29 @@ package unit
 
 import io.pivotal.pushapps.ConfigReader
 import io.pivotal.pushapps.DatabaseDriver
+import org.apache.commons.io.FilenameUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
+import java.nio.file.Paths
 
 class ConfigReaderTest : Spek({
+    fun findConigDir(): String {
+        val compiledFileLocation = ConfigReaderTest::class.java.getResource("${ConfigReaderTest::class.simpleName}.class")
+        val projectPath = Paths.get(compiledFileLocation.path.toString(), "../../../../../../src/test/kotlin/support/exampleConfig.yml").toAbsolutePath().toString()
+        return FilenameUtils.normalize(projectPath)
+    }
+
     describe("#parseConfig") {
         it("Parses the pushAppsConfig config") {
-            val pushAppsConfig = ConfigReader.parseConfig("src/test/kotlin/support/exampleConfig.yml")
+            val pushAppsConfig = ConfigReader.parseConfig(findConigDir())
             assertThat(pushAppsConfig.pushApps.appDeployRetryCount).isEqualTo(3)
+            assertThat(pushAppsConfig.pushApps.maxInFlight).isEqualTo(42)
         }
 
         it("Parses the cf config") {
-            val pushAppsConfig = ConfigReader.parseConfig("src/test/kotlin/support/exampleConfig.yml")
+            val pushAppsConfig = ConfigReader.parseConfig(findConigDir())
 
             assertThat(pushAppsConfig.cf.apiHost).isEqualTo("api.example.com")
             assertThat(pushAppsConfig.cf.username).isEqualTo("some-username")
@@ -27,7 +36,7 @@ class ConfigReaderTest : Spek({
         }
 
         it("Parses the apps config") {
-            val pushAppsConfig = ConfigReader.parseConfig("src/test/kotlin/support/exampleConfig.yml")
+            val pushAppsConfig = ConfigReader.parseConfig(findConigDir())
 
             val apps = pushAppsConfig.apps
             assertThat(apps).hasSize(1)
@@ -45,7 +54,7 @@ class ConfigReaderTest : Spek({
         }
 
         it("Parses the services config") {
-            val pushAppsConfig = ConfigReader.parseConfig("src/test/kotlin/support/exampleConfig.yml")
+            val pushAppsConfig = ConfigReader.parseConfig(findConigDir())
 
             val services = pushAppsConfig.services
             assertThat(services).hasSize(1)
@@ -58,7 +67,7 @@ class ConfigReaderTest : Spek({
         }
 
         it("Parses the security group config") {
-            val pushAppsConfig = ConfigReader.parseConfig("src/test/kotlin/support/exampleConfig.yml")
+            val pushAppsConfig = ConfigReader.parseConfig(findConigDir())
 
             val securityGroups = pushAppsConfig.securityGroups
             assertThat(securityGroups).hasSize(1)
@@ -70,7 +79,7 @@ class ConfigReaderTest : Spek({
         }
 
         it("Parses the user provided services config") {
-            val pushAppsConfig = ConfigReader.parseConfig("src/test/kotlin/support/exampleConfig.yml")
+            val pushAppsConfig = ConfigReader.parseConfig(findConigDir())
 
             val userProvidedServices = pushAppsConfig.userProvidedServices
             assertThat(userProvidedServices).hasSize(1)
@@ -81,7 +90,7 @@ class ConfigReaderTest : Spek({
         }
 
         it("Parses the db migration config") {
-            val pushAppsConfig = ConfigReader.parseConfig("src/test/kotlin/support/exampleConfig.yml")
+            val pushAppsConfig = ConfigReader.parseConfig(findConigDir())
 
             val migrations = pushAppsConfig.migrations
             assertThat(migrations).hasSize(1)

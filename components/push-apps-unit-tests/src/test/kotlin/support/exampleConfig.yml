@@ -1,5 +1,6 @@
 pushApps:
   appDeployRetryCount: 3
+  maxInFlight: 42
 cf:
   apiHost: "api.example.com"
   password: some-password

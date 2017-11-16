@@ -23,6 +23,7 @@ class AppDeployerTest : Spek({
             cloudFoundryClient = mockCfClient,
             appConfigs = listOf(appConfig),
             retryCount = retryCount,
+            maxInFlight = 1,
             availableServices = listOf("grapefruit")
         )
 
@@ -83,36 +84,5 @@ class AppDeployerTest : Spek({
         }
 
         //TODO blue green
-
-        //TODO single failure
-
-        it("Retries Deploying Failed App") {
-            val appConfig = AppConfig(
-                name = "Foo bar",
-                path = "/tmp/foo/bar",
-                buildpack = "bob_the_builder",
-                environment = mapOf("LEMONS" to "LIMES"),
-                serviceNames = listOf("grapefruit"),
-                route = Route("kiwi", "orange")
-            )
-            val tc = buildTestContext(appConfig = appConfig, retryCount = 2)
-
-            whenever(tc.mockCfClient.pushApplication(any())).thenReturn(Mono.empty())
-            whenever(tc.mockCfClient.setApplicationEnvironment(any())).thenReturn(listOf(Mono.empty()))
-            whenever(tc.mockCfClient.bindServicesToApplication(any(), any()))
-                .thenReturn(listOf(Mono.error(Error("lemons"))))
-                .thenReturn(listOf(Mono.empty()))
-
-            whenever(tc.mockCfClient.startApplication(any())).thenReturn(Mono.empty())
-            whenever(tc.mockCfClient.mapRoute(any())).thenReturn(Mono.empty())
-
-            tc.appDeployer.deployApps()
-
-            verify(tc.mockCfClient, times(2)).pushApplication(appConfig)
-            verify(tc.mockCfClient, times(2)).setApplicationEnvironment(appConfig)
-            verify(tc.mockCfClient, times(2)).bindServicesToApplication(appConfig.name, appConfig.serviceNames!!)
-            verify(tc.mockCfClient, times(1)).startApplication(appConfig.name)
-            verify(tc.mockCfClient, times(1)).mapRoute(appConfig)
-        }
     }
 })

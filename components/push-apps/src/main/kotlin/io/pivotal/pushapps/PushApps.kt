@@ -52,7 +52,7 @@ class PushApps(
             if (!success) return false
         }
 
-        return deployApps(apps, availableServices, pushAppsConfig.appDeployRetryCount, cloudFoundryClient)
+        return deployApps(apps, availableServices, pushAppsConfig.maxInFlight, pushAppsConfig.appDeployRetryCount, cloudFoundryClient)
     }
 
     private fun createSecurityGroups(securityGroups: List<SecurityGroup>, cloudFoundryClient: CloudFoundryClient, space: String): Boolean {
@@ -109,8 +109,8 @@ class PushApps(
         return handleOperationResult(databaseMigrationResults, "Migrating database")
     }
 
-    private fun deployApps(apps: List<AppConfig>, availableServices: List<String>, retryCount: Int, cloudFoundryClient: CloudFoundryClient): Boolean {
-        val appDeployer = AppDeployer(cloudFoundryClient, apps, availableServices, retryCount)
+    private fun deployApps(apps: List<AppConfig>, availableServices: List<String>, maxInFlight: Int, retryCount: Int, cloudFoundryClient: CloudFoundryClient): Boolean {
+        val appDeployer = AppDeployer(cloudFoundryClient, apps, availableServices, maxInFlight, retryCount)
         val results = appDeployer.deployApps()
 
         return handleOperationResult(results, "Deploying application")

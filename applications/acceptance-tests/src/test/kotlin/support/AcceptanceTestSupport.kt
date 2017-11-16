@@ -76,7 +76,9 @@ class AcceptanceTestSupport {
         services: List<ServiceConfig> = emptyList(),
         userProvidedServices: List<UserProvidedServiceConfig> = emptyList(),
         migrations: List<Migration> = emptyList(),
-        securityGroups: List<SecurityGroup> = emptyList()
+        securityGroups: List<SecurityGroup> = emptyList(),
+        retryCount: Int,
+        maxInFlight: Int
     ): AcceptanceTestContext {
         val organization = "pushapps_test_${UUID.randomUUID().toString()}"
 
@@ -106,7 +108,9 @@ class AcceptanceTestSupport {
             services = services,
             migrations = migrations,
             securityGroups = securityGroups,
-            skipSslValidation = true
+            skipSslValidation = true,
+            retryCount = retryCount,
+            maxInFlight = maxInFlight
         )
 
         return AcceptanceTestContext(cfOperations, cf, configFilePath, securityGroups, organization)
@@ -225,10 +229,20 @@ class AcceptanceTestSupport {
         services: List<ServiceConfig>,
         migrations: List<Migration>?,
         securityGroups: List<SecurityGroup>?,
-        skipSslValidation: Boolean
+        skipSslValidation: Boolean,
+        retryCount: Int,
+        maxInFlight: Int
     ): String {
         val cf = CfConfig(apiHost, username, password, organization, space, skipSslValidation)
-        val config = Config(PushAppsConfig(), cf, apps, services, userProvidedServices, migrations, securityGroups)
+        val config = Config(
+            PushAppsConfig(retryCount, maxInFlight),
+            cf,
+            apps,
+            services,
+            userProvidedServices,
+            migrations,
+            securityGroups
+        )
 
         val objectMapper = ObjectMapper(YAMLFactory()).registerModule(KotlinModule())
 

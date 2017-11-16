@@ -1,17 +1,19 @@
 package io.pivotal.pushapps
 
-import io.netty.util.concurrent.CompleteFuture
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import reactor.core.publisher.Flux
-import reactor.core.publisher.FluxSink
 import reactor.core.publisher.Mono
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.LinkedBlockingQueue
+
+class RetryError(val appConfig: AppConfig) : Throwable()
 
 class AppDeployer(
     private val cloudFoundryClient: CloudFoundryClient,
     private val appConfigs: List<AppConfig>,
     private val availableServices: List<String>,
+    private val maxInFlight: Int,
     private val retryCount: Int
 ) {
     private val logger: Logger = LogManager.getLogger(AppDeployer::class.java)
@@ -20,30 +22,43 @@ class AppDeployer(
         val appNames = appConfigs.map(AppConfig::name)
         logger.info("Deploying applications: ${appNames.joinToString(", ")}")
 
-        val deployAppsFlux: Flux<OperationResult> = Flux.create { sink ->
-            val applicationDeployments = appConfigs.map { appConfig ->
-                deployApplicationWithRetries(appConfig, sink, 1)
-            }
+        //FIXME: replace with thread safe queue, doesn't need to block
+        val queue = LinkedBlockingQueue<AppConfig>()
+        queue.addAll(appConfigs)
 
-            CompletableFuture.allOf(*applicationDeployments.toTypedArray())
-                .thenApply { sink.complete() }
+        val deploymentFunction = {appConfig: AppConfig ->
+            deployApplication(appConfig)
         }
 
-        return deployAppsFlux.toIterable().toList()
-    }
+        val subscriber = AppDeploymentScheduler(
+            maxInFlight = maxInFlight,
+            appDeployer = deploymentFunction,
+            appConfigQueue = queue,
+            cloudFoundryClient = cloudFoundryClient,
+            retries = retryCount
+        )
 
-    private fun deployApplicationWithRetries(appConfig: AppConfig, sink: FluxSink<OperationResult>, attemptCount: Int): CompletableFuture<Any> {
-        return deployApplication(appConfig)
-            .thenApply {
-                if (it.didSucceed || attemptCount >= retryCount) {
-                    sink.next(it)
-                } else {
-                    deployApplicationWithRetries(appConfig, sink, attemptCount + 1)
+        //FIXME: extract to injected thing that can be tested
+        val flux = Flux.create<AppConfig>({ sink ->
+            sink.onRequest({ n: Long ->
+                if (queue.isEmpty()) sink.complete()
+
+                val appConfigs = queue.take(n.toInt())
+                appConfigs.forEach { appConfig ->
+                    val wasRemoved = queue.remove(appConfig)
+                    if (wasRemoved) sink.next(appConfig)
                 }
-            }
+            })
+        })
+
+        flux.subscribe(subscriber)
+
+        val results = subscriber.results.get()
+        logger.debug("Got results $results")
+        return results
     }
 
-    private fun deployApplication(appConfig: AppConfig): CompletableFuture<OperationResult> {
+    fun deployApplication(appConfig: AppConfig): CompletableFuture<OperationResult> {
         val deployAppFuture = if (appConfig.blueGreenDeploy == true) {
             generateBlueGreenDeployApplicationFuture(appConfig)
         } else {
@@ -92,8 +107,8 @@ class AppDeployer(
             }
 
         val pushAppWithEnvFuture = setEnvActions.fold(pushAppActionFuture) { acc, setEnvAction ->
-                acc.thenCompose { setEnvAction.toFuture() }
-            }
+            acc.thenCompose { setEnvAction.toFuture() }
+        }
 
         val environmentSetFuture = pushAppWithEnvFuture.thenApply {
             logger.debug("Set environment variables for ${appConfig.name}, binding services.")

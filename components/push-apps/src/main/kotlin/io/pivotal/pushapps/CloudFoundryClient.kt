@@ -4,12 +4,10 @@ import org.apache.logging.log4j.LogManager
 import org.cloudfoundry.client.v2.securitygroups.CreateSecurityGroupRequest
 import org.cloudfoundry.client.v2.securitygroups.Protocol
 import org.cloudfoundry.client.v2.securitygroups.RuleEntity
+import org.cloudfoundry.doppler.LogMessage
 import org.cloudfoundry.operations.CloudFoundryOperations
 import org.cloudfoundry.operations.DefaultCloudFoundryOperations
-import org.cloudfoundry.operations.applications.ApplicationSummary
-import org.cloudfoundry.operations.applications.SetEnvironmentVariableApplicationRequest
-import org.cloudfoundry.operations.applications.StartApplicationRequest
-import org.cloudfoundry.operations.applications.StopApplicationRequest
+import org.cloudfoundry.operations.applications.*
 import org.cloudfoundry.operations.organizations.CreateOrganizationRequest
 import org.cloudfoundry.operations.organizations.OrganizationSummary
 import org.cloudfoundry.operations.routes.MapRouteRequest
@@ -19,6 +17,7 @@ import org.cloudfoundry.operations.spaces.CreateSpaceRequest
 import org.cloudfoundry.operations.spaces.GetSpaceRequest
 import org.cloudfoundry.operations.spaces.SpaceDetail
 import org.cloudfoundry.operations.spaces.SpaceSummary
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.time.Duration
 
@@ -319,5 +318,11 @@ class CloudFoundryClient(
             .block()
 
         return spaceId
+    }
+
+    fun fetchRecentLogsForAsync(appName: String): Flux<LogMessage> {
+        val logsRequest = LogsRequest.builder().name(appName).recent(true).build()
+
+        return cloudFoundryOperations.applications().logs(logsRequest)
     }
 }

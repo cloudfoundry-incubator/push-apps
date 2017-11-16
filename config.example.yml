@@ -1,12 +1,13 @@
 pushApps:
   appDeployRetryCount: 2
+  maxInFlight: 42
 cf:
   apiHost: "api.example.com"
   password: secret
   username: user
   organization: some-organization
   space: some-space
-apps: 
+apps:
 - name: some-app-name
   path: "<dirname>/some-app.zip"
   buildpack: binary_buildpack
