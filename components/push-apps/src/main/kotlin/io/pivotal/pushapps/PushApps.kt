@@ -3,6 +3,7 @@ package io.pivotal.pushapps
 import io.pivotal.pushapps.CloudFoundryOperationsBuilder.Companion.cloudFoundryOperationsBuilder
 import org.apache.logging.log4j.LogManager
 import org.cloudfoundry.UnknownCloudFoundryException
+import org.cloudfoundry.doppler.LogMessage
 import org.flywaydb.core.Flyway
 
 class PushApps(
@@ -141,7 +142,7 @@ class PushApps(
         val nonOptionalFailedResults = failedResults.filterNot(OperationResult::optional)
 
         nonOptionalFailedResults
-            .forEach { (name, _, error, _) ->
+            .forEach { (name, _, error, _, recentLogs) ->
                 val messages = mutableListOf<String>()
 
                 if (error !== null) {
@@ -159,6 +160,21 @@ class PushApps(
                 }
 
                 logger.error("$actionName $name failed with error messages: [${messages.joinToString(", ")}]")
+
+                val logs = recentLogs
+                    .toIterable()
+                    .sortedByDescending(LogMessage::getTimestamp)
+                    .map(LogMessage::getMessage)
+                    .toList()
+
+                if (logs.isNotEmpty()) {
+                    val failedDeploymentLogLinesToShow = config.pushApps.failedDeploymentLogLinesToShow
+                    val logsToShow = logs.subList(0, failedDeploymentLogLinesToShow)
+                    logger.error("Deployment of $name failed, printing the most recent $failedDeploymentLogLinesToShow log lines")
+                    logger.error(logsToShow.joinToString("\n\r"))
+                } else {
+                    logger.error("Unable to fetch logs for failed operation $name")
+                }
             }
 
         return nonOptionalFailedResults.isEmpty()

@@ -21,6 +21,7 @@ class ConfigReaderTest : Spek({
             val pushAppsConfig = ConfigReader.parseConfig(findConigDir())
             assertThat(pushAppsConfig.pushApps.appDeployRetryCount).isEqualTo(3)
             assertThat(pushAppsConfig.pushApps.maxInFlight).isEqualTo(42)
+            assertThat(pushAppsConfig.pushApps.failedDeploymentLogLinesToShow).isEqualTo(12)
         }
 
         it("Parses the cf config") {

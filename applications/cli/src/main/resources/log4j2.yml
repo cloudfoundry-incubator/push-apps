@@ -35,3 +35,18 @@ configuration:
       additivity: false
       AppenderRef:
         ref: STDOUT
+    - name: cloudfoundry-client.operations
+      level: error
+      additivity: false
+      AppenderRef:
+        ref: STDOUT
+    - name: cloudfoundry-client.request
+      level: error
+      additivity: false
+      AppenderRef:
+        ref: STDOUT
+    - name: cloudfoundry-client.response
+      level: error
+      additivity: false
+      AppenderRef:
+        ref: STDOUT

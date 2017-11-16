@@ -36,7 +36,8 @@ data class Config(
 
 data class PushAppsConfig(
     val appDeployRetryCount: Int = 0,
-    val maxInFlight: Int = 2
+    val maxInFlight: Int = 2,
+    val failedDeploymentLogLinesToShow: Int = 50
 )
 
 data class CfConfig(
