@@ -9,7 +9,7 @@ import org.flywaydb.core.Flyway
 class PushApps(
     val config: Config,
     private val cloudFoundryClientBuilder: CloudFoundryClientBuilder,
-    private val flyway: Flyway = Flyway(),
+    private val flywayWrapper: FlywayWrapper = FlywayWrapper(Flyway()),
     private val dataSourceFactory: DataSourceFactory = DataSourceFactory(
         { mySqlDataSourceBuilder(it) },
         { postgresDataSourceBuilder(it) }
@@ -53,7 +53,13 @@ class PushApps(
             if (!success) return false
         }
 
-        return deployApps(apps, availableServices, pushAppsConfig.maxInFlight, pushAppsConfig.appDeployRetryCount, cloudFoundryClient)
+        return deployApps(
+            apps = apps,
+            availableServices = availableServices,
+            maxInFlight = pushAppsConfig.maxInFlight,
+            retryCount = pushAppsConfig.appDeployRetryCount,
+            cloudFoundryClient = cloudFoundryClient
+        )
     }
 
     private fun createSecurityGroups(securityGroups: List<SecurityGroup>, cloudFoundryClient: CloudFoundryClient, space: String): Boolean {
@@ -102,8 +108,8 @@ class PushApps(
 
     private fun runMigrations(migrations: List<Migration>): Boolean {
         val databaseMigrationResults = DatabaseMigrator(
-            migrations.toTypedArray(),
-            flyway,
+            migrations,
+            flywayWrapper,
             dataSourceFactory
         ).migrate()
 

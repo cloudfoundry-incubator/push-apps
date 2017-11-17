@@ -108,7 +108,7 @@ class DataSourceFactoryTest : Spek({
 
             it("adds the database name") {
                 val (mySqlDataSourceBuilder, postgresDataSourceBuilder) = buildTextContext()
-                val (migration, postgresDataSource, dataSourceFactory) =
+                val (migration, _, dataSourceFactory) =
                     buildPostgresTextContext(mySqlDataSourceBuilder, postgresDataSourceBuilder)
 
                 dataSourceFactory.buildDataSource(migration)

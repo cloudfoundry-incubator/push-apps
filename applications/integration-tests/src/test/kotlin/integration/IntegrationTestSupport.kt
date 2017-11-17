@@ -27,7 +27,7 @@ data class IntegrationTestContext(
     val config: Config,
     val cfOperations: DefaultCloudFoundryOperations,
     val cfClientBuilder: CloudFoundryClientBuilder,
-    val flyway: Flyway,
+    val flyway: FlywayWrapper,
     val dataSourceFactory: DataSourceFactory,
     val dataSource: DataSource
 )
@@ -44,7 +44,7 @@ fun buildTestContext(
     val cfOperations = buildMockCfOperations()
     val cfOperationsBuilder = buildMockCfOperationsBuilder(cfOperations)
     val cfClientBuilder = buildMockCfClientBuilder(cfOperations, cfOperationsBuilder)
-    val flyway = mock<Flyway>()
+    val flyway = mock<FlywayWrapper>()
     val (dataSourceFactory, dataSource) = buildDataSourceFactory()
 
     val config = createConfig(

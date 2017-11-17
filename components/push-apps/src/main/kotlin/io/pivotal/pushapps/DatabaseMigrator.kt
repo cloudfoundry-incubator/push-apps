@@ -9,8 +9,8 @@ import java.util.concurrent.CompletableFuture
 import javax.sql.DataSource
 
 class DatabaseMigrator(
-    private val migrations: Array<Migration>,
-    private val flyway: Flyway,
+    private val migrations: List<Migration>,
+    private val flywayWrapper: FlywayWrapper,
     private val dataSourceFactory: DataSourceFactory
 ) {
     private val logger = LogManager.getLogger(DatabaseMigrator::class.java)
@@ -28,8 +28,7 @@ class DatabaseMigrator(
                     .thenApply { sink.next(it) }
             }
 
-            CompletableFuture.allOf(*migrateDatabaseFutures
-                .toTypedArray())
+            CompletableFuture.allOf(*migrateDatabaseFutures.toTypedArray())
                 .thenApply { sink.complete() }
         }
 
@@ -39,13 +38,12 @@ class DatabaseMigrator(
     private fun migrateDatabase(dataSource: DataSource, migration: Migration) {
         if (migration.driver is DatabaseDriver.MySql) createDatabaseIfAbsent(dataSource.connection, migration.schema)
         val newDataSource = dataSourceFactory.addDatabaseNameToDataSource(dataSource, migration)
-        runFlyway(newDataSource, migration)
+            runFlyway(newDataSource, migration)
     }
 
     private fun createDatabaseIfAbsent(conn: Connection, dbName: String) {
         try {
             val stmt = conn.createStatement()
-
             stmt.execute("CREATE DATABASE IF NOT EXISTS $dbName;")
         } catch (ex: SQLException) {
             logger.error("Unable to create database $dbName. Caught exception: ${ex.message}")
@@ -53,9 +51,7 @@ class DatabaseMigrator(
     }
 
     private fun runFlyway(dataSource: DataSource, migration: Migration) {
-        flyway.dataSource = dataSource
-        flyway.setLocations("filesystem:" + migration.migrationDir)
-
-        flyway.migrate()
+        val migrationsLocation = "filesystem:" + migration.migrationDir
+        flywayWrapper.migrate(dataSource, migrationsLocation)
     }
 }

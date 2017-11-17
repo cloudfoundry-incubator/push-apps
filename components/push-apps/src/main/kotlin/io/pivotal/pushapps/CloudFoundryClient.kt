@@ -305,7 +305,7 @@ class CloudFoundryClient(
         return applicationListFlux.toIterable().toList()
     }
 
-    fun getSpaceId(spaceName: String): String {
+    fun getSpaceId(spaceName: String): String? {
         val spaceRequest = GetSpaceRequest
             .builder()
             .name(spaceName)

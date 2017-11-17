@@ -4,8 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.github.kittinunf.fuel.Fuel
-import com.github.kittinunf.fuel.core.Request
-import com.github.kittinunf.result.Result
 import io.pivotal.pushapps.*
 import io.pivotal.pushapps.CloudFoundryOperationsBuilder.Companion.cloudFoundryOperationsBuilder
 import org.apache.commons.io.FilenameUtils
@@ -204,7 +202,7 @@ class AcceptanceTestSupport {
             .list(securityGroupsRequest)
             .map(ListSecurityGroupsResponse::getResources)
             .block()
-        return securityGroupResources
+        return securityGroupResources ?: emptyList()
     }
 
     private fun getTargetedOperations(cfOperations: CloudFoundryOperations, organization: String, space: String): CloudFoundryOperations {
@@ -318,7 +316,7 @@ class AcceptanceTestSupport {
 
     fun httpGet(url: String): Mono<String> {
         return Mono.create<String> { sink ->
-            val request: Request = Fuel.get(url).responseString { _, _, result ->
+            Fuel.get(url).responseString { _, _, result ->
                 result.fold(sink::success, sink::error)
             }
         }
