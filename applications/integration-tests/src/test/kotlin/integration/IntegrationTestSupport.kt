@@ -16,7 +16,6 @@ import org.cloudfoundry.operations.services.ServiceInstanceSummary
 import org.cloudfoundry.operations.services.Services
 import org.cloudfoundry.operations.spaces.SpaceDetail
 import org.cloudfoundry.operations.spaces.Spaces
-import org.flywaydb.core.Flyway
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import javax.sql.DataSource
@@ -39,7 +38,8 @@ fun buildTestContext(
     migrations: List<Migration> = emptyList(),
     securityGroups: List<SecurityGroup> = emptyList(),
     organization: String = "dewey_decimal",
-    space: String = "test"
+    space: String = "test",
+    retryCount: Int = 0
 ): IntegrationTestContext {
     val cfOperations = buildMockCfOperations()
     val cfOperationsBuilder = buildMockCfOperationsBuilder(cfOperations)
@@ -58,7 +58,8 @@ fun buildTestContext(
         services = services,
         migrations = migrations,
         securityGroups = securityGroups,
-        skipSslValidation = true
+        skipSslValidation = true,
+        retryCount = retryCount
     )
 
     return IntegrationTestContext(
@@ -172,8 +173,11 @@ private fun createConfig(
     services: List<ServiceConfig>,
     migrations: List<Migration>?,
     securityGroups: List<SecurityGroup>?,
-    skipSslValidation: Boolean
+    skipSslValidation: Boolean,
+    retryCount: Int
 ): Config {
     val cf = CfConfig(apiHost, username, password, organization, space, skipSslValidation)
-    return Config(PushAppsConfig(), cf, apps, services, userProvidedServices, migrations, securityGroups)
+    return Config(PushAppsConfig(
+        appDeployRetryCount = retryCount
+    ), cf, apps, services, userProvidedServices, migrations, securityGroups)
 }

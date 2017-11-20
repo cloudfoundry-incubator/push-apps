@@ -4,20 +4,20 @@ import org.apache.logging.log4j.LogManager
 import org.cloudfoundry.UnknownCloudFoundryException
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 import java.util.*
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.CompletionException
-import java.util.concurrent.ExecutionException
 
 class AppDeploymentScheduler(
     val maxInFlight: Int,
-    val appDeployer: (AppConfig) -> CompletableFuture<OperationResult>,
+    val appDeployer: (AppConfig) -> Flux<OperationResult>,
     val appConfigQueue: Queue<AppConfig>,
     val cloudFoundryClient: CloudFoundryClient,
     val retries: Int = 0
 ) : Subscriber<AppConfig> {
     private val logger = LogManager.getLogger(AppDeploymentScheduler::class.java)
-    private val deployments = mutableListOf<CompletableFuture<OperationResult>>()
+    private val deployments = mutableListOf<Flux<OperationResult>>()
     private val deploymentResults = mutableListOf<OperationResult>()
 
     private val retriesByApp = mutableMapOf<String, Int>()
@@ -30,31 +30,34 @@ class AppDeploymentScheduler(
 
     override fun onNext(appConfig: AppConfig) {
         val retryCount = retriesByApp.getOrDefault(appConfig.name, retries)
+        retriesByApp[appConfig.name] = retryCount - 1
 
-        val future = appDeployer(appConfig).exceptionally { error ->
-            val cause = error.cause
-            when (cause) {
+        val handleErrors: (Throwable) -> Mono<OperationResult> = { error ->
+            when (error) {
                 is UnknownCloudFoundryException -> {
-                    logger.debug("Retrying deployment of ${appConfig.name} due to an UnknownCloudFoundryException with message ${cause.message} and status code ${cause.statusCode}.")
-                    throw RetryError(appConfig)
+                    logger.debug("Retrying deployment of ${appConfig.name} due to an UnknownCloudFoundryException with message ${error.message} and status code ${error.statusCode}.")
+                    appConfigQueue.offer(appConfig)
+                    Mono.empty()
                 }
                 else -> {
                     if (retryCount > 0) {
                         logger.debug("Retrying deployment of ${appConfig.name}, retry count at $retryCount.")
-                        throw RetryError(appConfig)
+                        appConfigQueue.offer(appConfig)
+                        Mono.empty()
+                    } else {
+                        val recentLogs = cloudFoundryClient
+                            .fetchRecentLogsForAsync(appConfig.name)
+
+                        Mono.just(OperationResult(appConfig.name, false, error, false, recentLogs))
                     }
-
-                    val recentLogs = cloudFoundryClient
-                        .fetchRecentLogsForAsync(appConfig.name)
-
-                    OperationResult(appConfig.name, false, cause, false, recentLogs)
                 }
             }
         }
 
-        retriesByApp[appConfig.name] = retryCount - 1
+        val deployAppFlux = appDeployer(appConfig)
+            .onErrorResume(handleErrors)
 
-        deployments.add(future)
+        deployments.add(deployAppFlux)
 
         onNextAmount++
 
@@ -65,30 +68,12 @@ class AppDeploymentScheduler(
     }
 
     private fun waitForCurrentDeployments() {
-        val resultsList = deployments.mapNotNull { deployment ->
-            try {
-                deployment.get()
-            } catch (error: CompletionException) {
-                handleRetryErrors(error)
-            } catch (error: ExecutionException) {
-                handleRetryErrors(error)
-            }
+        val resultsList = deployments.flatMap { deployment ->
+            deployment.toIterable().filterNotNull()
         }
 
         deploymentResults.addAll(resultsList)
         deployments.clear()
-    }
-
-    private fun handleRetryErrors(error: Exception): Nothing? {
-        val cause = error.cause
-
-        when (cause) {
-            is RetryError -> {
-                appConfigQueue.offer(cause.appConfig)
-            }
-        }
-
-        return null
     }
 
     private fun maxInFlightReached() = (onNextAmount % maxInFlight) == 0

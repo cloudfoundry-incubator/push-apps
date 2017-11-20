@@ -3,7 +3,7 @@ package integration
 import com.nhaarman.mockito_kotlin.*
 import io.pivotal.pushapps.*
 import org.assertj.core.api.Assertions.assertThat
-import org.cloudfoundry.UnknownCloudFoundryException
+import org.cloudfoundry.doppler.LogMessage
 import org.cloudfoundry.operations.applications.ApplicationSummary
 import org.cloudfoundry.operations.routes.MapRouteRequest
 import org.cloudfoundry.operations.routes.UnmapRouteRequest
@@ -273,17 +273,22 @@ class DeployAppTest : Spek({
             }
         }
 
-        it("returning an error if a deploy fails") {
+        it("retries failed deployments up to the retry count") {
             val tc = buildTestContext(
-                apps = listOf(helloApp), organization = "foo_bar_org"
+                apps = listOf(helloApp),
+                retryCount = 3
             )
 
             whenever(
                 tc.cfOperations.applications().push(any())
             ).thenAnswer {
-                val error = UnknownCloudFoundryException(1, "it broke")
+                val error = RuntimeException("it broke")
                 Mono.error<Void>(error)
             }
+
+            val mockLogMessage = mock<LogMessage>()
+            whenever(tc.cfOperations.applications().logs(any()))
+                .thenReturn(Flux.fromIterable(listOf(mockLogMessage)))
 
             val pushApps = PushApps(
                 tc.config,
@@ -292,6 +297,39 @@ class DeployAppTest : Spek({
 
             val result = pushApps.pushApps()
             assertThat(result).isFalse()
+
+            verify(tc.cfOperations.applications(), times(4)).push(argForWhich {
+                name == helloApp.name
+            })
+        }
+
+        it("returning an error if a deploy fails and fetches logs for failed operation") {
+            val tc = buildTestContext(
+                apps = listOf(helloApp), organization = "foo_bar_org", retryCount = 0
+            )
+
+            whenever(
+                tc.cfOperations.applications().push(any())
+            ).thenAnswer {
+                val error = RuntimeException("it broke")
+                Mono.error<Void>(error)
+            }
+
+            val mockLogMessage = mock<LogMessage>()
+            whenever(tc.cfOperations.applications().logs(any()))
+                .thenReturn(Flux.fromIterable(listOf(mockLogMessage)))
+
+            val pushApps = PushApps(
+                tc.config,
+                tc.cfClientBuilder
+            )
+
+            val result = pushApps.pushApps()
+            assertThat(result).isFalse()
+
+            verify(tc.cfOperations.applications()).logs(argForWhich {
+                name == helloApp.name
+            })
         }
     }
 })

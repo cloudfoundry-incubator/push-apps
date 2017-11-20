@@ -44,7 +44,7 @@ class AppDeployerTest : Spek({
             val tc = buildTestContext(appConfig = appConfig, retryCount = 1)
 
             whenever(tc.mockCfClient.pushApplication(any())).thenReturn(Mono.empty())
-            whenever(tc.mockCfClient.setApplicationEnvironment(any())).thenReturn(listOf(Mono.empty()))
+            whenever(tc.mockCfClient.setApplicationEnvironment(any())).thenReturn(Mono.empty())
             whenever(tc.mockCfClient.bindServicesToApplication(any(), any())).thenReturn(listOf(Mono.empty()))
             whenever(tc.mockCfClient.startApplication(any())).thenReturn(Mono.empty())
             whenever(tc.mockCfClient.mapRoute(any())).thenReturn(Mono.empty())
@@ -70,7 +70,7 @@ class AppDeployerTest : Spek({
             val tc = buildTestContext(appConfig = appConfig, retryCount = 1)
 
             whenever(tc.mockCfClient.pushApplication(any())).thenReturn(Mono.empty())
-            whenever(tc.mockCfClient.setApplicationEnvironment(any())).thenReturn(listOf(Mono.empty()))
+            whenever(tc.mockCfClient.setApplicationEnvironment(any())).thenReturn(Mono.empty())
             whenever(tc.mockCfClient.startApplication(any())).thenReturn(Mono.empty())
             whenever(tc.mockCfClient.mapRoute(any())).thenReturn(Mono.empty())
 

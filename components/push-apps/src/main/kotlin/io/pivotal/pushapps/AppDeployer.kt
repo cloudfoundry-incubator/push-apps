@@ -2,12 +2,11 @@ package io.pivotal.pushapps
 
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
+import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import java.util.concurrent.CompletableFuture
+import reactor.core.publisher.whenComplete
 import java.util.concurrent.ConcurrentLinkedQueue
-
-class RetryError(val appConfig: AppConfig) : Throwable()
 
 class AppDeployer(
     private val cloudFoundryClient: CloudFoundryClient,
@@ -58,97 +57,78 @@ class AppDeployer(
         return results
     }
 
-    fun deployApplication(appConfig: AppConfig): CompletableFuture<OperationResult> {
-        val deployAppFuture = if (appConfig.blueGreenDeploy == true) {
-            generateBlueGreenDeployApplicationFuture(appConfig)
+    private fun deployApplication(appConfig: AppConfig): Flux<OperationResult> {
+        return if (appConfig.blueGreenDeploy == true) {
+            asyncBlueGreenDeployApplication(appConfig)
         } else {
-            generateDeployApplicationFuture(appConfig)
+            asyncDeployApplication(appConfig)
         }
-
-        return getOperationResult(deployAppFuture, appConfig.name, false)
     }
 
-    private fun generateBlueGreenDeployApplicationFuture(appConfig: AppConfig): CompletableFuture<Void> {
+    private fun asyncBlueGreenDeployApplication(appConfig: AppConfig): Flux<OperationResult> {
         val applications = cloudFoundryClient.listApplications()
         val blueAppConfig = appConfig.copy(name = appConfig.name + "-blue")
 
-        var deployApplicationFuture = generateDeployApplicationFuture(blueAppConfig)
+        val deployBlueApplication = asyncDeployApplication(blueAppConfig)
+            .transform(logAsyncOperation(logger, "Deploying blue application ${appConfig.name}"))
+
+        val operations = mutableListOf<Publisher<OperationResult>>()
 
         if (applications.contains(appConfig.name)) {
-            deployApplicationFuture = deployApplicationFuture.thenCompose {
-                cloudFoundryClient.unmapRoute(appConfig).toFuture()
-            }
+            operations.add(doOperation(
+                "Un-map current application routes ${appConfig.name}",
+                cloudFoundryClient.unmapRoute(appConfig))
+            )
         }
 
-        return deployApplicationFuture
-            .thenCompose { generateDeployApplicationFuture(appConfig) }
-            .thenCompose { cloudFoundryClient.unmapRoute(blueAppConfig).toFuture() }
-            .thenCompose {
-                cloudFoundryClient
-                    .stopApplication(blueAppConfig.name)
-                    .toFuture()
-                    .thenApply {
-                        logger.debug("Stopped application ${blueAppConfig.name}")
-                        it
-                    }
-            }
+        val deployGreenApplication = asyncDeployApplication(appConfig)
+            .transform(logAsyncOperation(logger, "Deploy green application ${appConfig.name}"))
+
+        val unmapBlueRoute = doOperation(
+            "Un-map blue routes ${appConfig.name}",
+            cloudFoundryClient.unmapRoute(blueAppConfig))
+
+        val stopBlueApplication = doOperation(
+            "Stop blue application ${appConfig.name}",
+            cloudFoundryClient.stopApplication(blueAppConfig.name))
+
+        operations.addAll(listOf(deployGreenApplication, unmapBlueRoute, stopBlueApplication))
+
+        return Flux.concat(deployBlueApplication, *operations.toTypedArray())
     }
 
-    private fun generateDeployApplicationFuture(appConfig: AppConfig): CompletableFuture<Void> {
-        val pushAppAction = generatePushAppAction(appConfig)
-        val setEnvActions = cloudFoundryClient.setApplicationEnvironment(appConfig)
 
-        logger.debug("Pushing ${appConfig.name}.")
-        val pushAppActionFuture = pushAppAction
-            .toFuture()
-            .thenApply {
-                logger.debug("Pushed ${appConfig.name}, setting environment variables.")
-                it
-            }
+    private fun asyncDeployApplication(appConfig: AppConfig): Flux<OperationResult> {
+        val pushAppAction = doOperation(
+            "Push ${appConfig.name}",
+            cloudFoundryClient.pushApplication(appConfig))
 
-        val pushAppWithEnvFuture = setEnvActions.fold(pushAppActionFuture) { acc, setEnvAction ->
-            acc.thenCompose { setEnvAction.toFuture() }
-        }
+        val setEnvActions = doOperation(
+            "Set environment variables for ${appConfig.name}",
+            cloudFoundryClient.setApplicationEnvironment(appConfig))
 
-        val environmentSetFuture = pushAppWithEnvFuture.thenApply {
-            logger.debug("Set environment variables for ${appConfig.name}, binding services.")
-            it
-        }
+        val bindServiceActions = doOperation(
+            "Bind services for ${appConfig.name}",
+            generateBindServiceActions(appConfig))
 
+        val startApplication = doOperation(
+            "Start application ${appConfig.name}",
+            cloudFoundryClient.startApplication(appConfig.name))
 
-        val bindServiceActions: List<Mono<Void>> = generateBindServiceActions(appConfig)
-        val bindServicesFuture = bindServiceActions
-            .fold(environmentSetFuture) { acc, bindServiceAction ->
-                acc.thenCompose { bindServiceAction.toFuture() }
-            }
+        val mapRoute = doOperation(
+            "Map routes for ${appConfig.name}",
+            cloudFoundryClient.mapRoute(appConfig))
 
-        val servicesBoundFuture = bindServicesFuture.thenApply {
-            logger.debug("Bound services for ${appConfig.name}, starting application.")
-            it
-        }
-
-        return servicesBoundFuture
-            .thenCompose {
-                cloudFoundryClient
-                    .startApplication(appConfig.name)
-                    .toFuture()
-                    .thenApply {
-                        logger.debug("Started ${appConfig.name}, mapping routes.")
-                        it
-                    }
-            }
-            .thenCompose {
-                cloudFoundryClient
-                    .mapRoute(appConfig)
-                    .toFuture()
-            }
+        return Flux.concat(pushAppAction, setEnvActions, bindServiceActions, startApplication, mapRoute)
     }
 
-    private fun generatePushAppAction(appConfig: AppConfig): Mono<Void> {
-        return cloudFoundryClient.pushApplication(appConfig)
+    private fun doOperation(description: String, operation: Mono<Void>): Mono<OperationResult> {
+        return operation
+            .transform(logAsyncOperation(logger, description))
+            .flatMap(convertToOperationResult(description))
     }
 
-    private fun generateBindServiceActions(appConfig: AppConfig): List<Mono<Void>> {
+    private fun generateBindServiceActions(appConfig: AppConfig): Mono<Void> {
         var bindServiceActions: List<Mono<Void>> = emptyList()
         if (appConfig.serviceNames !== null) {
             val availableServicesToBeBound = appConfig.serviceNames.filter {
@@ -156,6 +136,6 @@ class AppDeployer(
             }
             bindServiceActions = cloudFoundryClient.bindServicesToApplication(appConfig.name, availableServicesToBeBound)
         }
-        return bindServiceActions
+        return whenComplete(*bindServiceActions.toTypedArray())
     }
 }

@@ -16,21 +16,16 @@ import org.reactivestreams.Subscription
 import reactor.core.publisher.Flux
 import java.util.*
 import java.util.concurrent.BlockingQueue
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.CompletionException
 import java.util.concurrent.ConcurrentLinkedQueue
 
 class AppDeploymentSchedulerTest : Spek({
     val appConfig = mock<AppConfig>()
-    val future = CompletableFuture<OperationResult>()
-    val appDeployer = { _: AppConfig ->
-        future
-    }
     val operationResult = OperationResult("foo bar", true)
+    val flux = Flux.just(operationResult)
+    val appDeployer = { _: AppConfig -> flux }
     val subscription = mock<Subscription>()
 
     beforeEachTest {
-        future.complete(operationResult)
         whenever(appConfig.name).thenReturn("foo bar")
     }
 
@@ -79,7 +74,7 @@ class AppDeploymentSchedulerTest : Spek({
             var appDeployerWasCalled = false
             val deployer = { _: AppConfig ->
                 appDeployerWasCalled = true
-                future
+                flux
             }
 
             val scheduler = AppDeploymentScheduler(
@@ -116,12 +111,9 @@ class AppDeploymentSchedulerTest : Spek({
 
         context("when appDeployer completes exceptionally with an UnknownCloudFoundryException") {
             it("requeue the failed appConfig") {
-                val exceptionalFuture = CompletableFuture<OperationResult>()
-                val deployer = { _: AppConfig ->
-                    exceptionalFuture
-                }
+                val exceptionalFlux = Flux.error<OperationResult>(UnknownCloudFoundryException(502))
+                val deployer = { _: AppConfig -> exceptionalFlux }
 
-                exceptionalFuture.completeExceptionally(CompletionException(UnknownCloudFoundryException(502)))
                 val queue = ConcurrentLinkedQueue<AppConfig>()
 
                 val scheduler = AppDeploymentScheduler(
@@ -141,18 +133,12 @@ class AppDeploymentSchedulerTest : Spek({
             it("only retries failed deployments, and does not lose successful ones") {
                 var deployerCalls = 0
 
-                val firstFuture = CompletableFuture<OperationResult>()
-                val secondFuture = CompletableFuture<OperationResult>()
-                val exceptionalFuture = CompletableFuture<OperationResult>()
-                val futures = listOf(firstFuture, exceptionalFuture, secondFuture)
+                val firstFlux = Flux.just<OperationResult>(OperationResult("foo bar", true))
+                val secondFlux = Flux.just<OperationResult>(OperationResult("hello world", true))
+                val exceptionalFlux = Flux.error<OperationResult>(UnknownCloudFoundryException(502))
+                val fluxes = listOf(firstFlux, exceptionalFlux, secondFlux)
 
-                val deployer = { _: AppConfig ->
-                    futures[deployerCalls++]
-                }
-
-                firstFuture.complete(OperationResult("foo bar", true))
-                exceptionalFuture.completeExceptionally(CompletionException(UnknownCloudFoundryException(502)))
-                secondFuture.complete(OperationResult("hello world", true))
+                val deployer = { _: AppConfig -> fluxes[deployerCalls++] }
 
                 val queue = mock<BlockingQueue<AppConfig>>()
 
@@ -190,23 +176,24 @@ class AppDeploymentSchedulerTest : Spek({
         context("when appDeployer completes exceptionally with any other exception") {
             context("when number of failures is below the retry count") {
                 it("requeue the failed appConfig if number of failures is below the retry count") {
-                    val exceptionalFuture = CompletableFuture<OperationResult>()
-                    val deployer = { _: AppConfig ->
-                        exceptionalFuture
-                    }
+                    val exceptionalFlux = Flux.error<OperationResult>(RuntimeException())
+                    val deployer = { _: AppConfig -> exceptionalFlux }
 
-                    exceptionalFuture.completeExceptionally(CompletionException(RuntimeException()))
                     val queue = mock<BlockingQueue<AppConfig>>()
 
+                    val cloudFoundryClient = mock<CloudFoundryClient>()
                     val scheduler = AppDeploymentScheduler(
                         maxInFlight = 1,
                         appDeployer = deployer,
                         appConfigQueue = queue,
-                        cloudFoundryClient = mock<CloudFoundryClient>(),
+                        cloudFoundryClient = cloudFoundryClient,
                         retries = 1
                     )
-                    scheduler.onSubscribe(subscription)
 
+                    whenever(cloudFoundryClient.fetchRecentLogsForAsync(any()))
+                        .thenReturn(Flux.just(mock<LogMessage>()))
+
+                    scheduler.onSubscribe(subscription)
                     scheduler.onNext(appConfig)
 
                     verify(queue).offer(appConfig)
@@ -219,35 +206,32 @@ class AppDeploymentSchedulerTest : Spek({
                 it("only retries failed deployments, and does not lose successful ones") {
                     var deployerCalls = 0
 
-                    val firstFuture = CompletableFuture<OperationResult>()
-                    val secondFuture = CompletableFuture<OperationResult>()
-                    val exceptionalFuture = CompletableFuture<OperationResult>()
-                    val futures = listOf(firstFuture, exceptionalFuture, secondFuture)
+                    val firstFlux = Flux.just<OperationResult>(OperationResult("foo bar", true))
+                    val secondFlux = Flux.just<OperationResult>(OperationResult("hello world", true))
+                    val exceptionalFlux = Flux.error<OperationResult>(RuntimeException())
+                    val fluxes = listOf(firstFlux, exceptionalFlux, secondFlux)
 
-                    val deployer = { _: AppConfig ->
-                        futures[deployerCalls++]
-                    }
-
-                    firstFuture.complete(OperationResult("foo bar", true))
-                    exceptionalFuture.completeExceptionally(CompletionException(RuntimeException()))
-                    secondFuture.complete(OperationResult("hello world", true))
+                    val deployer = { _: AppConfig -> fluxes[deployerCalls++] }
 
                     val queue = mock<BlockingQueue<AppConfig>>()
 
+                    val cloudFoundryClient = mock<CloudFoundryClient>()
                     val scheduler = AppDeploymentScheduler(
                         maxInFlight = 2,
                         appDeployer = deployer,
                         appConfigQueue = queue,
-                        cloudFoundryClient = mock<CloudFoundryClient>(),
+                        cloudFoundryClient = cloudFoundryClient,
                         retries = 1
                     )
-                    scheduler.onSubscribe(subscription)
-
                     val fooBarConfig = mock<AppConfig>()
                     val helloWorldConfig = mock<AppConfig>()
 
                     whenever(fooBarConfig.name).thenReturn("foo bar")
                     whenever(helloWorldConfig.name).thenReturn("hello world")
+                    whenever(cloudFoundryClient.fetchRecentLogsForAsync(any()))
+                        .thenReturn(Flux.just(mock<LogMessage>()))
+
+                    scheduler.onSubscribe(subscription)
 
                     scheduler.onNext(fooBarConfig)
                     scheduler.onNext(helloWorldConfig)
@@ -262,18 +246,14 @@ class AppDeploymentSchedulerTest : Spek({
                     assertThat(results[0].didSucceed).isTrue()
                     assertThat(results[1].name).isEqualTo("hello world")
                     assertThat(results[1].didSucceed).isTrue()
-
                 }
             }
 
             context("when number of failures is above the retry count") {
                 it("fetch logs for the failed app") {
-                    val exceptionalFuture = CompletableFuture<OperationResult>()
-                    val deployer = { _: AppConfig ->
-                        exceptionalFuture
-                    }
+                    val exceptionalFlux = Flux.error<OperationResult>(RuntimeException())
+                    val deployer = { _: AppConfig -> exceptionalFlux }
 
-                    exceptionalFuture.completeExceptionally(CompletionException(RuntimeException()))
                     val cloudFoundryClient = mock<CloudFoundryClient>()
                     val logMessage = mock<LogMessage>()
 

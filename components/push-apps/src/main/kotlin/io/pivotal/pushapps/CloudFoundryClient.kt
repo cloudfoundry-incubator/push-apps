@@ -19,6 +19,7 @@ import org.cloudfoundry.operations.spaces.SpaceDetail
 import org.cloudfoundry.operations.spaces.SpaceSummary
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.core.publisher.whenComplete
 import java.time.Duration
 
 class CloudFoundryClient(
@@ -90,14 +91,16 @@ class CloudFoundryClient(
             .stop(stopApplicationRequest)
     }
 
-    fun setApplicationEnvironment(appConfig: AppConfig): List<Mono<Void>> {
+    fun setApplicationEnvironment(appConfig: AppConfig): Mono<Void> {
         val setEnvRequests = generateSetEnvRequests(appConfig)
 
-        return setEnvRequests.map { request ->
+        val request = setEnvRequests.map { request ->
             cloudFoundryOperations
                 .applications()
                 .setEnvironmentVariable(request)
         }
+
+        return whenComplete(*request.toTypedArray())
     }
 
     private fun generateSetEnvRequests(appConfig: AppConfig): Array<SetEnvironmentVariableApplicationRequest> {
