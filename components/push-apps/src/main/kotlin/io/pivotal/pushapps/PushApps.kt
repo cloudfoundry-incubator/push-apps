@@ -174,7 +174,7 @@ class PushApps(
                     .toList()
 
                 if (logs.isNotEmpty()) {
-                    val failedDeploymentLogLinesToShow = config.pushApps.failedDeploymentLogLinesToShow
+                    val failedDeploymentLogLinesToShow = Math.min(logs.size -1, config.pushApps.failedDeploymentLogLinesToShow)
                     val logsToShow = logs.subList(0, failedDeploymentLogLinesToShow)
                     logger.error("Deployment of $name failed, printing the most recent $failedDeploymentLogLinesToShow log lines")
                     logger.error(logsToShow.joinToString("\n\r"))
