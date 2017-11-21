@@ -2,7 +2,7 @@ package unit
 
 import com.nhaarman.mockito_kotlin.*
 import io.pivotal.pushapps.AppConfig
-import io.pivotal.pushapps.AppDeploymentScheduler
+import io.pivotal.pushapps.OperationScheduler
 import io.pivotal.pushapps.CloudFoundryClient
 import io.pivotal.pushapps.OperationResult
 import org.assertj.core.api.Assertions.assertThat
@@ -18,11 +18,12 @@ import java.util.*
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.ConcurrentLinkedQueue
 
-class AppDeploymentSchedulerTest : Spek({
+class OperationSchedulerTest : Spek({
     val appConfig = mock<AppConfig>()
     val operationResult = OperationResult("foo bar", true)
     val flux = Flux.just(operationResult)
     val appDeployer = { _: AppConfig -> flux }
+    val appConfigIdentifier = { config: AppConfig -> config.name }
     val subscription = mock<Subscription>()
 
     beforeEachTest {
@@ -31,10 +32,11 @@ class AppDeploymentSchedulerTest : Spek({
 
     describe("#onSubscribe") {
         it("requests maxInFlight number of items from subscription") {
-            val scheduler = AppDeploymentScheduler(
+            val scheduler = OperationScheduler(
                 maxInFlight = 4,
-                appDeployer = appDeployer,
-                appConfigQueue = mock<Queue<AppConfig>>(),
+                operation = appDeployer,
+                operationIdentifier = appConfigIdentifier,
+                operationConfigQueue = mock<Queue<AppConfig>>(),
                 cloudFoundryClient = mock<CloudFoundryClient>()
             )
             scheduler.onSubscribe(subscription)
@@ -45,10 +47,11 @@ class AppDeploymentSchedulerTest : Spek({
 
     describe("#onComplete") {
         it("waits on all outstanding application deployments, and returns a future that completes with the deployment results") {
-            val scheduler = AppDeploymentScheduler(
+            val scheduler = OperationScheduler(
                 maxInFlight = 4,
-                appDeployer = appDeployer,
-                appConfigQueue = mock<Queue<AppConfig>>(),
+                operation = appDeployer,
+                operationIdentifier = appConfigIdentifier,
+                operationConfigQueue = mock<Queue<AppConfig>>(),
                 cloudFoundryClient = mock<CloudFoundryClient>()
             )
             scheduler.onSubscribe(subscription)
@@ -70,17 +73,18 @@ class AppDeploymentSchedulerTest : Spek({
     }
 
     describe("#onNext") {
-        it("calls the appDeployer to get a deployment future") {
+        it("calls the operation to get a deployment future") {
             var appDeployerWasCalled = false
             val deployer = { _: AppConfig ->
                 appDeployerWasCalled = true
                 flux
             }
 
-            val scheduler = AppDeploymentScheduler(
+            val scheduler = OperationScheduler(
                 maxInFlight = 4,
-                appDeployer = deployer,
-                appConfigQueue = mock<Queue<AppConfig>>(),
+                operation = deployer,
+                operationIdentifier = appConfigIdentifier,
+                operationConfigQueue = mock<Queue<AppConfig>>(),
                 cloudFoundryClient = mock<CloudFoundryClient>()
             )
             scheduler.onSubscribe(subscription)
@@ -94,10 +98,11 @@ class AppDeploymentSchedulerTest : Spek({
             val queue = mock<BlockingQueue<AppConfig>>()
             whenever(queue.isEmpty()).thenReturn(false)
 
-            val scheduler = AppDeploymentScheduler(
+            val scheduler = OperationScheduler(
                 maxInFlight = 2,
-                appDeployer = appDeployer,
-                appConfigQueue = queue,
+                operation = appDeployer,
+                operationIdentifier = appConfigIdentifier,
+                operationConfigQueue = queue,
                 cloudFoundryClient = mock<CloudFoundryClient>()
             )
             scheduler.onSubscribe(sub)
@@ -109,17 +114,18 @@ class AppDeploymentSchedulerTest : Spek({
             verify(sub, times(2)).request(2.toLong())
         }
 
-        context("when appDeployer completes exceptionally with an UnknownCloudFoundryException") {
+        context("when operation completes exceptionally with an UnknownCloudFoundryException") {
             it("requeue the failed appConfig") {
                 val exceptionalFlux = Flux.error<OperationResult>(UnknownCloudFoundryException(502))
                 val deployer = { _: AppConfig -> exceptionalFlux }
 
                 val queue = ConcurrentLinkedQueue<AppConfig>()
 
-                val scheduler = AppDeploymentScheduler(
+                val scheduler = OperationScheduler(
                     maxInFlight = 1,
-                    appDeployer = deployer,
-                    appConfigQueue = queue,
+                    operation = deployer,
+                    operationIdentifier = appConfigIdentifier,
+                    operationConfigQueue = queue,
                     cloudFoundryClient = mock<CloudFoundryClient>()
                 )
                 scheduler.onSubscribe(subscription)
@@ -142,10 +148,11 @@ class AppDeploymentSchedulerTest : Spek({
 
                 val queue = mock<BlockingQueue<AppConfig>>()
 
-                val scheduler = AppDeploymentScheduler(
+                val scheduler = OperationScheduler(
                     maxInFlight = 2,
-                    appDeployer = deployer,
-                    appConfigQueue = queue,
+                    operation = deployer,
+                    operationIdentifier = appConfigIdentifier,
+                    operationConfigQueue = queue,
                     cloudFoundryClient = mock<CloudFoundryClient>(),
                     retries = 1
                 )
@@ -173,7 +180,7 @@ class AppDeploymentSchedulerTest : Spek({
             }
         }
 
-        context("when appDeployer completes exceptionally with any other exception") {
+        context("when operation completes exceptionally with any other exception") {
             context("when number of failures is below the retry count") {
                 it("requeue the failed appConfig if number of failures is below the retry count") {
                     val exceptionalFlux = Flux.error<OperationResult>(RuntimeException())
@@ -182,10 +189,11 @@ class AppDeploymentSchedulerTest : Spek({
                     val queue = mock<BlockingQueue<AppConfig>>()
 
                     val cloudFoundryClient = mock<CloudFoundryClient>()
-                    val scheduler = AppDeploymentScheduler(
+                    val scheduler = OperationScheduler(
                         maxInFlight = 1,
-                        appDeployer = deployer,
-                        appConfigQueue = queue,
+                        operation = deployer,
+                        operationIdentifier = appConfigIdentifier,
+                        operationConfigQueue = queue,
                         cloudFoundryClient = cloudFoundryClient,
                         retries = 1
                     )
@@ -216,10 +224,11 @@ class AppDeploymentSchedulerTest : Spek({
                     val queue = mock<BlockingQueue<AppConfig>>()
 
                     val cloudFoundryClient = mock<CloudFoundryClient>()
-                    val scheduler = AppDeploymentScheduler(
+                    val scheduler = OperationScheduler(
                         maxInFlight = 2,
-                        appDeployer = deployer,
-                        appConfigQueue = queue,
+                        operation = deployer,
+                        operationIdentifier = appConfigIdentifier,
+                        operationConfigQueue = queue,
                         cloudFoundryClient = cloudFoundryClient,
                         retries = 1
                     )
@@ -259,10 +268,11 @@ class AppDeploymentSchedulerTest : Spek({
 
                     whenever(cloudFoundryClient.fetchRecentLogsForAsync(any())).thenReturn(Flux.fromIterable(listOf(logMessage)))
 
-                    val scheduler = AppDeploymentScheduler(
+                    val scheduler = OperationScheduler(
                         maxInFlight = 1,
-                        appDeployer = deployer,
-                        appConfigQueue = mock<Queue<AppConfig>>(),
+                        operation = deployer,
+                        operationIdentifier = appConfigIdentifier,
+                        operationConfigQueue = mock<Queue<AppConfig>>(),
                         cloudFoundryClient = cloudFoundryClient,
                         retries = 0
                     )

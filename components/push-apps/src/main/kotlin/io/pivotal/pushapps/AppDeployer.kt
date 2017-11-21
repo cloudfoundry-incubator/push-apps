@@ -24,14 +24,11 @@ class AppDeployer(
         val queue = ConcurrentLinkedQueue<AppConfig>()
         queue.addAll(appConfigs)
 
-        val deploymentFunction = { appConfig: AppConfig ->
-            deployApplication(appConfig)
-        }
-
-        val subscriber = AppDeploymentScheduler(
+        val subscriber = OperationScheduler<AppConfig>(
             maxInFlight = maxInFlight,
-            appDeployer = deploymentFunction,
-            appConfigQueue = queue,
+            operation = this::deployApplication,
+            operationIdentifier = AppConfig::name,
+            operationConfigQueue = queue,
             cloudFoundryClient = cloudFoundryClient,
             retries = retryCount
         )
