@@ -8,9 +8,12 @@ import java.nio.file.Paths
 import javax.sql.DataSource
 
 class FlywayWrapper(
-    private val flyway: Flyway
+    private val createFlywayInstance: () -> Flyway
 ) {
     fun migrate(dataSource: DataSource, migrationsLocation: String, repair: Boolean) {
+        //Need a new flyway instance for each migration, otherwise it can use the wrong datasource
+        val flyway = createFlywayInstance()
+
         if (Files.notExists(Paths.get(migrationsLocation)))
             throw FlywayException("Unable to find migrations folder $migrationsLocation")
         if (pathContainsNoMigrations(migrationsLocation))

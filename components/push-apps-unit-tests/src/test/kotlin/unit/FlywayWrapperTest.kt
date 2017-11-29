@@ -26,7 +26,7 @@ class FlywayWrapperTest : Spek({
         val flyway = mock<Flyway>()
         val dataSource = mock<DataSource>()
 
-        val flywayWrapper = FlywayWrapper(flyway)
+        val flywayWrapper = FlywayWrapper({flyway})
 
         return TestContext(
             flyway = flyway,

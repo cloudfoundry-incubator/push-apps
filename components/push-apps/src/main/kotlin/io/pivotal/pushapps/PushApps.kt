@@ -7,9 +7,9 @@ import org.cloudfoundry.doppler.LogMessage
 import org.flywaydb.core.Flyway
 
 class PushApps(
-    val config: Config,
+    private val config: Config,
     private val cloudFoundryClientBuilder: CloudFoundryClientBuilder,
-    private val flywayWrapper: FlywayWrapper = FlywayWrapper(Flyway()),
+    private val flywayWrapper: FlywayWrapper = FlywayWrapper({Flyway()}),
     private val dataSourceFactory: DataSourceFactory = DataSourceFactory(
         { mySqlDataSourceBuilder(it) },
         { postgresDataSourceBuilder(it) }
