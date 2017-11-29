@@ -23,9 +23,14 @@ class PushApps(
         val cloudFoundryClient = targetCf(cf)
 
         if (securityGroups !== null) {
-            val securityGroupNames = securityGroups.map(SecurityGroup::name)
-            logger.info("Creating security groups: ${securityGroupNames.joinToString(", ")}.")
-            val success = createSecurityGroups(securityGroups, cloudFoundryClient, cf.space)
+            val success = createSecurityGroups(
+                securityGroups,
+                cloudFoundryClient,
+                cf.space,
+                pushAppsConfig.maxInFlight,
+                pushAppsConfig.appDeployRetryCount
+            )
+
             if (!success) return false
         }
 
@@ -62,8 +67,14 @@ class PushApps(
         )
     }
 
-    private fun createSecurityGroups(securityGroups: List<SecurityGroup>, cloudFoundryClient: CloudFoundryClient, space: String): Boolean {
-        val securityGroupCreator = SecurityGroupCreator(securityGroups, cloudFoundryClient, space)
+    private fun createSecurityGroups(securityGroups: List<SecurityGroup>, cloudFoundryClient: CloudFoundryClient, space: String, maxInFlight: Int, retryCount: Int): Boolean {
+        val securityGroupCreator = SecurityGroupCreator(
+            securityGroups,
+            cloudFoundryClient,
+            space,
+            maxInFlight,
+            retryCount
+        )
         val results = securityGroupCreator.createSecurityGroups()
 
         return handleOperationResult(results, "Creating security group")
@@ -174,7 +185,7 @@ class PushApps(
                     .toList()
 
                 if (logs.isNotEmpty()) {
-                    val failedDeploymentLogLinesToShow = Math.min(logs.size -1, config.pushApps.failedDeploymentLogLinesToShow)
+                    val failedDeploymentLogLinesToShow = Math.min(logs.size - 1, config.pushApps.failedDeploymentLogLinesToShow)
                     val logsToShow = logs.subList(0, failedDeploymentLogLinesToShow)
                     logger.error("Deployment of $name failed, printing the most recent $failedDeploymentLogLinesToShow log lines")
                     logger.error(logsToShow.joinToString("\n\r"))

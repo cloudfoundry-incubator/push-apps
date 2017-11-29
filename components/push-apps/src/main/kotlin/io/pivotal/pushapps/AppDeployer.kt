@@ -33,25 +33,10 @@ class AppDeployer(
             retries = retryCount
         )
 
-        //FIXME: extract to injected thing that can be tested
-        val flux = Flux.create<AppConfig>({ sink ->
-            sink.onRequest({ n: Long ->
-                if (queue.isEmpty()) sink.complete()
-
-                (1..n).forEach {
-                    val appConfig = queue.poll()
-                    if (appConfig !== null) {
-                        sink.next(appConfig)
-                    }
-                }
-            })
-        })
-
+        val flux = createQueueBackedFlux(queue)
         flux.subscribe(subscriber)
 
-        val results = subscriber.results.get()
-        logger.debug("Got results $results")
-        return results
+        return subscriber.results.get()
     }
 
     private fun deployApplication(appConfig: AppConfig): Flux<OperationResult> {

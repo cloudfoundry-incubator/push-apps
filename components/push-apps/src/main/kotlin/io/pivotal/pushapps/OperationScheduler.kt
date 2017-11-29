@@ -2,24 +2,26 @@ package io.pivotal.pushapps
 
 import org.apache.logging.log4j.LogManager
 import org.cloudfoundry.UnknownCloudFoundryException
+import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.core.publisher.toFlux
 import java.util.*
 import java.util.concurrent.CompletableFuture
 
 class OperationScheduler<T>(
     private val maxInFlight: Int,
-    private val operation: (T) -> Flux<OperationResult>,
+    private val operation: (T) -> Publisher<OperationResult>,
     private val operationIdentifier: (T) -> String,
     private val operationConfigQueue: Queue<T>,
     private val cloudFoundryClient: CloudFoundryClient,
     private val retries: Int = 0
 ) : Subscriber<T> {
     private val logger = LogManager.getLogger(OperationScheduler::class.java)
-    private val deployments = mutableListOf<Flux<OperationResult>>()
-    private val deploymentResults = mutableListOf<OperationResult>()
+    private val pendingOperations = mutableListOf<Flux<OperationResult>>()
+    private val operationResults = mutableListOf<OperationResult>()
 
     private val retriesByApp = mutableMapOf<String, Int>()
 
@@ -55,10 +57,11 @@ class OperationScheduler<T>(
             }
         }
 
-        val deployAppFlux = operation(nextItem)
+        val operationFlux = operation(nextItem)
+            .toFlux()
             .onErrorResume(handleErrors)
 
-        deployments.add(deployAppFlux)
+        pendingOperations.add(operationFlux)
 
         onNextAmount++
 
@@ -69,19 +72,19 @@ class OperationScheduler<T>(
     }
 
     private fun waitForCurrentDeployments() {
-        val resultsList = deployments.flatMap { deployment ->
+        val resultsList = pendingOperations.flatMap { deployment ->
             deployment.toIterable().filterNotNull()
         }
 
-        deploymentResults.addAll(resultsList)
-        deployments.clear()
+        operationResults.addAll(resultsList)
+        pendingOperations.clear()
     }
 
     private fun maxInFlightReached() = (onNextAmount % maxInFlight) == 0
 
     override fun onComplete() {
         waitForCurrentDeployments()
-        results.complete(deploymentResults)
+        results.complete(operationResults)
     }
 
     override fun onSubscribe(s: Subscription) {
@@ -92,6 +95,6 @@ class OperationScheduler<T>(
     override fun onError(error: Throwable) {
         logger.debug("Got error ${error.message}, with cause ${error.cause} in ${this::class.java}.")
         //FIXME: test this
-        deploymentResults.add(OperationResult(name = "Unknown", didSucceed = false, error = error))
+        operationResults.add(OperationResult(name = "Unknown", didSucceed = false, error = error))
     }
 }

@@ -8,7 +8,7 @@ import reactor.core.publisher.Mono
 
 fun <T> logAsyncOperation(logger: Logger, operation: String): (Publisher<T>) -> Publisher<T> {
     val printSubscriptionMessage: (Subscription) -> Unit = {
-        logger.info("$operation: STARTED")
+        logger.debug("$operation: STARTED")
     }
 
     val printSuccessMessage = {

@@ -1,14 +1,19 @@
 package io.pivotal.pushapps
 
+import org.apache.logging.log4j.LogManager
 import org.cloudfoundry.client.v2.ClientV2Exception
-import reactor.core.publisher.Flux
-import java.util.concurrent.CompletableFuture
+import reactor.core.publisher.Mono
+import java.util.concurrent.ConcurrentLinkedQueue
 
 class SecurityGroupCreator(
-    val securityGroups: List<SecurityGroup>,
-    val cloudFoundryClient: CloudFoundryClient,
-    val space: String
+    private val securityGroups: List<SecurityGroup>,
+    private val cloudFoundryClient: CloudFoundryClient,
+    private val space: String,
+    private val maxInFlight: Int,
+    private val retryCount: Int
 ) {
+    private val logger = LogManager.getLogger(SecurityGroupCreator::class.java)
+
     fun createSecurityGroups(): List<OperationResult> {
         val spaceId = cloudFoundryClient.getSpaceId(space)
 
@@ -18,33 +23,39 @@ class SecurityGroupCreator(
             PushAppsError("Could not find space id for space $space")
         ))
 
-        val securityGroupFutures = securityGroups.map { group ->
-            val securityGroupFuture = cloudFoundryClient
-                .createSecurityGroup(group, spaceId)
-                .toFuture()
-                .handle { result, e ->
-                    if (e === null || (e as ClientV2Exception).description.contains("security group name is taken")) {
-                        result
-                    } else {
-                        throw e
-                    }
+        val securityGroupNames = securityGroups.map(SecurityGroup::name)
+        logger.info("Creating security groups: ${securityGroupNames.joinToString(", ")}.")
+
+        val queue = ConcurrentLinkedQueue<SecurityGroup>()
+        queue.addAll(securityGroups)
+
+        val subscriber = OperationScheduler<SecurityGroup>(
+            maxInFlight = maxInFlight,
+            operation = { group: SecurityGroup -> createSecurityGroup(spaceId, group) },
+            operationIdentifier = SecurityGroup::name,
+            operationConfigQueue = queue,
+            cloudFoundryClient = cloudFoundryClient,
+            retries = retryCount
+        )
+
+        val flux = createQueueBackedFlux(queue)
+        flux.subscribe(subscriber)
+
+        return subscriber.results.get()
+    }
+
+    private fun createSecurityGroup(spaceId: String, group: SecurityGroup): Mono<OperationResult> {
+        val description = "Create security group ${group.name}"
+        return cloudFoundryClient
+            .createSecurityGroup(group, spaceId)
+            .onErrorResume { e: Throwable ->
+                if ((e as ClientV2Exception).description.contains("security group name is taken")) {
+                    return@onErrorResume Mono.empty()
                 }
 
-            getOperationResult(securityGroupFuture, group.name, false)
-        }
-
-        val createSecurityGroupsFlux: Flux<OperationResult> = Flux.create { sink ->
-            securityGroupFutures.map { securityGroupFuture ->
-                securityGroupFuture
-                    .thenApply { sink.next(it) }
+                throw e
             }
-
-            CompletableFuture.allOf(*securityGroupFutures
-                .toTypedArray())
-                .thenApply { sink.complete() }
-        }
-
-        val results = createSecurityGroupsFlux.toIterable().toList()
-        return results
+            .transform(logAsyncOperation(logger, description))
+            .flatMap(convertToOperationResult(description))
     }
 }
