@@ -104,6 +104,7 @@ class ConfigReaderTest : Spek({
             assertThat(migration.port).isEqualTo("5432")
             assertThat(migration.schema).isEqualTo("metrics")
             assertThat(migration.migrationDir).isEqualTo("/all/the/cool/migrations")
+            assertThat(migration.repair).isFalse()
         }
     }
 })

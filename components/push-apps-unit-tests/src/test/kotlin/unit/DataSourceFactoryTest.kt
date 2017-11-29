@@ -36,7 +36,8 @@ class DataSourceFactoryTest : Spek({
                     schema = "metrics",
                     user = "metrics",
                     password = "secret",
-                    migrationDir = "/tmp"
+                    migrationDir = "/tmp",
+                    repair = false
                 )
 
                 val dataSourceFactory = DataSourceFactory(
@@ -76,7 +77,8 @@ class DataSourceFactoryTest : Spek({
                     schema = "metrics",
                     user = "metrics",
                     password = "secret",
-                    migrationDir = "/tmp"
+                    migrationDir = "/tmp",
+                    repair = false
                 )
 
                 val dataSourceFactory = DataSourceFactory(
@@ -133,7 +135,8 @@ class DataSourceFactoryTest : Spek({
                 schema = "metrics",
                 user = "metrics",
                 password = "secret",
-                migrationDir = "/tmp"
+                migrationDir = "/tmp",
+                repair = false
             )
 
             var passedDataSource: DataSource? = null
@@ -166,7 +169,8 @@ class DataSourceFactoryTest : Spek({
                 schema = "metrics",
                 user = "metrics",
                 password = "secret",
-                migrationDir = "/tmp"
+                migrationDir = "/tmp",
+                repair = false
             )
 
             val dataSourceFactory = DataSourceFactory(

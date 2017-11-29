@@ -76,7 +76,8 @@ class EndToEndAcceptanceTest : Spek({
                 password = "supersecret",
                 schema = "new_db",
                 driver = DatabaseDriver.MySql(),
-                migrationDir = "${acceptanceTestSupport.acceptanceTestProjectDir}/src/test/kotlin/support/dbmigrations"
+                migrationDir = "${acceptanceTestSupport.acceptanceTestProjectDir}/src/test/kotlin/support/dbmigrations",
+                repair = false
             )
 
             val securityGroup = SecurityGroup(

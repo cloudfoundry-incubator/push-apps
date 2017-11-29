@@ -22,7 +22,8 @@ class DatabaseMigratorTest : Spek({
                 password = "supersecret",
                 schema = "new_db",
                 driver = DatabaseDriver.MySql(),
-                migrationDir = "some/location"
+                migrationDir = "some/location",
+                repair = false
             )
 
             val flywayWrapper = mock<FlywayWrapper>()
@@ -46,7 +47,11 @@ class DatabaseMigratorTest : Spek({
 
             databaseMigrator.migrate()
 
-            verify(flywayWrapper).migrate(dataSource = dataSource, migrationsLocation = "some/location")
+            verify(flywayWrapper).migrate(
+                dataSource = dataSource,
+                migrationsLocation = "some/location",
+                repair = false
+            )
         }
     }
 })

@@ -30,14 +30,17 @@ class FlywayWrapperTest : Spek({
 
         return TestContext(
             flyway = flyway,
-            flywayWrapper =  flywayWrapper,
+            flywayWrapper = flywayWrapper,
             dataSource = dataSource
         )
     }
 
     fun findSupportPath(): String {
-        val compiledFileLocation = FlywayWrapperTest::class.java.getResource("${FlywayWrapperTest::class.simpleName}.class")
-        val projectPath = Paths.get(compiledFileLocation.path.toString(), "../../../../../../src/test/kotlin/support").toAbsolutePath().toString()
+        val compiledFileLocation = FlywayWrapperTest::class.java
+            .getResource("${FlywayWrapperTest::class.simpleName}.class")
+        val projectPath = Paths.get(compiledFileLocation.path.toString(), "../../../../../../src/test/kotlin/support")
+            .toAbsolutePath()
+            .toString()
         return FilenameUtils.normalize(projectPath)
     }
 
@@ -48,11 +51,28 @@ class FlywayWrapperTest : Spek({
         it("migrates the database using the provided datasource and migration location") {
             val (flyway, flywayWrapper, dataSource) = buildTextContext()
 
-            flywayWrapper.migrate(dataSource, validMigrationsPath)
+            flywayWrapper.migrate(
+                dataSource = dataSource,
+                migrationsLocation = validMigrationsPath,
+                repair = false
+            )
 
             verify(flyway).dataSource = dataSource
             verify(flyway).setLocations("filesystem:$validMigrationsPath")
+            verify(flyway).validate()
             verify(flyway).migrate()
+        }
+
+        it("repairs the schema table when repair is requested") {
+            val (flyway, flywayWrapper, dataSource) = buildTextContext()
+
+            flywayWrapper.migrate(
+                dataSource = dataSource,
+                migrationsLocation = validMigrationsPath,
+                repair = true
+            )
+
+            verify(flyway).repair()
         }
 
         it("throws exceptions thrown by flyway") {
@@ -61,7 +81,11 @@ class FlywayWrapperTest : Spek({
             whenever(flyway.migrate()).thenThrow(FlywayException())
 
             assertThatExceptionOfType(FlywayException::class.java).isThrownBy {
-                flywayWrapper.migrate(dataSource, validMigrationsPath)
+                flywayWrapper.migrate(
+                    dataSource = dataSource,
+                    migrationsLocation = validMigrationsPath,
+                    repair = false
+                )
             }
         }
 
@@ -72,13 +96,22 @@ class FlywayWrapperTest : Spek({
             println("valid: $validMigrationsPath")
             println("invalid: $invalidMigrationsPath")
 
-            flywayWrapper.migrate(dataSource, validMigrationsPath)
+            flywayWrapper.migrate(
+                dataSource = dataSource,
+                migrationsLocation = validMigrationsPath,
+                repair = false
+            )
             verify(flyway).setLocations("filesystem:$validMigrationsPath")
             verify(flyway).dataSource = dataSource
+            verify(flyway).validate()
             verify(flyway).migrate()
 
             assertThatExceptionOfType(FlywayException::class.java).isThrownBy {
-                flywayWrapper.migrate(dataSource, invalidMigrationsPath)
+                flywayWrapper.migrate(
+                    dataSource = dataSource,
+                    migrationsLocation = invalidMigrationsPath,
+                    repair = false
+                )
             }
             verifyNoMoreInteractions(flyway)
         }

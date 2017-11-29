@@ -10,7 +10,7 @@ import javax.sql.DataSource
 class FlywayWrapper(
     private val flyway: Flyway
 ) {
-    fun migrate(dataSource: DataSource, migrationsLocation: String) {
+    fun migrate(dataSource: DataSource, migrationsLocation: String, repair: Boolean) {
         if (Files.notExists(Paths.get(migrationsLocation)))
             throw FlywayException("Unable to find migrations folder $migrationsLocation")
         if (pathContainsNoMigrations(migrationsLocation))
@@ -18,7 +18,11 @@ class FlywayWrapper(
 
         flyway.dataSource = dataSource
         flyway.setLocations("filesystem:$migrationsLocation")
+
+        if (repair) flyway.repair()
+
         flyway.migrate()
+        flyway.validate()
     }
 
     private fun pathContainsNoMigrations(migrationsLocation: String): Boolean {

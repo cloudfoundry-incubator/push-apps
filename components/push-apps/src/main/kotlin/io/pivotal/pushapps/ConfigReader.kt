@@ -100,7 +100,8 @@ data class Migration(
     val host: String,
     val port: String,
     val schema: String,
-    val migrationDir: String
+    val migrationDir: String,
+    val repair: Boolean
 )
 
 class MigrationDeserializer : StdDeserializer<Migration>(Migration::class.java) {
@@ -113,6 +114,7 @@ class MigrationDeserializer : StdDeserializer<Migration>(Migration::class.java) 
         val port = node.get("port").asText()
         val schema = node.get("schema").asText()
         val migrationDir = node.get("migrationDir").asText()
+        val repair = node.get("repair").asBoolean()
 
         val driverString = node.get("driver").asText()
         val driver = when (driverString) {
@@ -127,7 +129,8 @@ class MigrationDeserializer : StdDeserializer<Migration>(Migration::class.java) 
             host,
             port,
             schema,
-            migrationDir
+            migrationDir,
+            repair
         )
     }
 }
@@ -142,6 +145,7 @@ class MigrationSerializer : StdSerializer<Migration>(Migration::class.java) {
         gen.writeStringField("port", value.port);
         gen.writeStringField("schema", value.schema);
         gen.writeStringField("migrationDir", value.migrationDir);
+        gen.writeBooleanField("repair", value.repair);
 
         val driver = when(value.driver) {
             is DatabaseDriver.MySql -> "mysql"

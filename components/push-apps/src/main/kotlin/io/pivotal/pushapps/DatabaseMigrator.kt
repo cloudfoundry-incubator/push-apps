@@ -37,7 +37,7 @@ class DatabaseMigrator(
     private fun migrateDatabase(dataSource: DataSource, migration: Migration) {
         if (migration.driver is DatabaseDriver.MySql) createDatabaseIfAbsent(dataSource.connection, migration.schema)
         val newDataSource = dataSourceFactory.addDatabaseNameToDataSource(dataSource, migration)
-        flywayWrapper.migrate(newDataSource, migration.migrationDir)
+        flywayWrapper.migrate(newDataSource, migration.migrationDir, migration.repair)
     }
 
     private fun createDatabaseIfAbsent(conn: Connection, dbName: String) {

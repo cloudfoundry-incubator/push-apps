@@ -23,7 +23,8 @@ class MigrateDatabaseTest : Spek({
             password = "supersecret",
             schema = "new_db",
             driver = DatabaseDriver.MySql(),
-            migrationDir = "$workingDir/src/test/kotlin/support/dbmigrations"
+            migrationDir = "$workingDir/src/test/kotlin/support/dbmigrations",
+            repair = false
         )
 
         it("performing the given migrations") {
@@ -49,7 +50,11 @@ class MigrateDatabaseTest : Spek({
 
             verify(mockStatement).execute("CREATE DATABASE IF NOT EXISTS new_db;")
 
-            verify(tc.flyway).migrate(tc.dataSource, migration.migrationDir)
+            verify(tc.flyway).migrate(
+                dataSource = tc.dataSource,
+                migrationsLocation = migration.migrationDir,
+                repair = false
+            )
         }
 
         it("does not create the database if postgres") {
@@ -60,7 +65,8 @@ class MigrateDatabaseTest : Spek({
                 password = "supersecret",
                 schema = "new_db",
                 driver = DatabaseDriver.Postgres(),
-                migrationDir = "$workingDir/src/test/kotlin/support/dbmigrations"
+                migrationDir = "$workingDir/src/test/kotlin/support/dbmigrations",
+                repair = false
             )
 
             val tc = buildTestContext(
