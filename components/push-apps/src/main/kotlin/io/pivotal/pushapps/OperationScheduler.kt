@@ -2,6 +2,7 @@ package io.pivotal.pushapps
 
 import org.apache.logging.log4j.LogManager
 import org.cloudfoundry.UnknownCloudFoundryException
+import org.cloudfoundry.doppler.LogMessage
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
@@ -16,8 +17,8 @@ class OperationScheduler<T>(
     private val operation: (T) -> Publisher<OperationResult>,
     private val operationIdentifier: (T) -> String,
     private val operationConfigQueue: Queue<T>,
-    private val cloudFoundryClient: CloudFoundryClient,
-    private val retries: Int = 0
+    private val retries: Int = 0,
+    private val fetchLogs: (String) -> Flux<LogMessage> = { _ -> Flux.fromIterable(emptyList()) }
 ) : Subscriber<T> {
     private val logger = LogManager.getLogger(OperationScheduler::class.java)
     private val pendingOperations = mutableListOf<Flux<OperationResult>>()
@@ -48,10 +49,7 @@ class OperationScheduler<T>(
                         operationConfigQueue.offer(nextItem)
                         Mono.empty()
                     } else {
-                        val recentLogs = cloudFoundryClient
-                            .fetchRecentLogsForAsync(identifier)
-
-                        Mono.just(OperationResult(identifier, false, error, false, recentLogs))
+                        Mono.just(OperationResult(identifier, false, error, false, fetchLogs(identifier)))
                     }
                 }
             }

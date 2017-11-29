@@ -34,7 +34,6 @@ class SecurityGroupCreator(
             operation = { group: SecurityGroup -> createSecurityGroup(spaceId, group) },
             operationIdentifier = SecurityGroup::name,
             operationConfigQueue = queue,
-            cloudFoundryClient = cloudFoundryClient,
             retries = retryCount
         )
 
@@ -46,6 +45,11 @@ class SecurityGroupCreator(
 
     private fun createSecurityGroup(spaceId: String, group: SecurityGroup): Mono<OperationResult> {
         val description = "Create security group ${group.name}"
+        val operationResult = OperationResult(
+            name = description,
+            didSucceed = true
+        )
+
         return cloudFoundryClient
             .createSecurityGroup(group, spaceId)
             .onErrorResume { e: Throwable ->
@@ -56,6 +60,6 @@ class SecurityGroupCreator(
                 throw e
             }
             .transform(logAsyncOperation(logger, description))
-            .flatMap(convertToOperationResult(description))
+            .then(Mono.just(operationResult))
     }
 }

@@ -23,7 +23,10 @@ class UserProvidedServiceCreatorTest : Spek({
         val serviceConfig = UserProvidedServiceConfig(credentials = emptyMap(), name = "some-service")
         val serviceCreator = UserProvidedServiceCreator(
             cloudFoundryClient = mockCloudFoundryClient,
-            serviceConfigs = listOf(serviceConfig))
+            serviceConfigs = listOf(serviceConfig),
+            maxInFlight = 1,
+            retryCount = 0
+        )
 
         return TestContext(serviceCreator, mockCloudFoundryClient, serviceConfig)
     }
@@ -41,7 +44,7 @@ class UserProvidedServiceCreatorTest : Spek({
             assertThat(results).hasSize(1)
 
             val firstResult = results[0]
-            assertThat(firstResult.name).isEqualTo(tc.serviceConfig.name)
+            assertThat(firstResult.name).isEqualTo("Creating user provided service ${tc.serviceConfig.name}")
             assertThat(firstResult.didSucceed).isTrue()
         }
 
@@ -49,7 +52,7 @@ class UserProvidedServiceCreatorTest : Spek({
             val tc = buildTestContext()
             whenever(tc.mockCloudFoundryClient.listServices()).thenReturn(emptyList())
             whenever(tc.mockCloudFoundryClient.createUserProvidedService(any())).thenReturn(
-                Mono.fromSupplier { throw Exception("lemons") }
+                Mono.error(Exception("lemons"))
             )
 
             val results = tc.serviceCreator.createOrUpdateServices()
@@ -75,7 +78,7 @@ class UserProvidedServiceCreatorTest : Spek({
             assertThat(results).hasSize(1)
 
             val firstResult = results[0]
-            assertThat(firstResult.name).isEqualTo(tc.serviceConfig.name)
+            assertThat(firstResult.name).isEqualTo("Creating user provided service ${tc.serviceConfig.name}")
             assertThat(firstResult.didSucceed).isTrue()
         }
     }

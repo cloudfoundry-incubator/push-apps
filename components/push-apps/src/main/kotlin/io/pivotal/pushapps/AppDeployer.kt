@@ -29,8 +29,8 @@ class AppDeployer(
             operation = this::deployApplication,
             operationIdentifier = AppConfig::name,
             operationConfigQueue = queue,
-            cloudFoundryClient = cloudFoundryClient,
-            retries = retryCount
+            retries = retryCount,
+            fetchLogs = { identifier -> cloudFoundryClient.fetchRecentLogsForAsync(identifier) }
         )
 
         val flux = createQueueBackedFlux(queue)

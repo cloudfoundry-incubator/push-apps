@@ -46,7 +46,12 @@ class PushApps(
         if (userProvidedServices !== null) {
             val userProvidedServiceNames = userProvidedServices.map(UserProvidedServiceConfig::name)
             logger.info("Creating user provided services: ${userProvidedServiceNames.joinToString(", ")}")
-            val success = createOrUpdateUserProvidedServices(userProvidedServices, cloudFoundryClient)
+            val success = createOrUpdateUserProvidedServices(
+                userProvidedServices,
+                cloudFoundryClient,
+                pushAppsConfig.maxInFlight,
+                pushAppsConfig.appDeployRetryCount
+            )
             if (!success) return false
             availableServices += userProvidedServiceNames
         }
@@ -110,8 +115,18 @@ class PushApps(
         return Pair(success, createdServices)
     }
 
-    private fun createOrUpdateUserProvidedServices(userProvidedServices: List<UserProvidedServiceConfig>, cloudFoundryClient: CloudFoundryClient): Boolean {
-        val userProvidedServiceCreator = UserProvidedServiceCreator(cloudFoundryClient, userProvidedServices)
+    private fun createOrUpdateUserProvidedServices(
+        userProvidedServices: List<UserProvidedServiceConfig>,
+        cloudFoundryClient: CloudFoundryClient,
+        maxInFlight: Int,
+        retryCount: Int
+    ): Boolean {
+        val userProvidedServiceCreator = UserProvidedServiceCreator(
+            cloudFoundryClient = cloudFoundryClient,
+            serviceConfigs = userProvidedServices,
+            maxInFlight = maxInFlight,
+            retryCount = retryCount
+        )
         val createUserServicesResults = userProvidedServiceCreator.createOrUpdateServices()
 
         return handleOperationResult(createUserServicesResults, "Creating user provided service")

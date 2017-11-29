@@ -36,8 +36,7 @@ class OperationSchedulerTest : Spek({
                 maxInFlight = 4,
                 operation = appDeployer,
                 operationIdentifier = appConfigIdentifier,
-                operationConfigQueue = mock<Queue<AppConfig>>(),
-                cloudFoundryClient = mock<CloudFoundryClient>()
+                operationConfigQueue = mock<Queue<AppConfig>>()
             )
             scheduler.onSubscribe(subscription)
 
@@ -51,8 +50,7 @@ class OperationSchedulerTest : Spek({
                 maxInFlight = 4,
                 operation = appDeployer,
                 operationIdentifier = appConfigIdentifier,
-                operationConfigQueue = mock<Queue<AppConfig>>(),
-                cloudFoundryClient = mock<CloudFoundryClient>()
+                operationConfigQueue = mock<Queue<AppConfig>>()
             )
             scheduler.onSubscribe(subscription)
 
@@ -84,8 +82,7 @@ class OperationSchedulerTest : Spek({
                 maxInFlight = 4,
                 operation = deployer,
                 operationIdentifier = appConfigIdentifier,
-                operationConfigQueue = mock<Queue<AppConfig>>(),
-                cloudFoundryClient = mock<CloudFoundryClient>()
+                operationConfigQueue = mock<Queue<AppConfig>>()
             )
             scheduler.onSubscribe(subscription)
 
@@ -102,8 +99,7 @@ class OperationSchedulerTest : Spek({
                 maxInFlight = 2,
                 operation = appDeployer,
                 operationIdentifier = appConfigIdentifier,
-                operationConfigQueue = queue,
-                cloudFoundryClient = mock<CloudFoundryClient>()
+                operationConfigQueue = queue
             )
             scheduler.onSubscribe(sub)
 
@@ -125,8 +121,7 @@ class OperationSchedulerTest : Spek({
                     maxInFlight = 1,
                     operation = deployer,
                     operationIdentifier = appConfigIdentifier,
-                    operationConfigQueue = queue,
-                    cloudFoundryClient = mock<CloudFoundryClient>()
+                    operationConfigQueue = queue
                 )
                 scheduler.onSubscribe(subscription)
 
@@ -153,7 +148,6 @@ class OperationSchedulerTest : Spek({
                     operation = deployer,
                     operationIdentifier = appConfigIdentifier,
                     operationConfigQueue = queue,
-                    cloudFoundryClient = mock<CloudFoundryClient>(),
                     retries = 1
                 )
                 scheduler.onSubscribe(subscription)
@@ -188,18 +182,13 @@ class OperationSchedulerTest : Spek({
 
                     val queue = mock<BlockingQueue<AppConfig>>()
 
-                    val cloudFoundryClient = mock<CloudFoundryClient>()
                     val scheduler = OperationScheduler(
                         maxInFlight = 1,
                         operation = deployer,
                         operationIdentifier = appConfigIdentifier,
                         operationConfigQueue = queue,
-                        cloudFoundryClient = cloudFoundryClient,
                         retries = 1
                     )
-
-                    whenever(cloudFoundryClient.fetchRecentLogsForAsync(any()))
-                        .thenReturn(Flux.just(mock<LogMessage>()))
 
                     scheduler.onSubscribe(subscription)
                     scheduler.onNext(appConfig)
@@ -223,13 +212,11 @@ class OperationSchedulerTest : Spek({
 
                     val queue = mock<BlockingQueue<AppConfig>>()
 
-                    val cloudFoundryClient = mock<CloudFoundryClient>()
                     val scheduler = OperationScheduler(
                         maxInFlight = 2,
                         operation = deployer,
                         operationIdentifier = appConfigIdentifier,
                         operationConfigQueue = queue,
-                        cloudFoundryClient = cloudFoundryClient,
                         retries = 1
                     )
                     val fooBarConfig = mock<AppConfig>()
@@ -237,8 +224,6 @@ class OperationSchedulerTest : Spek({
 
                     whenever(fooBarConfig.name).thenReturn("foo bar")
                     whenever(helloWorldConfig.name).thenReturn("hello world")
-                    whenever(cloudFoundryClient.fetchRecentLogsForAsync(any()))
-                        .thenReturn(Flux.just(mock<LogMessage>()))
 
                     scheduler.onSubscribe(subscription)
 
@@ -259,22 +244,19 @@ class OperationSchedulerTest : Spek({
             }
 
             context("when number of failures is above the retry count") {
-                it("fetch logs for the failed app") {
+                it("fetch logs for the failed app if log fetcher is specified") {
                     val exceptionalFlux = Flux.error<OperationResult>(RuntimeException())
                     val deployer = { _: AppConfig -> exceptionalFlux }
 
-                    val cloudFoundryClient = mock<CloudFoundryClient>()
                     val logMessage = mock<LogMessage>()
-
-                    whenever(cloudFoundryClient.fetchRecentLogsForAsync(any())).thenReturn(Flux.fromIterable(listOf(logMessage)))
 
                     val scheduler = OperationScheduler(
                         maxInFlight = 1,
                         operation = deployer,
                         operationIdentifier = appConfigIdentifier,
                         operationConfigQueue = mock<Queue<AppConfig>>(),
-                        cloudFoundryClient = cloudFoundryClient,
-                        retries = 0
+                        retries = 0,
+                        fetchLogs = { Flux.fromIterable(listOf(logMessage)) }
                     )
                     scheduler.onSubscribe(subscription)
 
