@@ -1,7 +1,6 @@
 package io.pivotal.pushapps
 
 import org.apache.logging.log4j.LogManager
-import org.flywaydb.core.Flyway
 import reactor.core.publisher.Flux
 import java.sql.Connection
 import java.sql.SQLException
@@ -38,7 +37,7 @@ class DatabaseMigrator(
     private fun migrateDatabase(dataSource: DataSource, migration: Migration) {
         if (migration.driver is DatabaseDriver.MySql) createDatabaseIfAbsent(dataSource.connection, migration.schema)
         val newDataSource = dataSourceFactory.addDatabaseNameToDataSource(dataSource, migration)
-            runFlyway(newDataSource, migration)
+        flywayWrapper.migrate(newDataSource, migration.migrationDir)
     }
 
     private fun createDatabaseIfAbsent(conn: Connection, dbName: String) {
@@ -48,10 +47,5 @@ class DatabaseMigrator(
         } catch (ex: SQLException) {
             logger.error("Unable to create database $dbName. Caught exception: ${ex.message}")
         }
-    }
-
-    private fun runFlyway(dataSource: DataSource, migration: Migration) {
-        val migrationsLocation = "filesystem:" + migration.migrationDir
-        flywayWrapper.migrate(dataSource, migrationsLocation)
     }
 }

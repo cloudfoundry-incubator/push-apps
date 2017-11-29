@@ -46,7 +46,7 @@ class DatabaseMigratorTest : Spek({
 
             databaseMigrator.migrate()
 
-            verify(flywayWrapper).migrate(dataSource = dataSource, migrationsLocation = "filesystem:some/location")
+            verify(flywayWrapper).migrate(dataSource = dataSource, migrationsLocation = "some/location")
         }
     }
 })

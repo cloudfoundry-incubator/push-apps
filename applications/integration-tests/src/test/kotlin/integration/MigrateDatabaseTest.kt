@@ -49,7 +49,7 @@ class MigrateDatabaseTest : Spek({
 
             verify(mockStatement).execute("CREATE DATABASE IF NOT EXISTS new_db;")
 
-            verify(tc.flyway).migrate(tc.dataSource, "filesystem:" + migration.migrationDir)
+            verify(tc.flyway).migrate(tc.dataSource, migration.migrationDir)
         }
 
         it("does not create the database if postgres") {
