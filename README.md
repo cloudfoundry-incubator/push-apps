@@ -113,3 +113,13 @@ task.
     export CF_USERNAME=admin
     export CF_PASSWORD=secret
     ```
+
+## Known Issues
+
+The following issues are known and have stories/bugs waiting for them in the backlog.
+
+* Push Apps will automatically retry on 502 errors from CF. There is no limit to the number
+of times it will retry, nor is exponential back-off implemented yet.
+* There is a bug that causes null integer values (ie. optional integer values not provided in the
+config) to be read in as 0s instead of getting the appropriate default.
+* If one DB migration fails, Push Apps will not run remaining ones.
