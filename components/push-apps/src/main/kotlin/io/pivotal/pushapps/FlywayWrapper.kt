@@ -11,7 +11,7 @@ class FlywayWrapper(
     private val createFlywayInstance: () -> Flyway
 ) {
     fun migrate(dataSource: DataSource, migrationsLocation: String, repair: Boolean) {
-        //Need a new flyway instance for each migration, otherwise it can use the wrong datasource
+        //Need a new flyway instance for each migration, otherwise it can use the wrong datasource, since this is executed async
         val flyway = createFlywayInstance()
 
         if (Files.notExists(Paths.get(migrationsLocation)))
