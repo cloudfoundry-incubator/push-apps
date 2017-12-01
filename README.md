@@ -1,6 +1,8 @@
 # Push Apps
 
-A jar that pushes apps to CF for PCF Metrics
+A jar that pushes apps to CF for PCF Metrics. It is configured using a YAML configuration file, and is designed to make
+it easy to push a suite of apps and set up related services and security groups as well as running migrations. It was
+originally developed by the PCF Metrics team.
 
 ## Usage
 
