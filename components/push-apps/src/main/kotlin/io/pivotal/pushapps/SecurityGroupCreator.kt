@@ -33,6 +33,7 @@ class SecurityGroupCreator(
             maxInFlight = maxInFlight,
             operation = { group: SecurityGroup -> createSecurityGroup(spaceId, group) },
             operationIdentifier = SecurityGroup::name,
+            operationDescription = { group -> "Create security group ${group.name}"},
             operationConfigQueue = queue,
             retries = retryCount
         )

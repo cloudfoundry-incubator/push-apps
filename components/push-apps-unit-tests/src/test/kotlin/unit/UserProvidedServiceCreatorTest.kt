@@ -62,7 +62,7 @@ class UserProvidedServiceCreatorTest : Spek({
             assertThat(results).hasSize(1)
             val result = results[0]
             assertThat(result.didSucceed).isFalse()
-            assertThat(result.name).isEqualTo(tc.serviceConfig.name)
+            assertThat(result.name).isEqualTo("Create user provided service ${tc.serviceConfig.name}")
             assertThat(result.error!!.message).contains("lemons")
         }
 

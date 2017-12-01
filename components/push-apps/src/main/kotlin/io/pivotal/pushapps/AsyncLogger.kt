@@ -7,7 +7,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 fun <T> logAsyncOperation(logger: Logger, operation: String): (Publisher<T>) -> Publisher<T> {
-    val printSubscriptionMessage: (Subscription) -> Unit = {
+    val printSubscriptionMessage: (Subscription) -> Unit = { _ ->
         logger.debug("$operation: STARTED")
     }
 
@@ -15,7 +15,7 @@ fun <T> logAsyncOperation(logger: Logger, operation: String): (Publisher<T>) -> 
         logger.info("$operation: SUCCESS")
     }
 
-    val printErrorMessage: (Throwable) -> Unit = {
+    val printErrorMessage: (Throwable) -> Unit = { _ ->
         logger.error("$operation: ERROR")
     }
 

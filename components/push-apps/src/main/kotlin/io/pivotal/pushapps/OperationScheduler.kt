@@ -16,9 +16,9 @@ class OperationScheduler<T>(
     private val maxInFlight: Int,
     private val operation: (T) -> Publisher<OperationResult>,
     private val operationIdentifier: (T) -> String,
+    private val operationDescription: (T) -> String,
     private val operationConfigQueue: Queue<T>,
-    private val retries: Int = 0,
-    private val fetchLogs: (String) -> Flux<LogMessage> = { _ -> Flux.fromIterable(emptyList()) }
+    private val retries: Int = 0, private val fetchLogs: (String) -> Flux<LogMessage> = { _ -> Flux.fromIterable(emptyList()) }
 ) : Subscriber<T> {
     private val logger = LogManager.getLogger(OperationScheduler::class.java)
     private val pendingOperations = mutableListOf<Flux<OperationResult>>()
@@ -49,7 +49,13 @@ class OperationScheduler<T>(
                         operationConfigQueue.offer(nextItem)
                         Mono.empty()
                     } else {
-                        Mono.just(OperationResult(identifier, false, error, false, fetchLogs(identifier)))
+                        Mono.just(OperationResult(
+                            name = operationDescription(nextItem),
+                            didSucceed = false,
+                            error = error,
+                            optional = false,
+                            recentLogs = fetchLogs(identifier)
+                        ))
                     }
                 }
             }

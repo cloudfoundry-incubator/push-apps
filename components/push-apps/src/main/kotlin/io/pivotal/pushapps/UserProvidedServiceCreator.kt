@@ -29,6 +29,7 @@ class UserProvidedServiceCreator(
             maxInFlight = maxInFlight,
             operation = createServiceOperation,
             operationIdentifier = UserProvidedServiceConfig::name,
+            operationDescription = { service -> "Create user provided service ${service.name}"},
             operationConfigQueue = queue,
             retries = retryCount
         )

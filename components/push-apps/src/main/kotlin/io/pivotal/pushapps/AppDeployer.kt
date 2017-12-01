@@ -28,6 +28,7 @@ class AppDeployer(
             maxInFlight = maxInFlight,
             operation = this::deployApplication,
             operationIdentifier = AppConfig::name,
+            operationDescription = { appConfig: AppConfig -> "Push application ${appConfig.name}" },
             operationConfigQueue = queue,
             retries = retryCount,
             fetchLogs = { identifier -> cloudFoundryClient.fetchRecentLogsForAsync(identifier) }
@@ -107,7 +108,7 @@ class AppDeployer(
     private fun doOperation(description: String, operation: Mono<Void>): Mono<OperationResult> {
         return operation
             .transform(logAsyncOperation(logger, description))
-            .flatMap(convertToOperationResult(description))
+            .then(Mono.just(OperationResult(name = description, didSucceed = true)))
     }
 
     private fun generateBindServiceActions(appConfig: AppConfig): Mono<Void> {

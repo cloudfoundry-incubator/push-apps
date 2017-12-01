@@ -2,9 +2,8 @@ package unit
 
 import com.nhaarman.mockito_kotlin.*
 import io.pivotal.pushapps.AppConfig
-import io.pivotal.pushapps.OperationScheduler
-import io.pivotal.pushapps.CloudFoundryClient
 import io.pivotal.pushapps.OperationResult
+import io.pivotal.pushapps.OperationScheduler
 import org.assertj.core.api.Assertions.assertThat
 import org.cloudfoundry.UnknownCloudFoundryException
 import org.cloudfoundry.doppler.LogMessage
@@ -36,6 +35,7 @@ class OperationSchedulerTest : Spek({
                 maxInFlight = 4,
                 operation = appDeployer,
                 operationIdentifier = appConfigIdentifier,
+                operationDescription = { appConfig -> "Push application ${appConfig.name}" },
                 operationConfigQueue = mock<Queue<AppConfig>>()
             )
             scheduler.onSubscribe(subscription)
@@ -50,6 +50,7 @@ class OperationSchedulerTest : Spek({
                 maxInFlight = 4,
                 operation = appDeployer,
                 operationIdentifier = appConfigIdentifier,
+                operationDescription = { appConfig -> "Push application ${appConfig.name}" },
                 operationConfigQueue = mock<Queue<AppConfig>>()
             )
             scheduler.onSubscribe(subscription)
@@ -82,6 +83,7 @@ class OperationSchedulerTest : Spek({
                 maxInFlight = 4,
                 operation = deployer,
                 operationIdentifier = appConfigIdentifier,
+                operationDescription = { appConfig -> "Push application ${appConfig.name}" },
                 operationConfigQueue = mock<Queue<AppConfig>>()
             )
             scheduler.onSubscribe(subscription)
@@ -99,6 +101,7 @@ class OperationSchedulerTest : Spek({
                 maxInFlight = 2,
                 operation = appDeployer,
                 operationIdentifier = appConfigIdentifier,
+                operationDescription = { appConfig -> "Push application ${appConfig.name}" },
                 operationConfigQueue = queue
             )
             scheduler.onSubscribe(sub)
@@ -121,6 +124,7 @@ class OperationSchedulerTest : Spek({
                     maxInFlight = 1,
                     operation = deployer,
                     operationIdentifier = appConfigIdentifier,
+                    operationDescription = { appConfig -> "Push application ${appConfig.name}" },
                     operationConfigQueue = queue
                 )
                 scheduler.onSubscribe(subscription)
@@ -147,6 +151,7 @@ class OperationSchedulerTest : Spek({
                     maxInFlight = 2,
                     operation = deployer,
                     operationIdentifier = appConfigIdentifier,
+                    operationDescription = { appConfig -> "Push application ${appConfig.name}" },
                     operationConfigQueue = queue,
                     retries = 1
                 )
@@ -186,6 +191,7 @@ class OperationSchedulerTest : Spek({
                         maxInFlight = 1,
                         operation = deployer,
                         operationIdentifier = appConfigIdentifier,
+                        operationDescription = { appConfig -> "Push application ${appConfig.name}" },
                         operationConfigQueue = queue,
                         retries = 1
                     )
@@ -216,6 +222,7 @@ class OperationSchedulerTest : Spek({
                         maxInFlight = 2,
                         operation = deployer,
                         operationIdentifier = appConfigIdentifier,
+                        operationDescription = { appConfig -> "Push application ${appConfig.name}" },
                         operationConfigQueue = queue,
                         retries = 1
                     )
@@ -254,6 +261,7 @@ class OperationSchedulerTest : Spek({
                         maxInFlight = 1,
                         operation = deployer,
                         operationIdentifier = appConfigIdentifier,
+                        operationDescription = { appConfig -> "Push application ${appConfig.name}" },
                         operationConfigQueue = mock<Queue<AppConfig>>(),
                         retries = 0,
                         fetchLogs = { Flux.fromIterable(listOf(logMessage)) }
