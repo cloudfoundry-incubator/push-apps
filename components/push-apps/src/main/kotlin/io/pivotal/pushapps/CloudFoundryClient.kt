@@ -107,6 +107,10 @@ class CloudFoundryClient(
         if (appConfig.environment === null) return emptyArray()
 
         return appConfig.environment.map { variable ->
+            if (variable.value.isEmpty()) {
+                logger.debug("Setting environment variable ${variable.key} to empty string")
+            }
+
             SetEnvironmentVariableApplicationRequest
                 .builder()
                 .name(appConfig.name)

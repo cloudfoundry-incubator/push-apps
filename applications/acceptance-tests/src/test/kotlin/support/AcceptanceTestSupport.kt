@@ -225,8 +225,8 @@ class AcceptanceTestSupport {
         apps: List<AppConfig>,
         userProvidedServices: List<UserProvidedServiceConfig>,
         services: List<ServiceConfig>,
-        migrations: List<Migration>?,
-        securityGroups: List<SecurityGroup>?,
+        migrations: List<Migration>,
+        securityGroups: List<SecurityGroup>,
         skipSslValidation: Boolean,
         retryCount: Int,
         maxInFlight: Int

@@ -171,12 +171,19 @@ private fun createConfig(
     apps: List<AppConfig>,
     userProvidedServices: List<UserProvidedServiceConfig>,
     services: List<ServiceConfig>,
-    migrations: List<Migration>?,
-    securityGroups: List<SecurityGroup>?,
+    migrations: List<Migration>,
+    securityGroups: List<SecurityGroup>,
     skipSslValidation: Boolean,
     retryCount: Int
 ): Config {
-    val cf = CfConfig(apiHost, username, password, organization, space, skipSslValidation)
+    val cf = CfConfig(
+        apiHost = apiHost,
+        username = username,
+        password = password,
+        organization = organization,
+        space = space,
+        skipSslValidation = skipSslValidation
+    )
     return Config(PushAppsConfig(
         appDeployRetryCount = retryCount
     ), cf, apps, services, userProvidedServices, migrations, securityGroups)

@@ -1,0 +1,21 @@
+cf:
+  apiHost: "api.example.com"
+  password: some-password
+  username: some-username
+  organization: some-organization
+  space: some-space
+apps:
+- name: some-name
+  path: some-path
+services:
+- name: some-service-name
+  plan: a-good-one
+  broker: some-broker
+migrations:
+- user: user
+  password: password
+  driver: postgresql
+  host: 10.0.0.1
+  port: 5432
+  schema: metrics
+  migrationDir: /all/the/cool/migrations

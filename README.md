@@ -86,7 +86,7 @@ migrations: #optional array
   port: 3306 #required
   schema: backend #required
   migrationDir: /var/vcap/packages/backend/dbmigrations/metrics/ #required
-  repair: true #required
+  repair: true #optional, default false
 securityGroups: #optional array
 - name: outer-api #required
   destination: "0.0.0.0-255.255.255.255" #required

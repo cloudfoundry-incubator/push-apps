@@ -19,6 +19,7 @@ apps:
     path: "/citrus"
   environment:
     FRUIT: lemons
+    MISSING: ""
   serviceNames: [some-service-name]
 services:
 - name: some-service-name

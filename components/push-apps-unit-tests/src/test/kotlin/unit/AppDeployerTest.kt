@@ -54,7 +54,7 @@ class AppDeployerTest : Spek({
 
             verify(tc.mockCfClient, times(1)).pushApplication(appConfig)
             verify(tc.mockCfClient, times(1)).setApplicationEnvironment(appConfig)
-            verify(tc.mockCfClient, times(1)).bindServicesToApplication(appConfig.name, appConfig.serviceNames!!)
+            verify(tc.mockCfClient, times(1)).bindServicesToApplication(appConfig.name, appConfig.serviceNames)
             verify(tc.mockCfClient, times(1)).startApplication(appConfig.name)
             verify(tc.mockCfClient, times(1)).mapRoute(appConfig)
 

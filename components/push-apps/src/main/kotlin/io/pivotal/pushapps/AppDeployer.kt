@@ -113,7 +113,7 @@ class AppDeployer(
 
     private fun generateBindServiceActions(appConfig: AppConfig): Mono<Void> {
         var bindServiceActions: List<Mono<Void>> = emptyList()
-        if (appConfig.serviceNames !== null) {
+        if (appConfig.serviceNames.isNotEmpty()) {
             val availableServicesToBeBound = appConfig.serviceNames.filter {
                 availableServices.contains(it)
             }

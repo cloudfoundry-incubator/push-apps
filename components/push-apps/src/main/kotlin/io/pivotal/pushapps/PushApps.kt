@@ -22,7 +22,7 @@ class PushApps(
 
         val cloudFoundryClient = targetCf(cf)
 
-        if (securityGroups !== null) {
+        if (securityGroups.isNotEmpty()) {
             val success = createSecurityGroups(
                 securityGroups,
                 cloudFoundryClient,
@@ -35,7 +35,7 @@ class PushApps(
         }
 
         var availableServices: List<String> = emptyList()
-        if (services !== null) {
+        if (services.isNotEmpty()) {
             val serviceNames = services.map(ServiceConfig::name)
             logger.info("Creating services: ${serviceNames.joinToString(", ")}.")
             val (success, servicesAvailable) = createServices(services, cloudFoundryClient)
@@ -43,7 +43,7 @@ class PushApps(
             availableServices = servicesAvailable
         }
 
-        if (userProvidedServices !== null) {
+        if (userProvidedServices.isNotEmpty()) {
             val userProvidedServiceNames = userProvidedServices.map(UserProvidedServiceConfig::name)
             logger.info("Creating user provided services: ${userProvidedServiceNames.joinToString(", ")}")
             val success = createOrUpdateUserProvidedServices(
@@ -56,7 +56,7 @@ class PushApps(
             availableServices += userProvidedServiceNames
         }
 
-        if (migrations !== null) {
+        if (migrations.isNotEmpty()) {
             val migrationDescriptions = migrations.map { "${it.driver} migration for schema ${it.schema}" }
             logger.info("Running migrations: ${migrationDescriptions.joinToString(", ")}")
             val success = runMigrations(migrations)
@@ -72,7 +72,13 @@ class PushApps(
         )
     }
 
-    private fun createSecurityGroups(securityGroups: List<SecurityGroup>, cloudFoundryClient: CloudFoundryClient, space: String, maxInFlight: Int, retryCount: Int): Boolean {
+    private fun createSecurityGroups(
+        securityGroups: List<SecurityGroup>,
+        cloudFoundryClient: CloudFoundryClient,
+        space: String,
+        maxInFlight: Int,
+        retryCount: Int
+    ): Boolean {
         val securityGroupCreator = SecurityGroupCreator(
             securityGroups,
             cloudFoundryClient,
@@ -105,7 +111,10 @@ class PushApps(
             .createAndTargetSpace(cf.space)
     }
 
-    private fun createServices(services: List<ServiceConfig>, cloudFoundryClient: CloudFoundryClient): Pair<Boolean, List<String>> {
+    private fun createServices(
+        services: List<ServiceConfig>,
+        cloudFoundryClient: CloudFoundryClient
+    ): Pair<Boolean, List<String>> {
         val serviceCreator = ServiceCreator(cloudFoundryClient, services)
         val createServiceResults = serviceCreator.createServices()
 

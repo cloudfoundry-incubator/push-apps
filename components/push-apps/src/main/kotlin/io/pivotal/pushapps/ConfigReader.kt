@@ -25,17 +25,17 @@ class ConfigReader {
 }
 
 data class Config(
-    val pushApps: PushAppsConfig,
+    val pushApps: PushAppsConfig = PushAppsConfig(),
     val cf: CfConfig,
     val apps: List<AppConfig>,
-    val services: List<ServiceConfig>? = emptyList(),
-    val userProvidedServices: List<UserProvidedServiceConfig>? = emptyList(),
-    val migrations: List<Migration>? = emptyList(),
-    val securityGroups: List<SecurityGroup>? = emptyList()
+    val services: List<ServiceConfig> = emptyList(),
+    val userProvidedServices: List<UserProvidedServiceConfig> = emptyList(),
+    val migrations: List<Migration> = emptyList(),
+    val securityGroups: List<SecurityGroup> = emptyList()
 )
 
 data class PushAppsConfig(
-    val appDeployRetryCount: Int = 0,
+    val appDeployRetryCount: Int = 3,
     val maxInFlight: Int = 2,
     val failedDeploymentLogLinesToShow: Int = 50
 )
@@ -66,7 +66,7 @@ data class AppConfig(
     val blueGreenDeploy: Boolean? = null,
     val domain: String? = null,
     val healthCheckType: String? = null,
-    val serviceNames: List<String>? = emptyList()
+    val serviceNames: List<String> = emptyList()
 )
 
 data class Route(
@@ -114,7 +114,12 @@ class MigrationDeserializer : StdDeserializer<Migration>(Migration::class.java) 
         val port = node.get("port").asText()
         val schema = node.get("schema").asText()
         val migrationDir = node.get("migrationDir").asText()
-        val repair = node.get("repair").asBoolean()
+
+        val repair = if (node.has("repair")) {
+            node.get("repair").asBoolean()
+        } else {
+            false
+        }
 
         val driverString = node.get("driver").asText()
         val driver = when (driverString) {
@@ -147,7 +152,7 @@ class MigrationSerializer : StdSerializer<Migration>(Migration::class.java) {
         gen.writeStringField("migrationDir", value.migrationDir);
         gen.writeBooleanField("repair", value.repair);
 
-        val driver = when(value.driver) {
+        val driver = when (value.driver) {
             is DatabaseDriver.MySql -> "mysql"
             is DatabaseDriver.Postgres -> "postgres"
         }

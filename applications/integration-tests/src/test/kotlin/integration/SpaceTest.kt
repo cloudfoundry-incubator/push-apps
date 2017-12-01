@@ -41,7 +41,8 @@ class SpaceTest : Spek({
 
             val spaceSummary = mock<SpaceSummary>()
             whenever(spaceSummary.name).thenReturn("outer")
-            whenever(tc.cfOperations.spaces().list()).thenReturn(Flux.fromIterable(listOf(spaceSummary)))
+            whenever(tc.cfOperations.spaces().list())
+                .thenReturn(Flux.fromIterable(listOf(spaceSummary)))
 
             val pushApps = PushApps(
                 tc.config,
@@ -55,7 +56,6 @@ class SpaceTest : Spek({
             assertThat(result).isTrue()
 
             verify(tc.cfOperations.spaces()).list()
-            verify(tc.cfOperations.spaces()).get(any())
             verifyNoMoreInteractions(tc.cfOperations.spaces())
         }
     }
