@@ -86,7 +86,7 @@ data class UserProvidedServiceConfig(
     val credentials: Map<String, Any>
 )
 
-sealed class DatabaseDriver(val driver: String) {
+sealed class DatabaseDriver(val name: String) {
     class MySql : DatabaseDriver("mysql")
     class Postgres : DatabaseDriver("postgres")
 }

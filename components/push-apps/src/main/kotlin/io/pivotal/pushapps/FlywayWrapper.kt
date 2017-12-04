@@ -3,6 +3,7 @@ package io.pivotal.pushapps
 import org.apache.commons.io.FilenameUtils
 import org.flywaydb.core.Flyway
 import org.flywaydb.core.api.FlywayException
+import reactor.core.publisher.Mono
 import java.nio.file.Files
 import java.nio.file.Paths
 import javax.sql.DataSource
@@ -10,22 +11,25 @@ import javax.sql.DataSource
 class FlywayWrapper(
     private val createFlywayInstance: () -> Flyway
 ) {
-    fun migrate(dataSource: DataSource, migrationsLocation: String, repair: Boolean) {
-        //Need a new flyway instance for each migration, otherwise it can use the wrong datasource, since this is executed async
-        val flyway = createFlywayInstance()
+    fun migrate(dataSource: DataSource, migrationsLocation: String, repair: Boolean): Mono<Void> {
+        return Mono.fromRunnable {
+            // Need a new flyway instance for each migration, otherwise it can use the wrong datasource,
+            // since this is executed async
+            val flyway = createFlywayInstance()
 
-        if (Files.notExists(Paths.get(migrationsLocation)))
-            throw FlywayException("Unable to find migrations folder $migrationsLocation")
-        if (pathContainsNoMigrations(migrationsLocation))
-            throw FlywayException("Did not find any migrations in $migrationsLocation")
+            if (Files.notExists(Paths.get(migrationsLocation)))
+                throw FlywayException("Unable to find migrations folder $migrationsLocation")
+            if (pathContainsNoMigrations(migrationsLocation))
+                throw FlywayException("Did not find any migrations in $migrationsLocation")
 
-        flyway.dataSource = dataSource
-        flyway.setLocations("filesystem:$migrationsLocation")
+            flyway.dataSource = dataSource
+            flyway.setLocations("filesystem:$migrationsLocation")
 
-        if (repair) flyway.repair()
+            if (repair) flyway.repair()
 
-        flyway.migrate()
-        flyway.validate()
+            flyway.migrate()
+            flyway.validate()
+        }
     }
 
     private fun pathContainsNoMigrations(migrationsLocation: String): Boolean {

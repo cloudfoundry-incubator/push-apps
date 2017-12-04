@@ -40,7 +40,10 @@ class UserProvidedServiceCreator(
         return subscriber.results.get()
     }
 
-    private fun createUserProvidedService(existingServices: List<String>, serviceConfig: UserProvidedServiceConfig): Mono<OperationResult> {
+    private fun createUserProvidedService(
+        existingServices: List<String>,
+        serviceConfig: UserProvidedServiceConfig
+    ): Mono<OperationResult> {
         val serviceCommand = if (existingServices.contains(serviceConfig.name)) {
             cloudFoundryClient.updateUserProvidedService(serviceConfig)
         } else {

@@ -1,43 +1,60 @@
 package io.pivotal.pushapps
 
 import org.apache.logging.log4j.LogManager
-import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 import java.sql.Connection
 import java.sql.SQLException
-import java.util.concurrent.CompletableFuture
-import javax.sql.DataSource
+import java.util.concurrent.ConcurrentLinkedQueue
 
 class DatabaseMigrator(
     private val migrations: List<Migration>,
     private val flywayWrapper: FlywayWrapper,
-    private val dataSourceFactory: DataSourceFactory
+    private val dataSourceFactory: DataSourceFactory,
+    private val maxInFlight: Int,
+    private val retryCount: Int
 ) {
     private val logger = LogManager.getLogger(DatabaseMigrator::class.java)
 
-    //TODO add retries
     fun migrate(): List<OperationResult> {
-        val migrateDatabasesFlux: Flux<OperationResult> = Flux.create { sink ->
-            val migrateDatabaseFutures = migrations.map { migration ->
-                val migrateDatabaseFuture = CompletableFuture.runAsync {
-                    val dataSource = dataSourceFactory.buildDataSource(migration)
-                    migrateDatabase(dataSource, migration)
-                }
+        val schemas = migrations.map(Migration::schema)
+        logger.info("Running migrations for the following schemas: ${schemas.joinToString(", ")}")
 
-                getOperationResult(migrateDatabaseFuture, migration.schema, false)
-                    .thenApply { sink.next(it) }
-            }
+        val queue = ConcurrentLinkedQueue<Migration>()
+        queue.addAll(migrations)
 
-            CompletableFuture.allOf(*migrateDatabaseFutures.toTypedArray())
-                .thenApply { sink.complete() }
-        }
+        val subscriber = OperationScheduler<Migration>(
+            maxInFlight = maxInFlight,
+            operation = this::migrateDatabase,
+            operationIdentifier = Migration::schema,
+            operationDescription = this::migrationDescription,
+            operationConfigQueue = queue,
+            retries = retryCount
+        )
 
-        return migrateDatabasesFlux.toIterable().toList()
+        val flux = createQueueBackedFlux(queue)
+        flux.subscribe(subscriber)
+
+        return subscriber.results.get()
     }
 
-    private fun migrateDatabase(dataSource: DataSource, migration: Migration) {
+    private fun migrationDescription(migration: Migration): String {
+        return "Migrating ${migration.driver.name} schema ${migration.schema}."
+    }
+
+    private fun migrateDatabase(migration: Migration): Mono<OperationResult> {
+        val dataSource = dataSourceFactory.buildDataSource(migration)
         if (migration.driver is DatabaseDriver.MySql) createDatabaseIfAbsent(dataSource.connection, migration.schema)
         val newDataSource = dataSourceFactory.addDatabaseNameToDataSource(dataSource, migration)
-        flywayWrapper.migrate(newDataSource, migration.migrationDir, migration.repair)
+        val description = migrationDescription(migration)
+        val operationResult = OperationResult(
+            name = description,
+            didSucceed = true
+        )
+
+        return flywayWrapper
+            .migrate(newDataSource, migration.migrationDir, migration.repair)
+            .transform(logAsyncOperation(logger, description))
+            .then(Mono.just(operationResult))
     }
 
     private fun createDatabaseIfAbsent(conn: Connection, dbName: String) {

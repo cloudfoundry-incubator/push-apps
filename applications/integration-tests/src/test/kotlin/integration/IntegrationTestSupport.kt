@@ -44,7 +44,7 @@ fun buildTestContext(
     val cfOperations = buildMockCfOperations()
     val cfOperationsBuilder = buildMockCfOperationsBuilder(cfOperations)
     val cfClientBuilder = buildMockCfClientBuilder(cfOperations, cfOperationsBuilder)
-    val flyway = mock<FlywayWrapper>()
+    val flyway = buildMockFlywayWrapper()
     val (dataSourceFactory, dataSource) = buildDataSourceFactory()
 
     val config = createConfig(
@@ -70,6 +70,12 @@ fun buildTestContext(
         dataSourceFactory,
         dataSource
     )
+}
+
+private fun buildMockFlywayWrapper(): FlywayWrapper {
+    val flywayWrapper = mock<FlywayWrapper>()
+    whenever(flywayWrapper.migrate(any(), any(), any())).thenReturn(Mono.empty())
+    return flywayWrapper
 }
 
 fun buildDataSourceFactory(): Pair<DataSourceFactory, DataSource> {

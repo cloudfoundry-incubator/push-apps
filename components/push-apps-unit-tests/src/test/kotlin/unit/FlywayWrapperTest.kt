@@ -55,7 +55,7 @@ class FlywayWrapperTest : Spek({
                 dataSource = dataSource,
                 migrationsLocation = validMigrationsPath,
                 repair = false
-            )
+            ).block()
 
             verify(flyway).dataSource = dataSource
             verify(flyway).setLocations("filesystem:$validMigrationsPath")
@@ -70,7 +70,7 @@ class FlywayWrapperTest : Spek({
                 dataSource = dataSource,
                 migrationsLocation = validMigrationsPath,
                 repair = true
-            )
+            ).block()
 
             verify(flyway).repair()
         }
@@ -85,7 +85,7 @@ class FlywayWrapperTest : Spek({
                     dataSource = dataSource,
                     migrationsLocation = validMigrationsPath,
                     repair = false
-                )
+                ).block()
             }
         }
 
@@ -100,7 +100,8 @@ class FlywayWrapperTest : Spek({
                 dataSource = dataSource,
                 migrationsLocation = validMigrationsPath,
                 repair = false
-            )
+            ).block()
+
             verify(flyway).setLocations("filesystem:$validMigrationsPath")
             verify(flyway).dataSource = dataSource
             verify(flyway).validate()
@@ -111,7 +112,7 @@ class FlywayWrapperTest : Spek({
                     dataSource = dataSource,
                     migrationsLocation = invalidMigrationsPath,
                     repair = false
-                )
+                ).block()
             }
             verifyNoMoreInteractions(flyway)
         }

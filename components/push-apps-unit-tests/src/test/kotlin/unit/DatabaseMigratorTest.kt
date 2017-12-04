@@ -8,6 +8,7 @@ import io.pivotal.pushapps.*
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
+import reactor.core.publisher.Mono
 import java.sql.Connection
 import java.sql.Statement
 import javax.sql.DataSource
@@ -37,12 +38,15 @@ class DatabaseMigratorTest : Spek({
             whenever(dataSource.connection).thenReturn(connection)
             whenever(connection.createStatement()).thenReturn(statement)
             whenever(statement.execute(any())).thenReturn(true)
+            whenever(flywayWrapper.migrate(any(), any(), any())).thenReturn(Mono.empty())
 
 
             val databaseMigrator = DatabaseMigrator(
                 migrations = listOf(migration),
                 flywayWrapper = flywayWrapper,
-                dataSourceFactory = dataSourceFactory
+                dataSourceFactory = dataSourceFactory,
+                maxInFlight = 1,
+                retryCount = 0
             )
 
             databaseMigrator.migrate()

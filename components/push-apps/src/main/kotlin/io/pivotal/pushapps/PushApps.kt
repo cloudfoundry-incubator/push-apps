@@ -9,7 +9,7 @@ import org.flywaydb.core.Flyway
 class PushApps(
     private val config: Config,
     private val cloudFoundryClientBuilder: CloudFoundryClientBuilder,
-    private val flywayWrapper: FlywayWrapper = FlywayWrapper({Flyway()}),
+    private val flywayWrapper: FlywayWrapper = FlywayWrapper({ Flyway() }),
     private val dataSourceFactory: DataSourceFactory = DataSourceFactory(
         { mySqlDataSourceBuilder(it) },
         { postgresDataSourceBuilder(it) }
@@ -23,8 +23,7 @@ class PushApps(
         val cloudFoundryClient = targetCf(cf)
 
         if (securityGroups.isNotEmpty()) {
-            val success = createSecurityGroups(
-                securityGroups,
+            val success = securityGroups.createSecurityGroups(
                 cloudFoundryClient,
                 cf.space,
                 pushAppsConfig.maxInFlight,
@@ -36,18 +35,14 @@ class PushApps(
 
         var availableServices: List<String> = emptyList()
         if (services.isNotEmpty()) {
-            val serviceNames = services.map(ServiceConfig::name)
-            logger.info("Creating services: ${serviceNames.joinToString(", ")}.")
-            val (success, servicesAvailable) = createServices(services, cloudFoundryClient)
+            val (success, servicesAvailable) = services.createServices(cloudFoundryClient)
             if (!success) return false
             availableServices = servicesAvailable
         }
 
         if (userProvidedServices.isNotEmpty()) {
             val userProvidedServiceNames = userProvidedServices.map(UserProvidedServiceConfig::name)
-            logger.info("Creating user provided services: ${userProvidedServiceNames.joinToString(", ")}")
-            val success = createOrUpdateUserProvidedServices(
-                userProvidedServices,
+            val success = userProvidedServices.createOrUpdateUserProvidedServices(
                 cloudFoundryClient,
                 pushAppsConfig.maxInFlight,
                 pushAppsConfig.appDeployRetryCount
@@ -57,38 +52,19 @@ class PushApps(
         }
 
         if (migrations.isNotEmpty()) {
-            val migrationDescriptions = migrations.map { "${it.driver} migration for schema ${it.schema}" }
-            logger.info("Running migrations: ${migrationDescriptions.joinToString(", ")}")
-            val success = runMigrations(migrations)
+            val success = migrations.runMigrations(
+                pushAppsConfig.maxInFlight,
+                pushAppsConfig.appDeployRetryCount
+            )
             if (!success) return false
         }
 
-        return deployApps(
-            apps = apps,
+        return apps.deployApps(
             availableServices = availableServices,
             maxInFlight = pushAppsConfig.maxInFlight,
             retryCount = pushAppsConfig.appDeployRetryCount,
             cloudFoundryClient = cloudFoundryClient
         )
-    }
-
-    private fun createSecurityGroups(
-        securityGroups: List<SecurityGroup>,
-        cloudFoundryClient: CloudFoundryClient,
-        space: String,
-        maxInFlight: Int,
-        retryCount: Int
-    ): Boolean {
-        val securityGroupCreator = SecurityGroupCreator(
-            securityGroups,
-            cloudFoundryClient,
-            space,
-            maxInFlight,
-            retryCount
-        )
-        val results = securityGroupCreator.createSecurityGroups()
-
-        return handleOperationResult(results, "Creating security group")
     }
 
     private fun targetCf(cf: CfConfig): CloudFoundryClient {
@@ -111,28 +87,44 @@ class PushApps(
             .createAndTargetSpace(cf.space)
     }
 
-    private fun createServices(
-        services: List<ServiceConfig>,
-        cloudFoundryClient: CloudFoundryClient
-    ): Pair<Boolean, List<String>> {
-        val serviceCreator = ServiceCreator(cloudFoundryClient, services)
+    private fun List<SecurityGroup>.createSecurityGroups(
+        cloudFoundryClient: CloudFoundryClient,
+        space: String,
+        maxInFlight: Int,
+        retryCount: Int
+    ): Boolean {
+        val securityGroupCreator = SecurityGroupCreator(
+            this,
+            cloudFoundryClient,
+            space,
+            maxInFlight,
+            retryCount
+        )
+        val results = securityGroupCreator.createSecurityGroups()
+
+        return handleOperationResult(results, "Creating security group")
+    }
+
+    private fun List<ServiceConfig>.createServices(cloudFoundryClient: CloudFoundryClient): Pair<Boolean, List<String>> {
+        val serviceCreator = ServiceCreator(cloudFoundryClient, this)
         val createServiceResults = serviceCreator.createServices()
 
         val success = handleOperationResult(createServiceResults, "Creating service")
-        val createdServices = createServiceResults.filter(OperationResult::didSucceed).map(OperationResult::name)
+        val createdServices = createServiceResults
+            .filter(OperationResult::didSucceed)
+            .map(OperationResult::name)
 
         return Pair(success, createdServices)
     }
 
-    private fun createOrUpdateUserProvidedServices(
-        userProvidedServices: List<UserProvidedServiceConfig>,
+    private fun List<UserProvidedServiceConfig>.createOrUpdateUserProvidedServices(
         cloudFoundryClient: CloudFoundryClient,
         maxInFlight: Int,
         retryCount: Int
     ): Boolean {
         val userProvidedServiceCreator = UserProvidedServiceCreator(
             cloudFoundryClient = cloudFoundryClient,
-            serviceConfigs = userProvidedServices,
+            serviceConfigs = this,
             maxInFlight = maxInFlight,
             retryCount = retryCount
         )
@@ -141,18 +133,28 @@ class PushApps(
         return handleOperationResult(createUserServicesResults, "Creating user provided service")
     }
 
-    private fun runMigrations(migrations: List<Migration>): Boolean {
+    private fun List<Migration>.runMigrations(
+        maxInFlight: Int,
+        retryCount: Int
+    ): Boolean {
         val databaseMigrationResults = DatabaseMigrator(
-            migrations,
+            this,
             flywayWrapper,
-            dataSourceFactory
+            dataSourceFactory,
+            maxInFlight = maxInFlight,
+            retryCount = retryCount
         ).migrate()
 
         return handleOperationResult(databaseMigrationResults, "Migrating database")
     }
 
-    private fun deployApps(apps: List<AppConfig>, availableServices: List<String>, maxInFlight: Int, retryCount: Int, cloudFoundryClient: CloudFoundryClient): Boolean {
-        val appDeployer = AppDeployer(cloudFoundryClient, apps, availableServices, maxInFlight, retryCount)
+    private fun List<AppConfig>.deployApps(
+        availableServices: List<String>,
+        maxInFlight: Int,
+        retryCount: Int,
+        cloudFoundryClient: CloudFoundryClient
+    ): Boolean {
+        val appDeployer = AppDeployer(cloudFoundryClient, this, availableServices, maxInFlight, retryCount)
         val results = appDeployer.deployApps()
 
         return handleOperationResult(results, "Deploying application")
