@@ -37,14 +37,14 @@ class UserProvidedServiceCreatorTest : Spek({
             whenever(tc.mockCloudFoundryClient.listServices()).thenReturn(emptyList())
             whenever(tc.mockCloudFoundryClient.createUserProvidedService(any())).thenReturn(Mono.empty())
 
-            val results = tc.serviceCreator.createOrUpdateServices()
+            val results = tc.serviceCreator.createOrUpdateServices().toIterable().toList()
             verify(tc.mockCloudFoundryClient, times(1))
                 .createUserProvidedService(tc.serviceConfig)
 
             assertThat(results).hasSize(1)
 
             val firstResult = results[0]
-            assertThat(firstResult.name).isEqualTo("Creating user provided service ${tc.serviceConfig.name}")
+            assertThat(firstResult.description).isEqualTo("Creating user provided service ${tc.serviceConfig.name}")
             assertThat(firstResult.didSucceed).isTrue()
         }
 
@@ -55,14 +55,14 @@ class UserProvidedServiceCreatorTest : Spek({
                 Mono.error(Exception("lemons"))
             )
 
-            val results = tc.serviceCreator.createOrUpdateServices()
+            val results = tc.serviceCreator.createOrUpdateServices().toIterable().toList()
             verify(tc.mockCloudFoundryClient, times(1))
                 .createUserProvidedService(tc.serviceConfig)
 
             assertThat(results).hasSize(1)
             val result = results[0]
             assertThat(result.didSucceed).isFalse()
-            assertThat(result.name).isEqualTo("Create user provided service ${tc.serviceConfig.name}")
+            assertThat(result.description).isEqualTo("Create user provided service ${tc.serviceConfig.name}")
             assertThat(result.error!!.message).contains("lemons")
         }
 
@@ -71,14 +71,14 @@ class UserProvidedServiceCreatorTest : Spek({
             whenever(tc.mockCloudFoundryClient.listServices()).thenReturn(listOf(tc.serviceConfig.name))
             whenever(tc.mockCloudFoundryClient.updateUserProvidedService(any())).thenReturn(Mono.empty())
 
-            val results = tc.serviceCreator.createOrUpdateServices()
+            val results = tc.serviceCreator.createOrUpdateServices().toIterable().toList()
             verify(tc.mockCloudFoundryClient, times(1))
                 .updateUserProvidedService(tc.serviceConfig)
 
             assertThat(results).hasSize(1)
 
             val firstResult = results[0]
-            assertThat(firstResult.name).isEqualTo("Creating user provided service ${tc.serviceConfig.name}")
+            assertThat(firstResult.description).isEqualTo("Creating user provided service ${tc.serviceConfig.name}")
             assertThat(firstResult.didSucceed).isTrue()
         }
     }

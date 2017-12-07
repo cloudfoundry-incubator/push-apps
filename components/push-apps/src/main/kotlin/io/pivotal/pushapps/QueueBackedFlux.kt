@@ -1,10 +1,10 @@
 package io.pivotal.pushapps
 
 import reactor.core.publisher.Flux
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.*
 
 //FIXME: this flux should be tested
-fun <T> createQueueBackedFlux(queue: ConcurrentLinkedQueue<T>): Flux<T> {
+fun <T> createQueueBackedFlux(queue: Queue<T>): Flux<T> {
     return Flux.create<T>({ sink ->
         sink.onRequest({ n: Long ->
             if (queue.isEmpty()) sink.complete()

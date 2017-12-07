@@ -24,6 +24,11 @@ class ConfigReader {
     }
 }
 
+interface OperationConfig {
+    val name: String
+    val optional: Boolean
+}
+
 data class Config(
     val pushApps: PushAppsConfig = PushAppsConfig(),
     val cf: CfConfig,
@@ -51,7 +56,7 @@ data class CfConfig(
 )
 
 data class AppConfig(
-    val name: String,
+    override val name: String,
     val path: String,
     val buildpack: String? = null,
     val command: String? = null,
@@ -66,8 +71,9 @@ data class AppConfig(
     val blueGreenDeploy: Boolean? = null,
     val domain: String? = null,
     val healthCheckType: String? = null,
-    val serviceNames: List<String> = emptyList()
-)
+    val serviceNames: List<String> = emptyList(),
+    override val optional: Boolean = false
+) : OperationConfig
 
 data class Route(
     val hostname: String,
@@ -75,16 +81,17 @@ data class Route(
 )
 
 data class ServiceConfig(
-    val name: String,
+    override val name: String,
     val plan: String,
     val broker: String,
-    val optional: Boolean = false
-)
+    override val optional: Boolean = false
+) : OperationConfig
 
 data class UserProvidedServiceConfig(
-    val name: String,
-    val credentials: Map<String, Any>
-)
+    override val name: String,
+    val credentials: Map<String, Any>,
+    override val optional: Boolean = false
+) : OperationConfig
 
 sealed class DatabaseDriver(val name: String) {
     class MySql : DatabaseDriver("mysql")
@@ -101,8 +108,10 @@ data class Migration(
     val port: String,
     val schema: String,
     val migrationDir: String,
-    val repair: Boolean
-)
+    val repair: Boolean,
+    override val name: String = "Migrate schema $schema",
+    override val optional: Boolean = false
+): OperationConfig
 
 class MigrationDeserializer : StdDeserializer<Migration>(Migration::class.java) {
     override fun deserialize(p: JsonParser, ctxt: DeserializationContext): Migration {
@@ -140,7 +149,7 @@ class MigrationDeserializer : StdDeserializer<Migration>(Migration::class.java) 
     }
 }
 
-//TODO: this is only used for test, consider another approach
+//FIXME: this is only used for test, consider another approach
 class MigrationSerializer : StdSerializer<Migration>(Migration::class.java) {
     override fun serialize(value: Migration, gen: JsonGenerator, provider: SerializerProvider) {
         gen.writeStartObject();
@@ -164,7 +173,8 @@ class MigrationSerializer : StdSerializer<Migration>(Migration::class.java) {
 }
 
 data class SecurityGroup(
-    val name: String,
+    override val name: String,
     val destination: String,
-    val protocol: String
-)
+    val protocol: String,
+    override val optional: Boolean = false
+) : OperationConfig

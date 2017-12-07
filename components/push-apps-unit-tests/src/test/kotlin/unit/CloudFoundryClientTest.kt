@@ -384,7 +384,7 @@ class CloudFoundryClientTest : Spek({
 
             whenever(tc.spaces.get(any())).thenReturn(Mono.just(spaceDetail))
 
-            val spaceId = tc.cloudFoundryClient.getSpaceId("some-space")
+            val spaceId = tc.cloudFoundryClient.getSpaceId("some-space").block()
             verify(tc.spaces, times(1)).get(
                 argForWhich {
                     name == "some-space"

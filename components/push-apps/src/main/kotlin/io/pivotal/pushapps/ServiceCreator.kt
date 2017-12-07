@@ -1,27 +1,40 @@
 package io.pivotal.pushapps
 
+import org.apache.logging.log4j.LogManager
 import reactor.core.publisher.Flux
-import java.util.concurrent.CompletableFuture
+import reactor.core.publisher.Mono
+import java.time.Duration
+import java.util.concurrent.ConcurrentLinkedQueue
 
 class ServiceCreator(
+    private val serviceConfigs: List<ServiceConfig>,
     private val cloudFoundryClient: CloudFoundryClient,
-    private val serviceConfigs: List<ServiceConfig>
+    private val maxInFlight: Int,
+    private val retryCount: Int
 ) {
-    fun createServices(): List<OperationResult> {
-        val servicesToBeCreated = filterExistingServices()
+    private val logger = LogManager.getLogger(ServiceCreator::class.java)
 
-        val createServicesFlux: Flux<OperationResult> = Flux.create { sink ->
-            val createServiceFutures = servicesToBeCreated.map { serviceConfig ->
-                generateServiceFuture(serviceConfig)
-                    .thenApply { sink.next(it) }
-            }
+    fun createServices(): Flux<OperationResult> {
+        val serviceNames = serviceConfigs.map(ServiceConfig::name)
+        logger.info("Creating services: ${serviceNames.joinToString(", ")}.")
 
-            CompletableFuture.allOf(*createServiceFutures
-                .toTypedArray())
-                .thenApply { sink.complete() }
+        val queue = ConcurrentLinkedQueue<ServiceConfig>()
+        queue.addAll(filterExistingServices())
+
+        return Flux.create<OperationResult> { sink ->
+            val subscriber = OperationScheduler<ServiceConfig>(
+                maxInFlight = maxInFlight,
+                sink = sink,
+                operation = this::createService,
+                operationIdentifier = ServiceConfig::name,
+                operationDescription = this::createServiceDescription,
+                operationConfigQueue = queue,
+                retries = retryCount
+            )
+
+            val flux = createQueueBackedFlux(queue)
+            flux.subscribe(subscriber)
         }
-
-        return createServicesFlux.toIterable().toList()
     }
 
     private fun filterExistingServices(): List<ServiceConfig> {
@@ -32,11 +45,20 @@ class ServiceCreator(
         }
     }
 
-    private fun generateServiceFuture(serviceConfig: ServiceConfig): CompletableFuture<OperationResult> {
-        val serviceFuture = cloudFoundryClient
-            .createService(serviceConfig)
-            .toFuture()
+    private fun createServiceDescription(serviceConfig: ServiceConfig) = "Create service ${serviceConfig.name}"
 
-        return getOperationResult(serviceFuture, serviceConfig.name, serviceConfig.optional)
+    private fun createService(serviceConfig: ServiceConfig): Mono<OperationResult> {
+        val description = createServiceDescription(serviceConfig)
+        val operationResult = OperationResult(
+            description = description,
+            operationConfig = serviceConfig,
+            didSucceed = true
+        )
+
+        return cloudFoundryClient
+            .createService(serviceConfig)
+            .timeout(Duration.ofMinutes(1), Mono.error(PushAppsError("Timed out waiting for $description")))
+            .transform(logAsyncOperation(logger, description))
+            .then(Mono.just(operationResult))
     }
 }

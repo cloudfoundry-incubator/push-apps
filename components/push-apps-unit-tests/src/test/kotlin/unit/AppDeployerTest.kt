@@ -50,7 +50,8 @@ class AppDeployerTest : Spek({
             whenever(tc.mockCfClient.startApplication(any())).thenReturn(Mono.empty())
             whenever(tc.mockCfClient.mapRoute(any())).thenReturn(Mono.empty())
 
-            val results = tc.appDeployer.deployApps()
+            val results = tc.appDeployer.deployApps().toIterable().toList()
+            assertThat(results).hasSize(5)
 
             verify(tc.mockCfClient, times(1)).pushApplication(appConfig)
             verify(tc.mockCfClient, times(1)).setApplicationEnvironment(appConfig)
@@ -58,9 +59,7 @@ class AppDeployerTest : Spek({
             verify(tc.mockCfClient, times(1)).startApplication(appConfig.name)
             verify(tc.mockCfClient, times(1)).mapRoute(appConfig)
 
-            assertThat(results).hasSize(5)
-
-            val allOperationsWereSuccessful = results.fold(true) { memo, result -> memo && result.didSucceed}
+            val allOperationsWereSuccessful = results.fold(true) { memo, result -> memo && result.didSucceed }
             assertThat(allOperationsWereSuccessful).isTrue()
         }
 
@@ -80,7 +79,7 @@ class AppDeployerTest : Spek({
             whenever(tc.mockCfClient.startApplication(any())).thenReturn(Mono.empty())
             whenever(tc.mockCfClient.mapRoute(any())).thenReturn(Mono.empty())
 
-            tc.appDeployer.deployApps()
+            tc.appDeployer.deployApps().toIterable().toList()
 
             verify(tc.mockCfClient, times(1)).pushApplication(appConfig)
             verify(tc.mockCfClient, times(1)).setApplicationEnvironment(appConfig)
@@ -106,11 +105,11 @@ class AppDeployerTest : Spek({
             whenever(tc.mockCfClient.startApplication(any())).thenReturn(Mono.empty())
             whenever(tc.mockCfClient.mapRoute(any())).thenReturn(Mono.error(Error("it broke")))
 
-            val results = tc.appDeployer.deployApps()
+            val results = tc.appDeployer.deployApps().toIterable().toList()
 
             assertThat(results).hasSize(5)
 
-            val allOperationsWereSuccessful = results.fold(true) { memo, result -> memo && result.didSucceed}
+            val allOperationsWereSuccessful = results.fold(true) { memo, result -> memo && result.didSucceed }
             assertThat(allOperationsWereSuccessful).isFalse()
 
             val failedOperationCount = results.fold(0) { memo, result -> if (result.didSucceed) memo else memo + 1 }
@@ -118,9 +117,9 @@ class AppDeployerTest : Spek({
 
             val failedOperation: OperationResult? = results.find { !it.didSucceed }
             assertThat(failedOperation).isNotNull()
-            assertThat(failedOperation!!.name).isEqualTo("Push application Foo bar")
+            assertThat(failedOperation!!.description).isEqualTo("Push application Foo bar")
         }
 
-        //TODO blue green
+        //FIXME blue green
     }
 })

@@ -1,3 +1,5 @@
 package io.pivotal.pushapps
 
-class PushAppsError(override val message: String?) : Throwable()
+class PushAppsError(message: String, cause: Throwable?) : Throwable(message, cause) {
+    constructor(message: String): this(message, null)
+}

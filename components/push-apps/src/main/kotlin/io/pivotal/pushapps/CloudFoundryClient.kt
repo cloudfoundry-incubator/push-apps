@@ -312,19 +312,16 @@ class CloudFoundryClient(
         return applicationListFlux.toIterable().toList()
     }
 
-    fun getSpaceId(spaceName: String): String? {
+    fun getSpaceId(spaceName: String): Mono<String> {
         val spaceRequest = GetSpaceRequest
             .builder()
             .name(spaceName)
             .build()
 
-        val spaceId = cloudFoundryOperations
+        return cloudFoundryOperations
             .spaces()
             .get(spaceRequest)
             .map(SpaceDetail::getId)
-            .block()
-
-        return spaceId
     }
 
     fun fetchRecentLogsForAsync(appName: String): Flux<LogMessage> {

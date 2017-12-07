@@ -4,7 +4,6 @@ import com.nhaarman.mockito_kotlin.*
 import io.pivotal.pushapps.CloudFoundryClient
 import io.pivotal.pushapps.ServiceConfig
 import io.pivotal.pushapps.ServiceCreator
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
@@ -30,7 +29,10 @@ class ServiceCreatorTest : Spek({
 
         val serviceCreator = ServiceCreator(
             cloudFoundryClient = mockCloudFoundryClient,
-            serviceConfigs = listOf(serviceConfig))
+            serviceConfigs = listOf(serviceConfig),
+            maxInFlight = 1,
+            retryCount = 0
+        )
 
         return TestContext(serviceCreator, mockCloudFoundryClient, serviceConfig)
     }
@@ -41,14 +43,14 @@ class ServiceCreatorTest : Spek({
             whenever(tc.mockCloudFoundryClient.listServices()).thenReturn(emptyList())
             whenever(tc.mockCloudFoundryClient.createService(any())).thenReturn(Mono.empty())
 
-            val results = tc.serviceCreator.createServices()
+            val results = tc.serviceCreator.createServices().toIterable().toList()
+            assertThat(results).hasSize(1)
+
             verify(tc.mockCloudFoundryClient, times(1))
                 .createService(tc.serviceConfig)
 
-            assertThat(results).hasSize(1)
-
             val firstResult = results[0]
-            assertThat(firstResult.name).isEqualTo(tc.serviceConfig.name)
+            assertThat(firstResult.description).isEqualTo("Create service ${tc.serviceConfig.name}")
             assertThat(firstResult.didSucceed).isTrue()
 
         }
@@ -60,15 +62,16 @@ class ServiceCreatorTest : Spek({
                 Mono.fromSupplier { throw Exception("lemons") }
             )
 
-            val results = tc.serviceCreator.createServices()
+            val results = tc.serviceCreator.createServices().toIterable().toList()
+            assertThat(results).hasSize(1)
+
             verify(tc.mockCloudFoundryClient, times(1))
                 .createService(tc.serviceConfig)
 
-            Assertions.assertThat(results).hasSize(1)
             val result = results[0]
-            Assertions.assertThat(result.didSucceed).isFalse()
-            Assertions.assertThat(result.name).isEqualTo(tc.serviceConfig.name)
-            Assertions.assertThat(result.error!!.message).contains("lemons")
+            assertThat(result.didSucceed).isFalse()
+            assertThat(result.description).isEqualTo("Create service ${tc.serviceConfig.name}")
+            assertThat(result.error!!.message).contains("lemons")
         }
 
         it("it includes whether the service was optional in the result") {
@@ -78,24 +81,24 @@ class ServiceCreatorTest : Spek({
                 Mono.fromSupplier { throw Exception("lemons") }
             )
 
-            val results = tc.serviceCreator.createServices()
+            val results = tc.serviceCreator.createServices().toIterable().toList()
+            assertThat(results).hasSize(1)
+
             verify(tc.mockCloudFoundryClient, times(1))
                 .createService(tc.serviceConfig)
 
-            Assertions.assertThat(results).hasSize(1)
             val result = results[0]
-            Assertions.assertThat(result.optional).isTrue()
+            assertThat(result.operationConfig.optional).isTrue()
         }
 
         it("it does not try to create services that already exist") {
             val tc = buildTestContext()
             whenever(tc.mockCloudFoundryClient.listServices()).thenReturn(listOf(tc.serviceConfig.name))
 
-            val results = tc.serviceCreator.createServices()
-            verify(tc.mockCloudFoundryClient, times(0))
-                .createService(any())
+            val results = tc.serviceCreator.createServices().toIterable().toList()
+            assertThat(results).isEmpty()
 
-            Assertions.assertThat(results).isEmpty()
+            verify(tc.mockCloudFoundryClient, times(0)).createService(any())
         }
     }
 })

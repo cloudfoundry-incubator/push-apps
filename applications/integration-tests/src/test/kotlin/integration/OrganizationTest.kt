@@ -16,7 +16,15 @@ class OrganizationTest : Spek({
                 organization = "foo_bar_org"
             )
 
-            whenever(tc.cfOperations.organizations().list()).thenReturn(Flux.fromIterable(emptyList()))
+            val orgSummary = mock<OrganizationSummary>()
+            whenever(orgSummary.name).thenReturn("foo_bar_org")
+
+            whenever(tc.cfOperations.organizations().list())
+                .thenReturn(
+                    Flux.fromIterable(emptyList()),
+                    Flux.fromIterable(listOf(orgSummary)
+                    )
+                )
 
             val pushApps = PushApps(
                 tc.config,
@@ -58,7 +66,7 @@ class OrganizationTest : Spek({
 
             assertThat(result).isTrue()
 
-            verify(tc.cfOperations.organizations()).list()
+            verify(tc.cfOperations.organizations(), times(5)).list()
             verifyNoMoreInteractions(tc.cfOperations.organizations())
         }
     }

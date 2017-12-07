@@ -1,6 +1,7 @@
 package io.pivotal.pushapps
 
 import org.apache.logging.log4j.LogManager
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.sql.Connection
 import java.sql.SQLException
@@ -15,26 +16,27 @@ class DatabaseMigrator(
 ) {
     private val logger = LogManager.getLogger(DatabaseMigrator::class.java)
 
-    fun migrate(): List<OperationResult> {
+    fun migrate(): Flux<OperationResult> {
         val schemas = migrations.map(Migration::schema)
         logger.info("Running migrations for the following schemas: ${schemas.joinToString(", ")}")
 
         val queue = ConcurrentLinkedQueue<Migration>()
         queue.addAll(migrations)
 
-        val subscriber = OperationScheduler<Migration>(
-            maxInFlight = maxInFlight,
-            operation = this::migrateDatabase,
-            operationIdentifier = Migration::schema,
-            operationDescription = this::migrationDescription,
-            operationConfigQueue = queue,
-            retries = retryCount
-        )
+        return Flux.create<OperationResult> { sink ->
+            val subscriber = OperationScheduler<Migration>(
+                maxInFlight = maxInFlight,
+                sink = sink,
+                operation = this::migrateDatabase,
+                operationIdentifier = Migration::schema,
+                operationDescription = this::migrationDescription,
+                operationConfigQueue = queue,
+                retries = retryCount
+            )
 
-        val flux = createQueueBackedFlux(queue)
-        flux.subscribe(subscriber)
-
-        return subscriber.results.get()
+            val flux = createQueueBackedFlux(queue)
+            flux.subscribe(subscriber)
+        }
     }
 
     private fun migrationDescription(migration: Migration): String {
@@ -47,8 +49,9 @@ class DatabaseMigrator(
         val newDataSource = dataSourceFactory.addDatabaseNameToDataSource(dataSource, migration)
         val description = migrationDescription(migration)
         val operationResult = OperationResult(
-            name = description,
-            didSucceed = true
+            description = description,
+            didSucceed = true,
+            operationConfig = migration
         )
 
         return flywayWrapper

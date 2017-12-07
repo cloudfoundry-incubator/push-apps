@@ -1,6 +1,7 @@
 package io.pivotal.pushapps
 
 import org.apache.logging.log4j.LogManager
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.util.concurrent.ConcurrentLinkedQueue
 
@@ -12,7 +13,7 @@ class UserProvidedServiceCreator(
 ) {
     private val logger = LogManager.getLogger(UserProvidedServiceCreator::class.java)
 
-    fun createOrUpdateServices(): List<OperationResult> {
+    fun createOrUpdateServices(): Flux<OperationResult> {
         val serviceNames = serviceConfigs.map(UserProvidedServiceConfig::name)
         logger.info("Creating user provided services: ${serviceNames.joinToString(", ")}.")
 
@@ -25,19 +26,20 @@ class UserProvidedServiceCreator(
             createUserProvidedService(existingServiceNames, serviceConfig)
         }
 
-        val subscriber = OperationScheduler<UserProvidedServiceConfig>(
-            maxInFlight = maxInFlight,
-            operation = createServiceOperation,
-            operationIdentifier = UserProvidedServiceConfig::name,
-            operationDescription = { service -> "Create user provided service ${service.name}"},
-            operationConfigQueue = queue,
-            retries = retryCount
-        )
+        return Flux.create<OperationResult> { sink ->
+            val subscriber = OperationScheduler<UserProvidedServiceConfig>(
+                maxInFlight = maxInFlight,
+                sink = sink,
+                operation = createServiceOperation,
+                operationIdentifier = UserProvidedServiceConfig::name,
+                operationDescription = { service -> "Create user provided service ${service.name}" },
+                operationConfigQueue = queue,
+                retries = retryCount
+            )
 
-        val flux = createQueueBackedFlux(queue)
-        flux.subscribe(subscriber)
-
-        return subscriber.results.get()
+            val flux = createQueueBackedFlux(queue)
+            flux.subscribe(subscriber)
+        }
     }
 
     private fun createUserProvidedService(
@@ -52,8 +54,9 @@ class UserProvidedServiceCreator(
 
         val description = "Creating user provided service ${serviceConfig.name}"
         val operationResult = OperationResult(
-            name = description,
-            didSucceed = true
+            description = description,
+            didSucceed = true,
+            operationConfig = serviceConfig
         )
 
         return serviceCommand

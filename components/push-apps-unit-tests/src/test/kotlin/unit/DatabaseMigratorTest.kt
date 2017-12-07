@@ -49,7 +49,7 @@ class DatabaseMigratorTest : Spek({
                 retryCount = 0
             )
 
-            databaseMigrator.migrate()
+            databaseMigrator.migrate().toIterable().toList()
 
             verify(flywayWrapper).migrate(
                 dataSource = dataSource,
