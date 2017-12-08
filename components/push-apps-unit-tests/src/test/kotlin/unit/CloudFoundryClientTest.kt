@@ -191,7 +191,7 @@ class CloudFoundryClientTest : Spek({
                 )
             )
 
-            tc.cloudFoundryClient.setApplicationEnvironment(appConfig)
+            tc.cloudFoundryClient.setApplicationEnvironment(appConfig).block()
 
             verify(tc.applications, times(1)).setEnvironmentVariable(
                 argForWhich {

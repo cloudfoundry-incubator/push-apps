@@ -44,7 +44,12 @@ class EndToEndAcceptanceTest : Spek({
                 buildpack = "binary_buildpack",
                 command = "./helloapp",
                 environment = mapOf(
-                    "NAME" to "Steve"
+                    "NAME" to "Steve",
+                    "VERB" to "walk",
+                    "ANIMAL_TYPE" to "dog",
+                    "ANIMAL_NAME" to "Sally",
+                    "HOUR" to "12",
+                    "MINUTE" to "15"
                 ),
                 serviceNames = listOf(
                     "compliment-service",
@@ -154,6 +159,7 @@ class EndToEndAcceptanceTest : Spek({
                 assertThat(helloResponse).contains("hello Steve, you are handsome!")
                 assertThat(helloResponse).contains("compliment-service")
                 assertThat(helloResponse).contains("my-mf-service")
+                assertThat(helloResponse).contains("Did you remember to walk your dog named Sally at 12:15?")
 
                 val greenUrl = applicationOperations
                     .get(getGreenApplicationReq)

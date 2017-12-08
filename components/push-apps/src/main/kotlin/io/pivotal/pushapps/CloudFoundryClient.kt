@@ -94,13 +94,12 @@ class CloudFoundryClient(
     fun setApplicationEnvironment(appConfig: AppConfig): Mono<Void> {
         val setEnvRequests = generateSetEnvRequests(appConfig)
 
-        val request = setEnvRequests.map { request ->
-            cloudFoundryOperations
+        return setEnvRequests.foldRight(Mono.empty<Void>(), { request, memo ->
+            val setEnvVar = cloudFoundryOperations
                 .applications()
                 .setEnvironmentVariable(request)
-        }
-
-        return whenComplete(*request.toTypedArray())
+            memo.then(setEnvVar)
+        })
     }
 
     private fun generateSetEnvRequests(appConfig: AppConfig): Array<SetEnvironmentVariableApplicationRequest> {
@@ -120,7 +119,7 @@ class CloudFoundryClient(
         }.toTypedArray()
     }
 
-    //TODO should this just return one action at a time?
+    //FIXME: should this just return one action at a time?
     fun bindServicesToApplication(appName: String, serviceNames: List<String>): List<Mono<Void>> {
         val bindServiceRequests = generateBindServiceRequests(appName, serviceNames)
 
