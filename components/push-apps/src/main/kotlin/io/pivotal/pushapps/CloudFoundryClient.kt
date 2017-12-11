@@ -134,7 +134,7 @@ class CloudFoundryClient(
             cloudFoundryOperations
                 .services()
                 .bind(request)
-                .timeout(Duration.ofMinutes(operationTimeoutInMinutes))
+                .timeout(Duration.ofMinutes(this.operationTimeoutInMinutes))
         }
     }
 

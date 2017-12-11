@@ -4,7 +4,6 @@ import org.apache.logging.log4j.LogManager
 import org.cloudfoundry.client.v2.ClientV2Exception
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import java.time.Duration
 import java.util.concurrent.ConcurrentLinkedQueue
 
 class SecurityGroupCreator(
@@ -49,7 +48,6 @@ class SecurityGroupCreator(
 
         return cloudFoundryClient
             .createSecurityGroup(group, spaceId)
-            .timeout(Duration.ofMinutes(1), Mono.error(PushAppsError("Timed out waiting for $description"))) //TODO: move inside CF client
             .onErrorResume { e: Throwable ->
                 if ((e as ClientV2Exception).description.contains("security group name is taken")) {
                     return@onErrorResume Mono.empty()

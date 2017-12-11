@@ -58,6 +58,8 @@ class CloudFoundryClientTest : Spek({
 
         whenever(mockCfClient.securityGroups()).thenReturn(mockSecurityGroups)
 
+        whenever(mockServices.bind(any())).thenReturn(Mono.empty<Void>())
+
         val cloudFoundryClient = CloudFoundryClient(
             cloudFoundryOperations = mockCfOperations,
             cloudFoundryOperationsBuilder = mockCfOperationsBuilder,
