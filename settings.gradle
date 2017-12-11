@@ -2,9 +2,11 @@ rootProject.name = "push-apps"
 
 //Applications
 include ":applications:cli"
-include ":applications:acceptance-tests"
-include ":applications:integration-tests"
 
 //Components
 include ":components:push-apps"
-include ":components:push-apps-unit-tests"
+
+//Tests -- separated out so they can run in parallel after shared dependencies
+include ":tests:cli-acceptance-tests"
+include ":tests:push-apps-integration-tests"
+include ":tests:push-apps-unit-tests"

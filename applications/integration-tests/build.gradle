@@ -1,8 +1,0 @@
-apply from: "$rootProject.rootDir/gradle/kotlin.gradle"
-apply from: "$rootProject.rootDir/gradle/test.gradle"
-apply from: "$rootProject.rootDir/gradle/idea.gradle"
-
-dependencies {
-    testCompile project(":components:push-apps")
-    testCompile "com.nhaarman:mockito-kotlin:1.5.0"
-}
