@@ -23,12 +23,14 @@ class PushApps(
 
     fun pushApps(): Boolean {
         val (pushAppsConfig, cf, apps, services, userProvidedServices, migrations, securityGroups) = config
+        val targetedCfClientGenerator = buildTargetedCfGenerator(cf, pushAppsConfig.cfOperationTimeoutInMinutes)
 
-        val createSecurityGroups: Flux<OperationResult> = targetCf(cf)
+        val createSecurityGroups: Flux<OperationResult> = targetedCfClientGenerator
+            .next()
             .flatMap { cloudFoundryClient ->
                 cloudFoundryClient.getSpaceId(cf.space)
             }.switchIfEmpty(Mono.error(PushAppsError("Could not find space id for space ${cf.space}")))
-            .zipWith(targetCf(cf))
+            .zipWith(targetedCfClientGenerator.next())
             .flatMapMany { (spaceId, cloudFoundryClient) ->
                 securityGroups
                     .createSecurityGroupsFlux(cloudFoundryClient, cf, pushAppsConfig, spaceId)
@@ -40,7 +42,8 @@ class PushApps(
             timeoutInMinutes = pushAppsConfig.migrationTimeoutInMinutes
         )
 
-        val servicesAvailable: Flux<String> = targetCf(cf)
+        val servicesAvailable: Flux<String> = targetedCfClientGenerator
+            .next()
             .flatMapMany { cloudFoundryClient ->
                 services.createServices(
                     cloudFoundryClient = cloudFoundryClient,
@@ -49,7 +52,8 @@ class PushApps(
                 )
             }
 
-        val userProvidedServicesAvailable: Flux<String> = targetCf(cf)
+        val userProvidedServicesAvailable: Flux<String> = targetedCfClientGenerator
+            .next()
             .flatMapMany { cloudFoundryClient ->
                 userProvidedServices.createOrUpdateUserProvidedServices(
                     cloudFoundryClient = cloudFoundryClient,
@@ -61,7 +65,7 @@ class PushApps(
         val deployApps: Flux<OperationResult> = servicesAvailable
             .mergeWith(userProvidedServicesAvailable)
             .collectList()
-            .zipWith(targetCf(cf))
+            .zipWith(targetedCfClientGenerator.next())
             .flatMap { (allServicesAvailable, cloudFoundryClient) ->
                 apps.deployApps(
                     availableServices = allServicesAvailable.toList(),
@@ -106,7 +110,7 @@ class PushApps(
         return handleOperationResults(createSecurityGroups, "Create security group")
     }
 
-    private fun targetCf(cf: CfConfig): Mono<CloudFoundryClient> {
+    private fun buildTargetedCfGenerator(cf: CfConfig, cfOperationTimeoutInMinutes: Long): Flux<CloudFoundryClient> {
         return Mono.fromSupplier {
             val cloudFoundryOperations = cloudFoundryOperationsBuilder()
                 .apply {
@@ -120,12 +124,13 @@ class PushApps(
 
             val cloudFoundryClient = cloudFoundryClientBuilder.apply {
                 this.cloudFoundryOperations = cloudFoundryOperations
+                this.operationTimeoutInMinutes = cfOperationTimeoutInMinutes
             }.build()
 
             cloudFoundryClient
                 .createAndTargetOrganization(cf.organization)
                 .createAndTargetSpace(cf.space)
-        }
+        }.repeat()
     }
 
     private fun List<SecurityGroup>.createSecurityGroups(

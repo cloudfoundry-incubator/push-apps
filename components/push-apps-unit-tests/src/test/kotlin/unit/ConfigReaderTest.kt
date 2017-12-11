@@ -24,6 +24,7 @@ class ConfigReaderTest : Spek({
                 assertThat(pushAppsConfig.pushApps.maxInFlight).isEqualTo(2)
                 assertThat(pushAppsConfig.pushApps.failedDeploymentLogLinesToShow).isEqualTo(50)
                 assertThat(pushAppsConfig.pushApps.migrationTimeoutInMinutes).isEqualTo(15L)
+                assertThat(pushAppsConfig.pushApps.cfOperationTimeoutInMinutes).isEqualTo(5L)
             }
 
             it("correctly defaults values that are not provided for the cf config") {
@@ -79,6 +80,7 @@ class ConfigReaderTest : Spek({
             assertThat(pushAppsConfig.pushApps.maxInFlight).isEqualTo(42)
             assertThat(pushAppsConfig.pushApps.failedDeploymentLogLinesToShow).isEqualTo(12)
             assertThat(pushAppsConfig.pushApps.migrationTimeoutInMinutes).isEqualTo(7L)
+            assertThat(pushAppsConfig.pushApps.cfOperationTimeoutInMinutes).isEqualTo(3L)
         }
 
         it("Parses the cf config") {

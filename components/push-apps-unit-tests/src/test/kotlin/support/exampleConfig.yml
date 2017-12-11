@@ -3,6 +3,7 @@ pushApps:
   maxInFlight: 42
   failedDeploymentLogLinesToShow: 12
   migrationTimeoutInMinutes: 7
+  cfOperationTimeoutInMinutes: 3
 cf:
   apiHost: "api.example.com"
   password: some-password

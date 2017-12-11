@@ -60,7 +60,8 @@ class CloudFoundryClientTest : Spek({
 
         val cloudFoundryClient = CloudFoundryClient(
             cloudFoundryOperations = mockCfOperations,
-            cloudFoundryOperationsBuilder = mockCfOperationsBuilder
+            cloudFoundryOperationsBuilder = mockCfOperationsBuilder,
+            operationTimeoutInMinutes = 5L
         )
 
         return TestContext(

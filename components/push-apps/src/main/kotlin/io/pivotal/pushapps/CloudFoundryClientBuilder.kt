@@ -5,7 +5,8 @@ import org.cloudfoundry.operations.CloudFoundryOperations
 
 class CloudFoundryClientBuilder(
     var cloudFoundryOperations: CloudFoundryOperations? = null,
-    var cloudFoundryOperationsBuilder: CloudFoundryOperationsBuilder = cloudFoundryOperationsBuilder()
+    var cloudFoundryOperationsBuilder: CloudFoundryOperationsBuilder = cloudFoundryOperationsBuilder(),
+    var operationTimeoutInMinutes: Long = 5L
 ) {
     companion object {
         @JvmStatic
@@ -23,7 +24,8 @@ class CloudFoundryClientBuilder(
 
         return CloudFoundryClient(
             cfOperations,
-            cloudFoundryOperationsBuilder
+            cloudFoundryOperationsBuilder,
+            operationTimeoutInMinutes
         )
     }
 }

@@ -19,12 +19,12 @@ import org.cloudfoundry.operations.spaces.SpaceDetail
 import org.cloudfoundry.operations.spaces.SpaceSummary
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import reactor.core.publisher.whenComplete
 import java.time.Duration
 
 class CloudFoundryClient(
     private var cloudFoundryOperations: CloudFoundryOperations,
-    private val cloudFoundryOperationsBuilder: CloudFoundryOperationsBuilder
+    private val cloudFoundryOperationsBuilder: CloudFoundryOperationsBuilder,
+    private val operationTimeoutInMinutes: Long
 
 ) {
     private val logger = LogManager.getLogger(CloudFoundryClient::class.java)
@@ -52,6 +52,7 @@ class CloudFoundryClient(
         return cloudFoundryOperations
             .services()
             .createUserProvidedInstance(createServiceRequest)
+            .timeout(Duration.ofMinutes(operationTimeoutInMinutes))
     }
 
     fun updateUserProvidedService(serviceConfig: UserProvidedServiceConfig): Mono<Void> {
@@ -64,6 +65,7 @@ class CloudFoundryClient(
         return cloudFoundryOperations
             .services()
             .updateUserProvidedInstance(updateServiceRequest)
+            .timeout(Duration.ofMinutes(operationTimeoutInMinutes))
     }
 
     fun pushApplication(appConfig: AppConfig): Mono<Void> {
@@ -77,7 +79,10 @@ class CloudFoundryClient(
             .name(appName)
             .stagingTimeout(Duration.ofMinutes(10))
             .build()
-        return cloudFoundryOperations.applications().start(startApplicationRequest)
+        return cloudFoundryOperations
+            .applications()
+            .start(startApplicationRequest)
+            .timeout(Duration.ofMinutes(operationTimeoutInMinutes))
     }
 
     fun stopApplication(appName: String): Mono<Void> {
@@ -89,6 +94,7 @@ class CloudFoundryClient(
         return cloudFoundryOperations
             .applications()
             .stop(stopApplicationRequest)
+            .timeout(Duration.ofMinutes(operationTimeoutInMinutes))
     }
 
     fun setApplicationEnvironment(appConfig: AppConfig): Mono<Void> {
@@ -98,12 +104,13 @@ class CloudFoundryClient(
             val setEnvVar = cloudFoundryOperations
                 .applications()
                 .setEnvironmentVariable(request)
+                .timeout(Duration.ofMinutes(operationTimeoutInMinutes))
             memo.then(setEnvVar)
         })
     }
 
-    private fun generateSetEnvRequests(appConfig: AppConfig): Array<SetEnvironmentVariableApplicationRequest> {
-        if (appConfig.environment === null) return emptyArray()
+    private fun generateSetEnvRequests(appConfig: AppConfig): List<SetEnvironmentVariableApplicationRequest> {
+        if (appConfig.environment === null) return emptyList()
 
         return appConfig.environment.map { variable ->
             if (variable.value.isEmpty()) {
@@ -116,7 +123,7 @@ class CloudFoundryClient(
                 .variableName(variable.key)
                 .variableValue(variable.value)
                 .build()
-        }.toTypedArray()
+        }
     }
 
     //FIXME: should this just return one action at a time?
@@ -127,17 +134,18 @@ class CloudFoundryClient(
             cloudFoundryOperations
                 .services()
                 .bind(request)
+                .timeout(Duration.ofMinutes(operationTimeoutInMinutes))
         }
     }
 
-    private fun generateBindServiceRequests(appName: String, serviceNames: List<String>): Array<BindServiceInstanceRequest> {
+    private fun generateBindServiceRequests(appName: String, serviceNames: List<String>): List<BindServiceInstanceRequest> {
         return serviceNames.map { serviceName ->
             BindServiceInstanceRequest
                 .builder()
                 .applicationName(appName)
                 .serviceInstanceName(serviceName)
                 .build()
-        }.toTypedArray()
+        }
     }
 
     fun mapRoute(appConfig: AppConfig): Mono<Void> {
@@ -162,7 +170,11 @@ class CloudFoundryClient(
         val mapRouteRequest = mapRouteRequestBuilder.build()
 
         logger.debug("Building request to map route $route for application ${appConfig.name}")
-        return cloudFoundryOperations.routes().map(mapRouteRequest).ofType(Void.TYPE)
+        return cloudFoundryOperations
+            .routes()
+            .map(mapRouteRequest)
+            .ofType(Void.TYPE)
+            .timeout(Duration.ofMinutes(operationTimeoutInMinutes))
     }
 
     fun unmapRoute(appConfig: AppConfig): Mono<Void> {
@@ -181,7 +193,10 @@ class CloudFoundryClient(
             .path(appConfig.route.path)
             .build()
 
-        return cloudFoundryOperations.routes().unmap(unmapRouteRequest)
+        return cloudFoundryOperations
+            .routes()
+            .unmap(unmapRouteRequest)
+            .timeout(Duration.ofMinutes(operationTimeoutInMinutes))
     }
 
     fun createSecurityGroup(securityGroup: SecurityGroup, spaceId: String): Mono<Void> {
@@ -203,6 +218,7 @@ class CloudFoundryClient(
             .securityGroups()
             .create(createSecurityGroupRequest)
             .ofType(Void.TYPE)
+            .timeout(Duration.ofMinutes(operationTimeoutInMinutes))
     }
 
     fun createAndTargetOrganization(organizationName: String): CloudFoundryClient {
@@ -224,7 +240,11 @@ class CloudFoundryClient(
             .organizationName(name)
             .build()
 
-        cloudFoundryOperations.organizations().create(createOrganizationRequest).block()
+        cloudFoundryOperations
+            .organizations()
+            .create(createOrganizationRequest)
+            .timeout(Duration.ofMinutes(operationTimeoutInMinutes))
+            .block() //FIXME: remove blocking statement if possible
     }
 
     private fun targetOrganization(organizationName: String): CloudFoundryClient {
@@ -256,7 +276,11 @@ class CloudFoundryClient(
             .name(name)
             .build()
 
-        cloudFoundryOperations.spaces().create(createSpaceRequest).block()
+        cloudFoundryOperations
+            .spaces()
+            .create(createSpaceRequest)
+            .timeout(Duration.ofMinutes(operationTimeoutInMinutes))
+            .block() //FIXME: remove blocking statement if possible
     }
 
     private fun targetSpace(space: String): CloudFoundryClient {
@@ -273,10 +297,11 @@ class CloudFoundryClient(
         val orgFlux = cloudFoundryOperations
             .organizations()
             .list()
+            .timeout(Duration.ofMinutes(operationTimeoutInMinutes))
             .map(OrganizationSummary::getName)
 
         return orgFlux
-            .toIterable()
+            .toIterable() //FIXME: remove blocking statement if possible
             .toList()
     }
 
@@ -284,10 +309,11 @@ class CloudFoundryClient(
         val spaceFlux = cloudFoundryOperations
             .spaces()
             .list()
+            .timeout(Duration.ofMinutes(operationTimeoutInMinutes))
             .map(SpaceSummary::getName)
 
         return spaceFlux
-            .toIterable()
+            .toIterable() //FIXME: remove blocking statement if possible
             .toList()
     }
 
@@ -295,10 +321,11 @@ class CloudFoundryClient(
         val serviceInstanceFlux = cloudFoundryOperations
             .services()
             .listInstances()
+            .timeout(Duration.ofMinutes(operationTimeoutInMinutes))
             .map(ServiceInstanceSummary::getName)
 
         return serviceInstanceFlux
-            .toIterable()
+            .toIterable() //FIXME: remove blocking statement if possible
             .toList()
     }
 
@@ -306,6 +333,7 @@ class CloudFoundryClient(
         val applicationListFlux = cloudFoundryOperations
             .applications()
             .list()
+            .timeout(Duration.ofMinutes(operationTimeoutInMinutes))
             .map(ApplicationSummary::getName)
 
         return applicationListFlux.toIterable().toList()
@@ -320,12 +348,20 @@ class CloudFoundryClient(
         return cloudFoundryOperations
             .spaces()
             .get(spaceRequest)
+            .timeout(Duration.ofMinutes(operationTimeoutInMinutes))
             .map(SpaceDetail::getId)
     }
 
     fun fetchRecentLogsForAsync(appName: String): Flux<LogMessage> {
-        val logsRequest = LogsRequest.builder().name(appName).recent(true).build()
+        val logsRequest = LogsRequest
+            .builder()
+            .name(appName)
+            .recent(true)
+            .build()
 
-        return cloudFoundryOperations.applications().logs(logsRequest)
+        return cloudFoundryOperations
+            .applications()
+            .logs(logsRequest)
+            .timeout(Duration.ofMinutes(operationTimeoutInMinutes))
     }
 }

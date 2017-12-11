@@ -39,11 +39,12 @@ fun buildTestContext(
     securityGroups: List<SecurityGroup> = emptyList(),
     organization: String = "dewey_decimal",
     space: String = "test",
-    retryCount: Int = 0
+    retryCount: Int = 0,
+    cfOperationTimeoutInMinutes: Long = 5L
 ): IntegrationTestContext {
     val cfOperations = buildMockCfOperations()
     val cfOperationsBuilder = buildMockCfOperationsBuilder(cfOperations)
-    val cfClientBuilder = buildMockCfClientBuilder(cfOperations, cfOperationsBuilder)
+    val cfClientBuilder = buildMockCfClientBuilder(cfOperations, cfOperationsBuilder, cfOperationTimeoutInMinutes)
     val flyway = buildMockFlywayWrapper()
     val (dataSourceFactory, dataSource) = buildDataSourceFactory()
 
@@ -88,11 +89,16 @@ fun buildDataSourceFactory(): Pair<DataSourceFactory, DataSource> {
     return Pair(dataSourceFactory, dataSource)
 }
 
-fun buildMockCfClientBuilder(cfOperations: CloudFoundryOperations, cfOperationsBuilder: CloudFoundryOperationsBuilder): CloudFoundryClientBuilder {
+fun buildMockCfClientBuilder(
+    cfOperations: CloudFoundryOperations,
+    cfOperationsBuilder: CloudFoundryOperationsBuilder,
+    operationTimeoutInMinutes: Long
+): CloudFoundryClientBuilder {
     val cfClientBuilder = mock<CloudFoundryClientBuilder>()
     val cfClient = CloudFoundryClient(
         cloudFoundryOperations = cfOperations,
-        cloudFoundryOperationsBuilder = cfOperationsBuilder
+        cloudFoundryOperationsBuilder = cfOperationsBuilder,
+        operationTimeoutInMinutes = operationTimeoutInMinutes
     )
 
     whenever(cfClientBuilder.build()).thenReturn(cfClient)
