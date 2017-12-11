@@ -36,7 +36,8 @@ class PushApps(
 
         val runMigrations: Flux<OperationResult> = migrations.runMigrationsFlux(
             maxInFlight = pushAppsConfig.maxInFlight,
-            retryCount = pushAppsConfig.appDeployRetryCount
+            retryCount = pushAppsConfig.appDeployRetryCount,
+            timeoutInMinutes = pushAppsConfig.migrationTimeoutInMinutes
         )
 
         val servicesAvailable: Flux<String> = targetCf(cf)
@@ -196,7 +197,8 @@ class PushApps(
 
     private fun List<Migration>.runMigrationsFlux(
         maxInFlight: Int,
-        retryCount: Int
+        retryCount: Int,
+        timeoutInMinutes: Long
     ): Flux<OperationResult> {
         if (isEmpty()) return Flux.empty<OperationResult>()
 
@@ -205,7 +207,8 @@ class PushApps(
             flywayWrapper,
             dataSourceFactory,
             maxInFlight = maxInFlight,
-            retryCount = retryCount
+            retryCount = retryCount,
+            timeoutInMinutes = timeoutInMinutes
         ).migrate()
 
         return handleOperationResults(databaseMigrationResults, "Migrating database")

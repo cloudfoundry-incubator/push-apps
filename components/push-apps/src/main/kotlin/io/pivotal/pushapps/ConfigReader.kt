@@ -42,7 +42,8 @@ data class Config(
 data class PushAppsConfig(
     val appDeployRetryCount: Int = 3,
     val maxInFlight: Int = 2,
-    val failedDeploymentLogLinesToShow: Int = 50
+    val failedDeploymentLogLinesToShow: Int = 50,
+    val migrationTimeoutInMinutes: Long = 15L
 )
 
 data class CfConfig(

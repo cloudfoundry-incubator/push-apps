@@ -46,7 +46,8 @@ class DatabaseMigratorTest : Spek({
                 flywayWrapper = flywayWrapper,
                 dataSourceFactory = dataSourceFactory,
                 maxInFlight = 1,
-                retryCount = 0
+                retryCount = 0,
+                timeoutInMinutes = 5L
             )
 
             databaseMigrator.migrate().toIterable().toList()

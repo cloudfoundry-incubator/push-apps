@@ -5,6 +5,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.sql.Connection
 import java.sql.SQLException
+import java.time.Duration
 import java.util.concurrent.ConcurrentLinkedQueue
 
 class DatabaseMigrator(
@@ -12,7 +13,8 @@ class DatabaseMigrator(
     private val flywayWrapper: FlywayWrapper,
     private val dataSourceFactory: DataSourceFactory,
     private val maxInFlight: Int,
-    private val retryCount: Int
+    private val retryCount: Int,
+    private val timeoutInMinutes: Long
 ) {
     private val logger = LogManager.getLogger(DatabaseMigrator::class.java)
 
@@ -56,6 +58,7 @@ class DatabaseMigrator(
 
         return flywayWrapper
             .migrate(newDataSource, migration.migrationDir, migration.repair)
+            .timeout(Duration.ofMinutes(timeoutInMinutes))
             .transform(logAsyncOperation(logger, description))
             .then(Mono.just(operationResult))
     }
