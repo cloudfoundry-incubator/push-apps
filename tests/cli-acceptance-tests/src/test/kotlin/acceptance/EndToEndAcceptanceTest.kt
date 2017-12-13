@@ -1,5 +1,6 @@
 package acceptance
 
+import junit.framework.TestCase.assertTrue
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.fail
 import org.cloudfoundry.client.v2.securitygroups.Protocol
@@ -76,13 +77,24 @@ class EndToEndAcceptanceTest : Spek({
                 blueGreenDeploy = true
             )
 
-            val migration = Migration(
+            val mysqlMigration = Migration(
                 host = acceptanceTestSupport.getEnvOrDefault("INTEGRATION_HOST", "127.0.0.1"),
                 port = "3338",
                 user = "root",
                 password = "supersecret",
                 schema = "new_db",
                 driver = DatabaseDriver.MySql(),
+                migrationDir = "${acceptanceTestSupport.acceptanceTestProjectDir}/src/test/kotlin/support/dbmigrations",
+                repair = false
+            )
+
+            val pgMigration = Migration(
+                host = acceptanceTestSupport.getEnvOrDefault("INTEGRATION_HOST", "127.0.0.1"),
+                port = "6442",
+                user = "metrics",
+                password = "metrics_secret",
+                schema = "metrics",
+                driver = DatabaseDriver.Postgres(),
                 migrationDir = "${acceptanceTestSupport.acceptanceTestProjectDir}/src/test/kotlin/support/dbmigrations",
                 repair = false
             )
@@ -110,7 +122,7 @@ class EndToEndAcceptanceTest : Spek({
                     apps = listOf(helloApp, blueGreenApp),
                     services = listOf(metricsForwarderService, optionalService),
                     userProvidedServices = listOf(complimentService),
-                    migrations = listOf(migration),
+                    migrations = listOf(mysqlMigration, pgMigration),
                     securityGroups = listOf(securityGroup),
                     retryCount = 0,
                     maxInFlight = 4
@@ -124,9 +136,16 @@ class EndToEndAcceptanceTest : Spek({
 
                 docker.startDocker()
 
-                val conn = docker.connectToMysql(migration.host, migration.port, migration.user, migration.password)
-                if (conn === null) {
+                val mysqlConnection = docker.connectToMysql(mysqlMigration.host, mysqlMigration.port, mysqlMigration.user, mysqlMigration.password)
+                if (mysqlConnection === null) {
                     fail("Unable to connect to MySql")
+                    return@it
+                }
+
+
+                val pgConnection = docker.connectToPg(pgMigration.host, pgMigration.port, pgMigration.user, pgMigration.password)
+                if (pgConnection === null) {
+                    fail("Unable to connect to Postgres")
                     return@it
                 }
 
@@ -189,9 +208,13 @@ class EndToEndAcceptanceTest : Spek({
                 assertThat(routes).hasSize(1)
                 assertThat(routes[0].applications).containsOnly("generic")
 
-                assertThat(docker.checkIfDatabaseExists(conn, "new_db")).isTrue()
-                assertThat(docker.checkIfTableExists(conn, "new_db", "test_table_1")).isTrue()
-                assertThat(docker.checkIfTableExists(conn, "new_db", "test_table_2")).isTrue()
+                assertTrue("new_db DB exists in Mysql",docker.checkIfDatabaseExists(mysqlConnection, "new_db"))
+                assertTrue("Test table 1 exists in Mysql",docker.checkIfTableExists(mysqlConnection, "new_db", "test_table_1"))
+                assertTrue("Test table 2 exists in Mysql",docker.checkIfTableExists(mysqlConnection, "new_db", "test_table_2"))
+
+                assertTrue("Metrics DB exists in Postgres", docker.checkIfDatabaseExists(pgConnection, "metrics"))
+                assertTrue("Test table 1 exists in Postgres", docker.checkIfTableExists(pgConnection, "metrics", "test_table_1"))
+                assertTrue("Test table 2 exists in Postgres",docker.checkIfTableExists(pgConnection, "metrics", "test_table_2"))
 
                 organizations = tc.cfClient.listOrganizations()
                 assertThat(organizations).contains(tc.organization)

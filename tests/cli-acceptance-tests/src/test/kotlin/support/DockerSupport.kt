@@ -27,17 +27,18 @@ class DockerSupport {
         val dockerHost = acceptanceTestSupport.getEnvOrDefault("INTEGRATION_HOST", "127.0.0.1")
 
         waitForMysql(dockerHost, "3338", "root", "supersecret")
+        waitForPg(dockerHost, "6442", "metrics", "metrics_secret")
     }
 
     private fun stopDocker() {
         val dockerStopCommand = mutableListOf(
-            "docker-compose",
-            "-f", "$acceptanceTestProjectDir/src/test/kotlin/support/docker-compose.yml",
-            "-p", "java-push-apps",
-            "stop"
+                "docker-compose",
+                "-f", "$acceptanceTestProjectDir/src/test/kotlin/support/docker-compose.yml",
+                "-p", "java-push-apps",
+                "stop"
         )
         val dockerStopProcess = ProcessBuilder(
-            dockerStopCommand
+                dockerStopCommand
         ).inheritIO().start()
 
         dockerStopProcess.waitFor()
@@ -48,13 +49,13 @@ class DockerSupport {
 
     private fun removeStoppedDockerContainers() {
         val dockerRemoveCommand = mutableListOf(
-            "docker-compose",
-            "-f", "$acceptanceTestProjectDir/src/test/kotlin/support/docker-compose.yml",
-            "-p", "java-push-apps",
-            "rm", "-f"
+                "docker-compose",
+                "-f", "$acceptanceTestProjectDir/src/test/kotlin/support/docker-compose.yml",
+                "-p", "java-push-apps",
+                "rm", "-f"
         )
         val dockerRemoveProcess = ProcessBuilder(
-            dockerRemoveCommand
+                dockerRemoveCommand
         ).inheritIO().start()
 
         dockerRemoveProcess.waitFor()
@@ -65,20 +66,48 @@ class DockerSupport {
 
     private fun runDockerCompose() {
         val dockerComposeCommand = mutableListOf(
-            "docker-compose",
-            "-f", "$acceptanceTestProjectDir/src/test/kotlin/support/docker-compose.yml",
-            "-p", "java-push-apps",
-            "up", "-d"
+                "docker-compose",
+                "-f", "$acceptanceTestProjectDir/src/test/kotlin/support/docker-compose.yml",
+                "-p", "java-push-apps",
+                "up", "-d"
         )
 
         val dockerComposeProcess = ProcessBuilder(
-            dockerComposeCommand
+                dockerComposeCommand
         ).inheritIO().start()
 
         dockerComposeProcess.waitFor()
         if (dockerComposeProcess.exitValue() != 0) {
             throw Exception("unable to run command: " + dockerComposeCommand.joinToString(" "))
         }
+    }
+
+    fun waitForPg(pgHost: String, pgPort: String, pgUser: String, pgPassword: String) {
+        var attempts = 0
+        while (attempts < 3) {
+            try {
+                connectToPg(pgHost, pgPort, pgUser, pgPassword)
+            } catch (ex: Exception) {
+                Thread.sleep(1000)
+                attempts++
+                continue
+            }
+
+            break
+        }
+    }
+
+    fun connectToPg(pgHost: String, pgPort: String, pgUser: String, pgPassword: String): Connection? {
+        val connectionProps = Properties()
+        connectionProps.put("user", pgUser)
+        connectionProps.put("password", pgPassword)
+        Class.forName("org.postgresql.Driver").newInstance()
+        return DriverManager.getConnection(
+                "jdbc:postgresql://" +
+                        pgHost +
+                        ":" + pgPort + "/" +
+                        "",
+                connectionProps)
     }
 
     fun waitForMysql(mysqlHost: String, mysqlPort: String, mysqlUser: String, mysqlPassword: String) {
@@ -102,19 +131,23 @@ class DockerSupport {
         connectionProps.put("password", mysqlPassword)
         Class.forName("com.mysql.jdbc.Driver").newInstance()
         return DriverManager.getConnection(
-            "jdbc:" + "mysql" + "://" +
-                mysqlHost +
-                ":" + mysqlPort + "/" +
-                "",
-            connectionProps)
+                "jdbc:mysql://" +
+                        mysqlHost +
+                        ":" + mysqlPort + "/" +
+                        "",
+                connectionProps)
     }
 
     fun checkIfDatabaseExists(conn: Connection, dbName: String): Boolean {
         try {
+            var query = "SHOW DATABASES;"
+            if (conn.metaData.databaseProductName.contains("PostgreSQL")) {
+                query = "SELECT datname as Database FROM pg_database WHERE datistemplate = false;"
+            }
             val stmt = conn.createStatement()
-            var resultset = stmt!!.executeQuery("SHOW DATABASES;")
+            var resultset = stmt!!.executeQuery(query)
 
-            if (stmt.execute("SHOW DATABASES;")) {
+            if (stmt.execute(query)) {
                 resultset = stmt.resultSet
             }
 
@@ -126,7 +159,6 @@ class DockerSupport {
             }
         } catch (ex: SQLException) {
             ex.printStackTrace()
-            return false
         }
 
         return false
@@ -134,13 +166,16 @@ class DockerSupport {
 
     fun checkIfTableExists(conn: Connection, dbName: String, tableName: String): Boolean {
         try {
+            var query = "SELECT TABLE_NAME FROM information_schema.tables WHERE TABLE_SCHEMA='${dbName}';"
+            if (conn.metaData.databaseProductName.contains("PostgreSQL")) {
+                query = "SELECT TABLE_NAME FROM information_schema.tables WHERE TABLE_SCHEMA='public';"
+            }
+
             val stmt = conn.createStatement()
 
-            var resultset = stmt!!.executeQuery(
-                "SELECT TABLE_NAME FROM information_schema.tables WHERE TABLE_SCHEMA='${dbName}';")
+            var resultset = stmt!!.executeQuery(query)
 
-            if (stmt.execute(
-                "SELECT TABLE_NAME FROM information_schema.tables WHERE TABLE_SCHEMA='${dbName}';")) {
+            if (stmt.execute(query)) {
                 resultset = stmt.resultSet
             }
 
@@ -152,7 +187,6 @@ class DockerSupport {
             }
         } catch (ex: SQLException) {
             ex.printStackTrace()
-            return false
         }
 
         return false

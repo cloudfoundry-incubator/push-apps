@@ -56,7 +56,6 @@ class MigrateDatabaseTest : Spek({
                 repair = false
             )
         }
-
         it("does not create the database if postgres") {
             val postgresMigration = Migration(
                 host = "example.com",
