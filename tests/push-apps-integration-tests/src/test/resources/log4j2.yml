@@ -15,7 +15,7 @@ configuration:
       AppenderRef:
         ref: STDOUT
     logger:
-    - name: io.pivotal.pushapps
+    - name: org.cloudfoundry.pushapps
       level: ${env:LOG_LEVEL}
       additivity: false
       AppenderRef:

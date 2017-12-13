@@ -1,7 +1,7 @@
 package integration
 
 import com.nhaarman.mockito_kotlin.*
-import io.pivotal.pushapps.PushApps
+import org.cloudfoundry.pushapps.PushApps
 import org.assertj.core.api.Assertions.assertThat
 import org.cloudfoundry.operations.spaces.SpaceSummary
 import org.jetbrains.spek.api.Spek

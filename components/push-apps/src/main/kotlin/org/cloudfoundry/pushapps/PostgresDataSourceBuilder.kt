@@ -1,4 +1,4 @@
-package io.pivotal.pushapps
+package org.cloudfoundry.pushapps
 
 import org.postgresql.ds.PGSimpleDataSource
 import javax.sql.DataSource

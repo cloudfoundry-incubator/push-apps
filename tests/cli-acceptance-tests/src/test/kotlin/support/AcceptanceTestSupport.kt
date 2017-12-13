@@ -4,8 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.github.kittinunf.fuel.Fuel
-import io.pivotal.pushapps.*
-import io.pivotal.pushapps.CloudFoundryOperationsBuilder.Companion.cloudFoundryOperationsBuilder
 import org.apache.commons.io.FilenameUtils
 import org.assertj.core.api.Fail
 import org.cloudfoundry.client.v2.organizations.DeleteOrganizationRequest
@@ -17,6 +15,8 @@ import org.cloudfoundry.operations.CloudFoundryOperations
 import org.cloudfoundry.operations.DefaultCloudFoundryOperations
 import org.cloudfoundry.operations.organizations.OrganizationDetail
 import org.cloudfoundry.operations.organizations.OrganizationInfoRequest
+import org.cloudfoundry.pushapps.*
+import org.cloudfoundry.pushapps.CloudFoundryOperationsBuilder.Companion.cloudFoundryOperationsBuilder
 import reactor.core.publisher.Mono
 import java.io.File
 import java.io.InputStream

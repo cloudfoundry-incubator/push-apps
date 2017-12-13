@@ -4,10 +4,10 @@ import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.verifyNoMoreInteractions
 import com.nhaarman.mockito_kotlin.whenever
-import io.pivotal.pushapps.DatabaseDriver
-import io.pivotal.pushapps.Migration
-import io.pivotal.pushapps.PushApps
 import org.assertj.core.api.Assertions
+import org.cloudfoundry.pushapps.DatabaseDriver
+import org.cloudfoundry.pushapps.Migration
+import org.cloudfoundry.pushapps.PushApps
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it

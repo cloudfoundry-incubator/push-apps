@@ -4,9 +4,9 @@ import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.verifyNoMoreInteractions
 import com.nhaarman.mockito_kotlin.whenever
-import io.pivotal.pushapps.FlywayWrapper
 import org.apache.commons.io.FilenameUtils
 import org.assertj.core.api.Assertions.assertThatExceptionOfType
+import org.cloudfoundry.pushapps.FlywayWrapper
 import org.flywaydb.core.Flyway
 import org.flywaydb.core.api.FlywayException
 import org.jetbrains.spek.api.Spek
@@ -26,7 +26,7 @@ class FlywayWrapperTest : Spek({
         val flyway = mock<Flyway>()
         val dataSource = mock<DataSource>()
 
-        val flywayWrapper = FlywayWrapper({flyway})
+        val flywayWrapper = FlywayWrapper({ flyway })
 
         return TestContext(
             flyway = flyway,

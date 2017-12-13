@@ -1,9 +1,9 @@
-package io.pivotal.pushappscli
+package org.cloudfoundry.pushappscli
 
-import io.pivotal.pushapps.CloudFoundryClientBuilder.Companion.cloudFoundryClientBuilder
-import io.pivotal.pushapps.ConfigReader
-import io.pivotal.pushapps.PushApps
 import org.apache.logging.log4j.LogManager
+import org.cloudfoundry.pushapps.CloudFoundryClientBuilder.Companion.cloudFoundryClientBuilder
+import org.cloudfoundry.pushapps.ConfigReader
+import org.cloudfoundry.pushapps.PushApps
 
 class PushAppsCli {
     companion object {

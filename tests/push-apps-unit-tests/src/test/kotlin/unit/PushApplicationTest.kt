@@ -1,11 +1,11 @@
 package unit
 
 import com.nhaarman.mockito_kotlin.*
-import io.pivotal.pushapps.AppConfig
-import io.pivotal.pushapps.PushApplication
 import org.cloudfoundry.operations.CloudFoundryOperations
 import org.cloudfoundry.operations.applications.ApplicationHealthCheck
 import org.cloudfoundry.operations.applications.Applications
+import org.cloudfoundry.pushapps.AppConfig
+import org.cloudfoundry.pushapps.PushApplication
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it

@@ -1,4 +1,4 @@
-package io.pivotal.pushappscli
+package org.cloudfoundry.pushappscli
 
 import com.beust.jcommander.JCommander
 import com.beust.jcommander.Parameter

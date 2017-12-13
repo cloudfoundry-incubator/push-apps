@@ -1,14 +1,14 @@
 package integration
 
 import com.nhaarman.mockito_kotlin.*
-import io.pivotal.pushapps.PushApps
-import io.pivotal.pushapps.SecurityGroup
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.cloudfoundry.client.v2.ClientV2Exception
 import org.cloudfoundry.client.v2.securitygroups.CreateSecurityGroupRequest
 import org.cloudfoundry.client.v2.securitygroups.Protocol
 import org.cloudfoundry.operations.spaces.SpaceDetail
+import org.cloudfoundry.pushapps.PushApps
+import org.cloudfoundry.pushapps.SecurityGroup
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it

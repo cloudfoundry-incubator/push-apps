@@ -1,4 +1,4 @@
-package io.pivotal.pushapps
+package org.cloudfoundry.pushapps
 
 import org.apache.logging.log4j.Logger
 import org.reactivestreams.Publisher

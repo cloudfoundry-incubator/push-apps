@@ -1,12 +1,12 @@
 package integration
 
 import com.nhaarman.mockito_kotlin.*
-import io.pivotal.pushapps.*
 import org.assertj.core.api.Assertions.assertThat
 import org.cloudfoundry.doppler.LogMessage
 import org.cloudfoundry.operations.applications.ApplicationSummary
 import org.cloudfoundry.operations.routes.MapRouteRequest
 import org.cloudfoundry.operations.routes.UnmapRouteRequest
+import org.cloudfoundry.pushapps.*
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it

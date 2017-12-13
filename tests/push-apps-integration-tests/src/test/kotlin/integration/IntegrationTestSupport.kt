@@ -3,7 +3,6 @@ package integration
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
-import io.pivotal.pushapps.*
 import org.cloudfoundry.client.v2.securitygroups.CreateSecurityGroupResponse
 import org.cloudfoundry.client.v2.securitygroups.SecurityGroups
 import org.cloudfoundry.operations.CloudFoundryOperations
@@ -16,6 +15,7 @@ import org.cloudfoundry.operations.services.ServiceInstanceSummary
 import org.cloudfoundry.operations.services.Services
 import org.cloudfoundry.operations.spaces.SpaceDetail
 import org.cloudfoundry.operations.spaces.Spaces
+import org.cloudfoundry.pushapps.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import javax.sql.DataSource

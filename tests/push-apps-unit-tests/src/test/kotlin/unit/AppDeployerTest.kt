@@ -1,9 +1,12 @@
 package unit
 
 import com.nhaarman.mockito_kotlin.*
-import io.pivotal.pushapps.*
 import org.assertj.core.api.Assertions.assertThat
 import org.cloudfoundry.doppler.LogMessage
+import org.cloudfoundry.pushapps.AppConfig
+import org.cloudfoundry.pushapps.CloudFoundryClient
+import org.cloudfoundry.pushapps.OperationResult
+import org.cloudfoundry.pushapps.Route
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
@@ -12,7 +15,7 @@ import reactor.core.publisher.Mono
 
 class AppDeployerTest : Spek({
     data class TestContext(
-        val appDeployer: AppDeployer,
+        val appDeployer: org.cloudfoundry.pushapps.AppDeployer,
         val mockCfClient: CloudFoundryClient
     )
 
@@ -21,7 +24,7 @@ class AppDeployerTest : Spek({
         val logMessage = mock<LogMessage>()
         whenever(mockCfClient.fetchRecentLogsForAsync(any())).thenReturn(Flux.fromIterable(listOf(logMessage)))
 
-        val appDeployer = AppDeployer(
+        val appDeployer = org.cloudfoundry.pushapps.AppDeployer(
             cloudFoundryClient = mockCfClient,
             appConfigs = listOf(appConfig),
             retryCount = retryCount,

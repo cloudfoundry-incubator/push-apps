@@ -1,4 +1,4 @@
-package io.pivotal.pushapps
+package org.cloudfoundry.pushapps
 
 import org.apache.logging.log4j.LogManager
 import org.cloudfoundry.client.v2.ClientV2Exception

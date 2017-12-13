@@ -1,12 +1,12 @@
 package unit
 
 import com.nhaarman.mockito_kotlin.*
-import io.pivotal.pushapps.AppConfig
-import io.pivotal.pushapps.OperationResult
-import io.pivotal.pushapps.OperationScheduler
 import org.assertj.core.api.Assertions.assertThat
 import org.cloudfoundry.UnknownCloudFoundryException
 import org.cloudfoundry.doppler.LogMessage
+import org.cloudfoundry.pushapps.AppConfig
+import org.cloudfoundry.pushapps.OperationResult
+import org.cloudfoundry.pushapps.OperationScheduler
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.context
 import org.jetbrains.spek.api.dsl.describe

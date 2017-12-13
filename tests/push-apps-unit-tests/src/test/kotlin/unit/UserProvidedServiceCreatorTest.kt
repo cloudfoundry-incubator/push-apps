@@ -1,10 +1,10 @@
 package unit
 
 import com.nhaarman.mockito_kotlin.*
-import io.pivotal.pushapps.CloudFoundryClient
-import io.pivotal.pushapps.UserProvidedServiceConfig
-import io.pivotal.pushapps.UserProvidedServiceCreator
 import org.assertj.core.api.Assertions.assertThat
+import org.cloudfoundry.pushapps.CloudFoundryClient
+import org.cloudfoundry.pushapps.UserProvidedServiceConfig
+import org.cloudfoundry.pushapps.UserProvidedServiceCreator
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it

@@ -1,4 +1,4 @@
-package io.pivotal.pushapps
+package org.cloudfoundry.pushapps
 
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser

@@ -1,7 +1,5 @@
 package acceptance
 
-import io.pivotal.pushapps.*
-import io.pivotal.pushapps.CloudFoundryOperationsBuilder.Companion.cloudFoundryOperationsBuilder
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.fail
 import org.cloudfoundry.client.v2.securitygroups.Protocol
@@ -9,11 +7,15 @@ import org.cloudfoundry.operations.DefaultCloudFoundryOperations
 import org.cloudfoundry.operations.applications.GetApplicationRequest
 import org.cloudfoundry.operations.routes.Level
 import org.cloudfoundry.operations.routes.ListRoutesRequest
+import org.cloudfoundry.pushapps.*
+import org.cloudfoundry.pushapps.CloudFoundryOperationsBuilder.Companion.cloudFoundryOperationsBuilder
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.context
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
-import support.*
+import support.AcceptanceTestContext
+import support.AcceptanceTestSupport
+import support.DockerSupport
 
 class EndToEndAcceptanceTest : Spek({
     describe("happy path") {

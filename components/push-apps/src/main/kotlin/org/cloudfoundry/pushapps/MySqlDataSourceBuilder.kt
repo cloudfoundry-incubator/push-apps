@@ -1,4 +1,4 @@
-package io.pivotal.pushapps
+package org.cloudfoundry.pushapps
 
 import com.mysql.jdbc.jdbc2.optional.MysqlConnectionPoolDataSource
 import javax.sql.DataSource

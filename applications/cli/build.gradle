@@ -13,7 +13,7 @@ dependencies {
     compile 'org.apache.logging.log4j:log4j-core:2.9.1'
 }
 
-mainClassName = 'io.pivotal.pushappscli.PushAppsCli'
+mainClassName = 'org.cloudfoundry.pushappscli.PushAppsCli'
 jar {
     manifest {
         attributes 'Main-Class': "$mainClassName"

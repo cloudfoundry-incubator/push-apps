@@ -1,7 +1,7 @@
-package io.pivotal.pushapps
+package org.cloudfoundry.pushapps
 
-import io.pivotal.pushapps.CloudFoundryOperationsBuilder.Companion.cloudFoundryOperationsBuilder
 import org.cloudfoundry.operations.CloudFoundryOperations
+import org.cloudfoundry.pushapps.CloudFoundryOperationsBuilder.Companion.cloudFoundryOperationsBuilder
 
 class CloudFoundryClientBuilder(
     var cloudFoundryOperations: CloudFoundryOperations? = null,

@@ -1,4 +1,4 @@
-package io.pivotal.pushapps
+package org.cloudfoundry.pushapps
 
 import org.cloudfoundry.doppler.LogMessage
 import reactor.core.publisher.Flux
