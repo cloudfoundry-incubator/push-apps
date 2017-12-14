@@ -70,7 +70,7 @@ class EndToEndAcceptanceTest : Spek({
                     "NAME" to "BLUE OR GREEN"
                 ),
                 noRoute = true,
-                domain = "versace.gcp.pcf-metrics.com",
+                domain = System.getenv("CF_DOMAIN"),
                 route = Route(
                     hostname = "generic"
                 ),

@@ -32,7 +32,7 @@ class DeployAppTest : Spek({
             buildpack = "binary_buildpack",
             command = "./goodbyeapp",
             noRoute = true,
-            domain = "versace.gcp.pcf-metrics.com",
+            domain = "example.com",
             route = Route(
                 hostname = "oranges",
                 path = "/v1"
@@ -51,7 +51,7 @@ class DeployAppTest : Spek({
                 "NAME" to "BLUE OR GREEN"
             ),
             noRoute = true,
-            domain = "versace.gcp.pcf-metrics.com",
+            domain = "example.com",
             route = Route(
                 hostname = "generic"
             ),
