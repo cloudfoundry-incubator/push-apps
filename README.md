@@ -103,16 +103,18 @@ latest version and call the jar, so you can use it like `bin/pushApps.sh -c conf
 helpful in debugging problems. Make sure to spin up a remote debugger in Idea for running
 this script.
 * There is an [End to End Acceptance Test](applications/acceptance-tests/src/test/kotlin/acceptance/EndToEndAcceptanceTest.kt)
-that will actually hit a real Cloud Foundry instance. The instance it will hit is based off the
-values you put in your `.envrc` (see an example below). This test does not run as a part of
-the build `./gradlew build`, but will run on CI, and is availabe via the `acceptanceTest` gradle
-task.
-    
+that will actually hit a real Cloud Foundry instance. The test will looking for the following environment
+variables to determine which environment to hit. 
+
     ```
-    export CF_API=api.cf.example.com
-    export CF_USERNAME=admin
-    export CF_PASSWORD=secret
+    CF_API=api.cf.example.com
+    CF_USERNAME=admin
+    CF_PASSWORD=secret
+    CF_DOMAIN=cf.example.com
     ```
+
+This test does not run as a part of the build `./gradlew build`, but will run on CI, and is available via the 
+`acceptanceTest` gradle task.
 
 ## Known Issues
 
