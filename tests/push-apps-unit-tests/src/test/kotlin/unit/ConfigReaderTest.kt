@@ -20,7 +20,7 @@ class ConfigReaderTest : Spek({
         describe("parsing a minimal config") {
             it("correctly defaults values that are not provided for the pushAppsConfig config") {
                 val pushAppsConfig = ConfigReader.parseConfig(findConigPath("minimalConfig.yml"))
-                assertThat(pushAppsConfig.pushApps.appDeployRetryCount).isEqualTo(3)
+                assertThat(pushAppsConfig.pushApps.operationRetryCount).isEqualTo(3)
                 assertThat(pushAppsConfig.pushApps.maxInFlight).isEqualTo(2)
                 assertThat(pushAppsConfig.pushApps.failedDeploymentLogLinesToShow).isEqualTo(50)
                 assertThat(pushAppsConfig.pushApps.migrationTimeoutInMinutes).isEqualTo(15L)
@@ -76,7 +76,7 @@ class ConfigReaderTest : Spek({
 
         it("Parses the pushAppsConfig config") {
             val pushAppsConfig = ConfigReader.parseConfig(findConigPath("exampleConfig.yml"))
-            assertThat(pushAppsConfig.pushApps.appDeployRetryCount).isEqualTo(3)
+            assertThat(pushAppsConfig.pushApps.operationRetryCount).isEqualTo(3)
             assertThat(pushAppsConfig.pushApps.maxInFlight).isEqualTo(42)
             assertThat(pushAppsConfig.pushApps.failedDeploymentLogLinesToShow).isEqualTo(12)
             assertThat(pushAppsConfig.pushApps.migrationTimeoutInMinutes).isEqualTo(7L)

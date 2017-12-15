@@ -5,6 +5,7 @@ import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
 import org.cloudfoundry.client.v2.securitygroups.CreateSecurityGroupResponse
 import org.cloudfoundry.client.v2.securitygroups.SecurityGroups
+import org.cloudfoundry.doppler.LogMessage
 import org.cloudfoundry.operations.CloudFoundryOperations
 import org.cloudfoundry.operations.DefaultCloudFoundryOperations
 import org.cloudfoundry.operations.applications.ApplicationSummary
@@ -40,11 +41,12 @@ fun buildTestContext(
     organization: String = "dewey_decimal",
     space: String = "test",
     retryCount: Int = 0,
-    cfOperationTimeoutInMinutes: Long = 5L
+    cfOperationTimeoutInMinutes: Long = 1L,
+    maxInFlight: Int = 2
 ): IntegrationTestContext {
     val cfOperations = buildMockCfOperations()
     val cfOperationsBuilder = buildMockCfOperationsBuilder(cfOperations)
-    val cfClientBuilder = buildMockCfClientBuilder(cfOperations, cfOperationsBuilder, cfOperationTimeoutInMinutes)
+    val cfClientBuilder = buildMockCfClientBuilder(cfOperations, cfOperationsBuilder, cfOperationTimeoutInMinutes, retryCount)
     val flyway = buildMockFlywayWrapper()
     val (dataSourceFactory, dataSource) = buildDataSourceFactory()
 
@@ -60,7 +62,9 @@ fun buildTestContext(
         migrations = migrations,
         securityGroups = securityGroups,
         skipSslValidation = true,
-        retryCount = retryCount
+        retryCount = retryCount,
+        maxInFlight = maxInFlight,
+        cfOperationTimeoutInMinutes = cfOperationTimeoutInMinutes
     )
 
     return IntegrationTestContext(
@@ -92,13 +96,15 @@ fun buildDataSourceFactory(): Pair<DataSourceFactory, DataSource> {
 fun buildMockCfClientBuilder(
     cfOperations: CloudFoundryOperations,
     cfOperationsBuilder: CloudFoundryOperationsBuilder,
-    operationTimeoutInMinutes: Long
+    operationTimeoutInMinutes: Long,
+    retryCount: Int
 ): CloudFoundryClientBuilder {
     val cfClientBuilder = mock<CloudFoundryClientBuilder>()
     val cfClient = CloudFoundryClient(
         cloudFoundryOperations = cfOperations,
         cloudFoundryOperationsBuilder = cfOperationsBuilder,
-        operationTimeoutInMinutes = operationTimeoutInMinutes
+        operationTimeoutInMinutes = operationTimeoutInMinutes,
+        retryCount = retryCount
     )
 
     whenever(cfClientBuilder.build()).thenReturn(cfClient)
@@ -131,6 +137,7 @@ private fun buildMockCfOperations(): DefaultCloudFoundryOperations {
     val spaceDetail = mock<SpaceDetail>()
     val serviceInstanceSummary = mock<ServiceInstanceSummary>()
     val applicationSummary = mock<ApplicationSummary>()
+    val log = mock<LogMessage>()
 
     whenever(cfOperations.applications()).thenReturn(applications)
     whenever(cfOperations.organizations()).thenReturn(organizations)
@@ -147,6 +154,7 @@ private fun buildMockCfOperations(): DefaultCloudFoundryOperations {
     whenever(applications.setEnvironmentVariable(any())).thenReturn(Mono.empty())
     whenever(applications.start(any())).thenReturn(Mono.empty())
     whenever(applications.stop(any())).thenReturn(Mono.empty())
+    whenever(applications.logs(any())).thenReturn(Flux.fromIterable(listOf(log)))
 
     whenever(applications.list()).thenReturn(Flux.fromIterable(emptyList()))
 
@@ -160,7 +168,6 @@ private fun buildMockCfOperations(): DefaultCloudFoundryOperations {
     whenever(spaces.get(any())).thenReturn(Mono.just(spaceDetail))
 
     whenever(spaceDetail.id).thenReturn("abcd-1234")
-
     whenever(services.listInstances()).thenReturn(Flux.fromIterable(listOf(serviceInstanceSummary)))
     whenever(services.createInstance(any())).thenReturn(Mono.empty())
     whenever(services.createUserProvidedInstance(any())).thenReturn(Mono.empty())
@@ -186,7 +193,9 @@ private fun createConfig(
     migrations: List<Migration>,
     securityGroups: List<SecurityGroup>,
     skipSslValidation: Boolean,
-    retryCount: Int
+    retryCount: Int,
+    maxInFlight: Int,
+    cfOperationTimeoutInMinutes: Long
 ): Config {
     val cf = CfConfig(
         apiHost = apiHost,
@@ -197,6 +206,8 @@ private fun createConfig(
         skipSslValidation = skipSslValidation
     )
     return Config(PushAppsConfig(
-        appDeployRetryCount = retryCount
+        operationRetryCount = retryCount,
+        maxInFlight = maxInFlight,
+        cfOperationTimeoutInMinutes = cfOperationTimeoutInMinutes
     ), cf, apps, services, userProvidedServices, migrations, securityGroups)
 }

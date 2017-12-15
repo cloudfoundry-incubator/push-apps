@@ -303,6 +303,124 @@ class DeployAppTest : Spek({
             })
         }
 
+        it("retries failed deployments correctly when the number of deployments is higher than maxInFlight count") {
+            //max in flight of 2, deploy 3 apps, have 2nd app fail 2 times
+            val blueGreenGoodbye1 = AppConfig(
+                name = "goodbye",
+                path = "$workingDir/src/test/kotlin/support/goodbyeapp.zip",
+                buildpack = "binary_buildpack",
+                command = "./goodbyeapp",
+                environment = mapOf(
+                    "NAME" to "BLUE OR GREEN",
+                    "TRUTH" to "OUT THERE"
+                ),
+                noRoute = true,
+                domain = "example.com",
+                route = Route(
+                    hostname = "generic"
+                ),
+                blueGreenDeploy = true
+            )
+
+            val blueGreenGoodbye2 = AppConfig(
+                name = "shalom",
+                path = "$workingDir/src/test/kotlin/support/goodbyeapp.zip",
+                buildpack = "binary_buildpack",
+                command = "./goodbyeapp",
+                environment = mapOf(
+                    "NAME" to "BLUE OR GREEN",
+                    "HELLO" to "WORLD"
+                ),
+                noRoute = true,
+                domain = "example.com",
+                route = Route(
+                    hostname = "generic"
+                ),
+                blueGreenDeploy = true
+            )
+
+            val blueGreenHello = AppConfig(
+                name = "hello",
+                path = "$workingDir/src/test/kotlin/support/helloapp.zip",
+                buildpack = "binary_buildpack",
+                command = "./helloapp",
+                environment = mapOf(
+                    "NAME" to "BLUE OR GREEN",
+                    "RED_FISH" to "BLUE_FISH"
+                ),
+                noRoute = true,
+                domain = "example.com",
+                route = Route(
+                    hostname = "generic"
+                ),
+                blueGreenDeploy = true
+            )
+
+            val tc = buildTestContext(
+                apps = listOf(blueGreenGoodbye1, blueGreenGoodbye2, blueGreenHello),
+                organization = "foo_bar_org",
+                maxInFlight = 2,
+                retryCount = 3,
+                cfOperationTimeoutInMinutes = 1L
+            )
+
+            whenever(tc.cfOperations.applications().start(argForWhich {
+                name == "shalom"
+            })).thenReturn(
+                Mono.error<Void>(PushAppsError("it broke")),
+                Mono.error<Void>(PushAppsError("it broke")),
+                Mono.empty<Void>()
+            )
+
+            whenever(tc.cfOperations.applications().start(argForWhich {
+                name == "goodbye" ||
+                    name == "hello" ||
+                    name == "goodbye-blue" ||
+                    name == "hello-blue" ||
+                    name == "shalom-blue"
+            })).thenReturn(
+                Mono.empty<Void>()
+            )
+
+            val pushApps = PushApps(
+                tc.config,
+                tc.cfClientBuilder
+            )
+            pushApps.pushApps()
+
+            verify(tc.cfOperations.applications(), times(4)).push(argForWhich {
+                name == "hello" ||
+                    name == "hello-blue" ||
+                    name == "goodbye" ||
+                    name == "goodbye-blue"
+
+            })
+
+            verify(tc.cfOperations.applications(), times(4)).start(argForWhich {
+                name == "hello" ||
+                    name == "hello-blue" ||
+                    name == "goodbye" ||
+                    name == "goodbye-blue"
+            })
+
+            //FIXME: we should not retry the green if the blue fails, and vice-versa
+            verify(tc.cfOperations.applications(), times(1)).push(argForWhich {
+                name == "shalom-blue"
+
+            })
+            verify(tc.cfOperations.applications(), times(1)).push(argForWhich {
+                name == "shalom"
+            })
+
+            verify(tc.cfOperations.applications(), times(1)).start(argForWhich {
+                name == "shalom-blue"
+            })
+
+            verify(tc.cfOperations.applications(), times(3)).start(argForWhich {
+                name == "shalom"
+            })
+        }
+
         it("returning an error if a deploy fails and fetches logs for failed operation") {
             val tc = buildTestContext(
                 apps = listOf(helloApp), organization = "foo_bar_org", retryCount = 0

@@ -93,7 +93,7 @@ class AcceptanceTestSupport {
                 this.organization = organization
             }.build()
 
-        val cf = buildCfClient(apiHost, username, password, organization)
+        val cf = buildCfClient(apiHost, username, password, organization, retryCount)
 
         val configFilePath = writeConfigFile(
             apiHost = apiHost,
@@ -121,12 +121,12 @@ class AcceptanceTestSupport {
 
         val cfClient = tc.cfClient
 
-        val organizations = cfClient.listOrganizations()
+        val organizations = cfClient.listOrganizations().toIterable().toList()
         if (!organizations.contains(organization) || organization === null) return
 
         cfClient.createAndTargetOrganization(organization)
 
-        val spaces = cfClient.listSpaces()
+        val spaces = cfClient.listSpaces().toIterable().toList()
         if (!spaces.contains(space)) return
 
         cfClient.createAndTargetSpace(space)
@@ -291,7 +291,7 @@ class AcceptanceTestSupport {
         return exitValue
     }
 
-    fun buildCfClient(apiHost: String, username: String, password: String, organization: String): CloudFoundryClient {
+    fun buildCfClient(apiHost: String, username: String, password: String, organization: String, retryCount: Int): CloudFoundryClient {
         val config = CfConfig(
             apiHost = apiHost,
             username = username,
@@ -311,7 +311,7 @@ class AcceptanceTestSupport {
                 this.organization = config.organization
             }.build()
 
-        return CloudFoundryClient(cloudFoundryOperations, cloudFoundryOperationsBuilder(), 5L)
+        return CloudFoundryClient(cloudFoundryOperations, cloudFoundryOperationsBuilder(), 5L, retryCount)
     }
 
     fun httpGet(url: String): Mono<String> {

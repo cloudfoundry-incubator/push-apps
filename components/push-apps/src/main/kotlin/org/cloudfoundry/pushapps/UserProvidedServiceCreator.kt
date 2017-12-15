@@ -20,7 +20,10 @@ class UserProvidedServiceCreator(
         val queue = ConcurrentLinkedQueue<UserProvidedServiceConfig>()
         queue.addAll(serviceConfigs)
 
-        val existingServiceNames = cloudFoundryClient.listServices()
+        val existingServiceNames = cloudFoundryClient
+            .listServices()
+            .toIterable()
+            .toList()
 
         val createServiceOperation = { serviceConfig: UserProvidedServiceConfig ->
             createUserProvidedService(existingServiceNames, serviceConfig)
@@ -33,8 +36,7 @@ class UserProvidedServiceCreator(
                 operation = createServiceOperation,
                 operationIdentifier = UserProvidedServiceConfig::name,
                 operationDescription = { service -> "Create user provided service ${service.name}" },
-                operationConfigQueue = queue,
-                retries = retryCount
+                operationConfigQueue = queue
             )
 
             val flux = createQueueBackedFlux(queue)

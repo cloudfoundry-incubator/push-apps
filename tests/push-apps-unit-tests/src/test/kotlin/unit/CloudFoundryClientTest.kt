@@ -63,7 +63,8 @@ class CloudFoundryClientTest : Spek({
         val cloudFoundryClient = CloudFoundryClient(
             cloudFoundryOperations = mockCfOperations,
             cloudFoundryOperationsBuilder = mockCfOperationsBuilder,
-            operationTimeoutInMinutes = 5L
+            operationTimeoutInMinutes = 5L,
+            retryCount = 1
         )
 
         return TestContext(
@@ -341,7 +342,10 @@ class CloudFoundryClientTest : Spek({
         whenever(tc.organizations.list()).thenReturn(
             Flux.fromArray(arrayOf(orgSummary)))
 
-        val orgResults = tc.cloudFoundryClient.listOrganizations()
+        val orgResults = tc.cloudFoundryClient
+            .listOrganizations()
+            .toIterable()
+            .toList()
         assertThat(orgResults).isEqualTo(listOf("some-name"))
     }
 
@@ -355,7 +359,10 @@ class CloudFoundryClientTest : Spek({
         whenever(tc.spaces.list()).thenReturn(
             Flux.fromArray(arrayOf(spaceSummary)))
 
-        val spaceResults = tc.cloudFoundryClient.listSpaces()
+        val spaceResults = tc.cloudFoundryClient
+            .listSpaces()
+            .toIterable()
+            .toList()
         assertThat(spaceResults).isEqualTo(listOf("some-name"))
     }
 
@@ -370,7 +377,10 @@ class CloudFoundryClientTest : Spek({
         whenever(tc.services.listInstances()).thenReturn(
             Flux.fromArray(arrayOf(serviceSummary)))
 
-        val serviceResults = tc.cloudFoundryClient.listServices()
+        val serviceResults = tc.cloudFoundryClient
+            .listServices()
+            .toIterable()
+            .toList()
         assertThat(serviceResults).isEqualTo(listOf("some-name"))
     }
 

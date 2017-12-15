@@ -4,9 +4,10 @@ import org.cloudfoundry.operations.CloudFoundryOperations
 import org.cloudfoundry.pushapps.CloudFoundryOperationsBuilder.Companion.cloudFoundryOperationsBuilder
 
 class CloudFoundryClientBuilder(
+    private var cloudFoundryOperationsBuilder: CloudFoundryOperationsBuilder = cloudFoundryOperationsBuilder(),
     var cloudFoundryOperations: CloudFoundryOperations? = null,
-    var cloudFoundryOperationsBuilder: CloudFoundryOperationsBuilder = cloudFoundryOperationsBuilder(),
-    var operationTimeoutInMinutes: Long = 5L
+    var operationTimeoutInMinutes: Long = DEFAULT_OPERATION_TIMEOUT,
+    var retryCount: Int = DEFAULT_OPERATION_RETRY_COUNT
 ) {
     companion object {
         @JvmStatic
@@ -25,7 +26,8 @@ class CloudFoundryClientBuilder(
         return CloudFoundryClient(
             cfOperations,
             cloudFoundryOperationsBuilder,
-            operationTimeoutInMinutes
+            operationTimeoutInMinutes,
+            retryCount
         )
     }
 }

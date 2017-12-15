@@ -1,7 +1,6 @@
 package org.cloudfoundry.pushapps
 
 import org.apache.logging.log4j.LogManager
-import org.cloudfoundry.UnknownCloudFoundryException
 import org.cloudfoundry.doppler.LogMessage
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
@@ -21,48 +20,28 @@ class OperationScheduler<T : OperationConfig>(
     private val operationIdentifier: (T) -> String,
     private val operationDescription: (T) -> String,
     private val operationConfigQueue: Queue<T>,
-    private val retries: Int = 0,
     private val fetchLogs: (String) -> Flux<LogMessage> = { _ -> Flux.fromIterable(emptyList()) }
 ) : Subscriber<T> {
     private val logger = LogManager.getLogger(OperationScheduler::class.java)
     private val pendingOperations = mutableListOf<Flux<OperationResult>>()
-
-    private val retriesByApp = mutableMapOf<String, Int>()
 
     private lateinit var subscription: Subscription
     private var onNextAmount = 0
 
     override fun onNext(nextItem: T) {
         val identifier = operationIdentifier(nextItem)
-        val retryCount = retriesByApp.getOrDefault(identifier, retries)
-        retriesByApp[identifier] = retryCount - 1
 
         val handleErrors: (T) -> ErrorHandler = { config: T ->
             { error ->
-                when (error) {
-                    is UnknownCloudFoundryException -> {
-                        logger.debug("Retrying deployment of $identifier due to an UnknownCloudFoundryException with message ${error.message} and status code ${error.statusCode}.")
-                        operationConfigQueue.offer(nextItem)
-                        Mono.empty()
-                    }
-                    else -> {
-                        if (retryCount > 0) {
-                            logger.debug("Retrying deployment of $identifier, retry count at $retryCount.")
-                            operationConfigQueue.offer(nextItem)
-                            Mono.empty<OperationResult>()
-                        } else {
-                            val operationResult = OperationResult(
-                                description = operationDescription(nextItem),
-                                operationConfig = config,
-                                didSucceed = false,
-                                error = error,
-                                recentLogs = fetchLogs(identifier)
-                            )
+                val operationResult = OperationResult(
+                    description = operationDescription(nextItem),
+                    operationConfig = config,
+                    didSucceed = false,
+                    error = error,
+                    recentLogs = fetchLogs(identifier)
+                )
 
-                            Mono.just(operationResult)
-                        }
-                    }
-                }
+                Mono.just(operationResult)
             }
         }
 

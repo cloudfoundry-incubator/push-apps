@@ -29,8 +29,7 @@ class SecurityGroupCreator(
                 operation = { group: SecurityGroup -> createSecurityGroup(spaceId, group) },
                 operationIdentifier = SecurityGroup::name,
                 operationDescription = { group -> "Create security group ${group.name}" },
-                operationConfigQueue = queue,
-                retries = retryCount
+                operationConfigQueue = queue
             )
 
             val flux = createQueueBackedFlux(queue)

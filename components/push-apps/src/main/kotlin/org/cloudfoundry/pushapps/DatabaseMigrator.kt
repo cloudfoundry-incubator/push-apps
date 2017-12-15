@@ -32,8 +32,7 @@ class DatabaseMigrator(
                 operation = this::migrateDatabase,
                 operationIdentifier = Migration::schema,
                 operationDescription = this::migrationDescription,
-                operationConfigQueue = queue,
-                retries = retryCount
+                operationConfigQueue = queue
             )
 
             val flux = createQueueBackedFlux(queue)

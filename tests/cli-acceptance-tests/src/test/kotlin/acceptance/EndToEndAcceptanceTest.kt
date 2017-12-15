@@ -149,7 +149,7 @@ class EndToEndAcceptanceTest : Spek({
                     return@it
                 }
 
-                var organizations = tc.cfClient.listOrganizations()
+                var organizations = tc.cfClient.listOrganizations().toIterable().toList()
                 assertThat(organizations).doesNotContain(tc.organization)
 
                 val exitCode = acceptanceTestSupport.runPushApps(tc.configFilePath)
@@ -216,7 +216,7 @@ class EndToEndAcceptanceTest : Spek({
                 assertTrue("Test table 1 exists in Postgres", docker.checkIfTableExists(pgConnection, "metrics", "test_table_1"))
                 assertTrue("Test table 2 exists in Postgres",docker.checkIfTableExists(pgConnection, "metrics", "test_table_2"))
 
-                organizations = tc.cfClient.listOrganizations()
+                organizations = tc.cfClient.listOrganizations().toIterable().toList()
                 assertThat(organizations).contains(tc.organization)
 
                 val reactiveCfClient = (tc.cfOperations as DefaultCloudFoundryOperations).cloudFoundryClient
@@ -231,7 +231,7 @@ class EndToEndAcceptanceTest : Spek({
                     }
                 }
 
-                val spaces = tc.cfClient.listSpaces()
+                val spaces = tc.cfClient.listSpaces().toIterable().toList()
                 assertThat(spaces).contains("test")
             }
         }

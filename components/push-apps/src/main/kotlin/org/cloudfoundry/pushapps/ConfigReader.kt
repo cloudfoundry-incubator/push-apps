@@ -39,12 +39,15 @@ data class Config(
     val securityGroups: List<SecurityGroup> = emptyList()
 )
 
+val DEFAULT_OPERATION_RETRY_COUNT = 3
+val DEFAULT_OPERATION_TIMEOUT = 5L
+
 data class PushAppsConfig(
-    val appDeployRetryCount: Int = 3,
+    val operationRetryCount: Int = DEFAULT_OPERATION_RETRY_COUNT,
     val maxInFlight: Int = 2,
     val failedDeploymentLogLinesToShow: Int = 50,
     val migrationTimeoutInMinutes: Long = 15L,
-    val cfOperationTimeoutInMinutes: Long = 5L
+    val cfOperationTimeoutInMinutes: Long = DEFAULT_OPERATION_TIMEOUT
 )
 
 data class CfConfig(

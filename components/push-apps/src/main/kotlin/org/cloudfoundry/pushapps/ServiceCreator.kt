@@ -27,8 +27,7 @@ class ServiceCreator(
                 operation = this::createService,
                 operationIdentifier = ServiceConfig::name,
                 operationDescription = this::createServiceDescription,
-                operationConfigQueue = queue,
-                retries = retryCount
+                operationConfigQueue = queue
             )
 
             val flux = createQueueBackedFlux(queue)
@@ -37,7 +36,10 @@ class ServiceCreator(
     }
 
     private fun filterExistingServices(): List<ServiceConfig> {
-        val existingServiceNames = cloudFoundryClient.listServices()
+        val existingServiceNames = cloudFoundryClient
+            .listServices()
+            .toIterable()
+            .toList()
 
         return serviceConfigs.filter { serviceConfig ->
             !existingServiceNames.contains(serviceConfig.name)

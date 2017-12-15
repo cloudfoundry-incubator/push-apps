@@ -8,6 +8,7 @@ import org.cloudfoundry.pushapps.ServiceCreator
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 class ServiceCreatorTest : Spek({
@@ -40,7 +41,7 @@ class ServiceCreatorTest : Spek({
     describe("#createServices") {
         it("it creates the services and returns a success result") {
             val tc = buildTestContext()
-            whenever(tc.mockCloudFoundryClient.listServices()).thenReturn(emptyList())
+            whenever(tc.mockCloudFoundryClient.listServices()).thenReturn(Flux.fromIterable(emptyList()))
             whenever(tc.mockCloudFoundryClient.createService(any())).thenReturn(Mono.empty())
 
             val results = tc.serviceCreator.createServices().toIterable().toList()
@@ -57,7 +58,7 @@ class ServiceCreatorTest : Spek({
 
         it("it returns a failure result when creating a service fails") {
             val tc = buildTestContext()
-            whenever(tc.mockCloudFoundryClient.listServices()).thenReturn(emptyList())
+            whenever(tc.mockCloudFoundryClient.listServices()).thenReturn(Flux.fromIterable(emptyList()))
             whenever(tc.mockCloudFoundryClient.createService(any())).thenReturn(
                 Mono.fromSupplier { throw Exception("lemons") }
             )
@@ -76,7 +77,7 @@ class ServiceCreatorTest : Spek({
 
         it("it includes whether the service was optional in the result") {
             val tc = buildTestContext()
-            whenever(tc.mockCloudFoundryClient.listServices()).thenReturn(emptyList())
+            whenever(tc.mockCloudFoundryClient.listServices()).thenReturn(Flux.fromIterable(emptyList()))
             whenever(tc.mockCloudFoundryClient.createService(any())).thenReturn(
                 Mono.fromSupplier { throw Exception("lemons") }
             )
@@ -93,7 +94,7 @@ class ServiceCreatorTest : Spek({
 
         it("it does not try to create services that already exist") {
             val tc = buildTestContext()
-            whenever(tc.mockCloudFoundryClient.listServices()).thenReturn(listOf(tc.serviceConfig.name))
+            whenever(tc.mockCloudFoundryClient.listServices()).thenReturn(Flux.fromIterable(listOf(tc.serviceConfig.name)))
 
             val results = tc.serviceCreator.createServices().toIterable().toList()
             assertThat(results).isEmpty()

@@ -23,7 +23,11 @@ class PushApps(
 
     fun pushApps(): Boolean {
         val (pushAppsConfig, cf, apps, services, userProvidedServices, migrations, securityGroups) = config
-        val targetedCfClientGenerator = buildTargetedCfGenerator(cf, pushAppsConfig.cfOperationTimeoutInMinutes)
+        val targetedCfClientGenerator = buildTargetedCfGenerator(
+            cf = cf,
+            cfOperationTimeoutInMinutes = pushAppsConfig.cfOperationTimeoutInMinutes,
+            retryCount = pushAppsConfig.operationRetryCount
+        )
 
         val createSecurityGroups: Flux<OperationResult> = targetedCfClientGenerator
             .next()
@@ -38,7 +42,7 @@ class PushApps(
 
         val runMigrations: Flux<OperationResult> = migrations.runMigrationsFlux(
             maxInFlight = pushAppsConfig.maxInFlight,
-            retryCount = pushAppsConfig.appDeployRetryCount,
+            retryCount = pushAppsConfig.operationRetryCount,
             timeoutInMinutes = pushAppsConfig.migrationTimeoutInMinutes
         )
 
@@ -48,7 +52,7 @@ class PushApps(
                 services.createServices(
                     cloudFoundryClient = cloudFoundryClient,
                     maxInFlight = pushAppsConfig.maxInFlight,
-                    retryCount = pushAppsConfig.appDeployRetryCount
+                    retryCount = pushAppsConfig.operationRetryCount
                 )
             }
 
@@ -58,7 +62,7 @@ class PushApps(
                 userProvidedServices.createOrUpdateUserProvidedServices(
                     cloudFoundryClient = cloudFoundryClient,
                     maxInFlight = pushAppsConfig.maxInFlight,
-                    retryCount = pushAppsConfig.appDeployRetryCount
+                    retryCount = pushAppsConfig.operationRetryCount
                 )
             }
 
@@ -70,7 +74,7 @@ class PushApps(
                 apps.deployApps(
                     availableServices = allServicesAvailable.toList(),
                     maxInFlight = pushAppsConfig.maxInFlight,
-                    retryCount = pushAppsConfig.appDeployRetryCount,
+                    retryCount = pushAppsConfig.operationRetryCount,
                     cloudFoundryClient = cloudFoundryClient
                 ).collectList()
             }
@@ -103,14 +107,18 @@ class PushApps(
             cloudFoundryClient,
             cf.space,
             pushAppsConfig.maxInFlight,
-            pushAppsConfig.appDeployRetryCount,
+            pushAppsConfig.operationRetryCount,
             spaceId
         )
 
         return handleOperationResults(createSecurityGroups, "Create security group")
     }
 
-    private fun buildTargetedCfGenerator(cf: CfConfig, cfOperationTimeoutInMinutes: Long): Flux<CloudFoundryClient> {
+    private fun buildTargetedCfGenerator(
+        cf: CfConfig,
+        cfOperationTimeoutInMinutes: Long,
+        retryCount: Int
+    ): Flux<CloudFoundryClient> {
         return Mono.fromSupplier {
             val cloudFoundryOperations = cloudFoundryOperationsBuilder()
                 .apply {
@@ -125,6 +133,7 @@ class PushApps(
             val cloudFoundryClient = cloudFoundryClientBuilder.apply {
                 this.cloudFoundryOperations = cloudFoundryOperations
                 this.operationTimeoutInMinutes = cfOperationTimeoutInMinutes
+                this.retryCount = retryCount
             }.build()
 
             cloudFoundryClient

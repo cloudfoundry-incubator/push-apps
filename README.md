@@ -21,9 +21,11 @@ class to determine the type it is expecting for each field, and which are and ar
 
 ```yaml
 pushApps: #required hash
-  appDeployRetryCount: 3 # optional, default 0
+  operationRetryCount: 3 # optional, default 0
   maxInFlight: 4 #optional, default 2
   failedDeploymentLogLinesToShow: 50 #optional, default 50
+  migrationTimeoutInMinutes: 7 #optional, default 15
+  cfOperationTimeoutInMinutes: 1 #optional, default 5
 cf: #required hash
   apiHost: api.cf.example.com #required
   username: admin #required
