@@ -9,3 +9,4 @@ tests/cli-acceptance-tests/src/test/kotlin/support/goodbyeapp/*
 tests/cli-acceptance-tests/src/test/kotlin/support/helloapp/*
 !tests/cli-acceptance-tests/src/test/kotlin/support/helloapp/main.go
 tests/cli-acceptance-tests/src/test/kotlin/support/*.zip
+ci/secrets.yml
