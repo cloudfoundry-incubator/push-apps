@@ -233,6 +233,9 @@ class EndToEndAcceptanceTest : Spek({
 
                 val spaces = tc.cfClient.listSpaces().toIterable().toList()
                 assertThat(spaces).contains("test")
+
+                //TODO: run again with delete apps functionality
+//                val exitCode = acceptanceTestSupport.runPushApps(tc.configFilePath)
             }
         }
     }

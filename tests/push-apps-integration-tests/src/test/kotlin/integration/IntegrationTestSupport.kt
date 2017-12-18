@@ -34,6 +34,7 @@ data class IntegrationTestContext(
 
 fun buildTestContext(
     apps: List<AppConfig> = emptyList(),
+    deleteApps: List<DeleteAppConfig> = emptyList(),
     services: List<ServiceConfig> = emptyList(),
     userProvidedServices: List<UserProvidedServiceConfig> = emptyList(),
     migrations: List<Migration> = emptyList(),
@@ -57,6 +58,7 @@ fun buildTestContext(
         organization = organization,
         space = space,
         apps = apps,
+        deleteApps = deleteApps,
         userProvidedServices = userProvidedServices,
         services = services,
         migrations = migrations,
@@ -188,6 +190,7 @@ private fun createConfig(
     organization: String,
     space: String,
     apps: List<AppConfig>,
+    deleteApps: List<DeleteAppConfig>,
     userProvidedServices: List<UserProvidedServiceConfig>,
     services: List<ServiceConfig>,
     migrations: List<Migration>,
@@ -205,9 +208,21 @@ private fun createConfig(
         space = space,
         skipSslValidation = skipSslValidation
     )
-    return Config(PushAppsConfig(
+
+    val pushAppsConfig = PushAppsConfig(
         operationRetryCount = retryCount,
         maxInFlight = maxInFlight,
         cfOperationTimeoutInMinutes = cfOperationTimeoutInMinutes
-    ), cf, apps, services, userProvidedServices, migrations, securityGroups)
+    )
+
+    return Config(
+        pushApps = pushAppsConfig,
+        cf = cf,
+        apps = apps,
+        deleteApps = deleteApps,
+        services = services,
+        userProvidedServices = userProvidedServices,
+        migrations = migrations,
+        securityGroups = securityGroups
+    )
 }

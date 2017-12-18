@@ -33,6 +33,7 @@ data class Config(
     val pushApps: PushAppsConfig = PushAppsConfig(),
     val cf: CfConfig,
     val apps: List<AppConfig>,
+    val deleteApps: List<DeleteAppConfig>,
     val services: List<ServiceConfig> = emptyList(),
     val userProvidedServices: List<UserProvidedServiceConfig> = emptyList(),
     val migrations: List<Migration> = emptyList(),
@@ -59,6 +60,12 @@ data class CfConfig(
     val skipSslValidation: Boolean = false,
     val dialTimeoutInMillis: Long? = null
 )
+
+data class DeleteAppConfig(
+    override val name: String,
+    override val optional: Boolean = false,
+    val deleteRoutes: Boolean = false
+): OperationConfig
 
 data class AppConfig(
     override val name: String,

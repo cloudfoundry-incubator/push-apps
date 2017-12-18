@@ -22,12 +22,13 @@ class PushApps(
     private val logger = LogManager.getLogger(PushApps::class.java)
 
     fun pushApps(): Boolean {
-        val (pushAppsConfig, cf, apps, services, userProvidedServices, migrations, securityGroups) = config
+        val (pushAppsConfig, cf, apps, deleteApps, services, userProvidedServices, migrations, securityGroups) = config
         val targetedCfClientGenerator = buildTargetedCfGenerator(
             cf = cf,
             cfOperationTimeoutInMinutes = pushAppsConfig.cfOperationTimeoutInMinutes,
             retryCount = pushAppsConfig.operationRetryCount
         )
+
 
         val createSecurityGroups: Flux<OperationResult> = targetedCfClientGenerator
             .next()
