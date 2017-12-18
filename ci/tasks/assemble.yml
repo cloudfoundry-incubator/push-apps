@@ -3,8 +3,8 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: oracle/serverjre
-    tag: 8
+    repository: openjdk
+    tag: 8-slim
 inputs:
 - name: push-apps
 outputs:
@@ -13,21 +13,25 @@ outputs:
 - name: push-apps-bumped
   path: ""
 run:
-  path: sh
+  path: bash
   args:
     - -c
     - |
-      #!/bin/sh
+      #!/bin/bash
       set -ex
 
-      cd push-apps
-      ./gradlew bumpPatch
+      echo "Getting rsync"
+      apt-get update
+      apt-get install -y rsync
 
-      git add -A
-      git commit -m "bump version"
+      pushd push-apps
+        ./gradlew bumpPatch
 
-      ./gradlew assemble
-      cd ..
+        git add -A
+        git commit -m "bump version"
+
+        ./gradlew assemble
+      popd
 
       cp push-apps/applications/cli/build/libs/push-apps-*.jar push-apps-jar-output/
 

@@ -3,8 +3,8 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: oracle/serverjre
-    tag: 8
+    repository: openjdk
+    tag: 8-slim
 inputs:
 - name: built-push-apps
 params:
@@ -17,17 +17,19 @@ params:
   LOG_LEVEL: "debug"
   CF_LOG_LEVEL: "debug"
 run:
-  path: sh
+  path: bash
   args:
     - -c
     - |
-      #!/bin/sh
+      #!/bin/bash
       set -ex
 
-      apk add --update py-pip
+      apt-get update
+      apt-get install -y python-pip
       pip install docker-compose
 
       echo "Running Acceptance Tests!"
 
-      cd built-push-apps
-      ./gradlew -g .gradleCache acceptanceTest
+      pushd built-push-apps
+        ./gradlew -g .gradleCache acceptanceTest
+      popd

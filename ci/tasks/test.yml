@@ -10,16 +10,20 @@ inputs:
 outputs:
 - name: built-push-apps
 run:
-  path: sh
+  path: bash
   args:
     - -c
     - |
-      #!/bin/sh
+      #!/bin/bash
       set -ex
 
+      echo "Getting rsync"
+      apt-get update
+      apt-get install -y rsync
+
       echo "Running tests!"
-      cd push-apps
-      ./gradlew -g .gradleCache clean build
-      cd ..
+      pushd push-apps
+        ./gradlew -g .gradleCache clean build
+      popd
 
       rsync -a push-apps/ built-push-apps/
