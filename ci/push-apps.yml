@@ -38,62 +38,12 @@ jobs:
       trigger: true
   - task: test
     timeout: 10m
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: pcfmetrics/metrics-app-dev-release-docker
-          tag: latest
-      inputs:
-      - name: push-apps
-      outputs:
-      - name: built-push-apps
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash
-            set -ex
-
-            echo "Running tests!"
-            pushd push-apps
-              ./gradlew -g .gradleCache clean build
-            popd
-
-            rsync -a push-apps/ built-push-apps/
-  - task: acceptance_test
+    file: push-apps/ci/tasks/test.yml
+  - task: acceptance-test
     attempts: 3
     timeout: 15m
-    params:
-      CF_API: ((cf-api))
-      CF_USERNAME: ((cf-username))
-      CF_PASSWORD: ((cf-password))
-      DOCKER_HOST: "10.150.0.6:4243"
-      INTEGRATION_HOST: "10.150.0.6"
-      LOG_LEVEL: "debug"
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: pcfmetrics/metrics-app-dev-release-docker
-          tag: latest
-      inputs:
-      - name: built-push-apps
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash
-            set -ex
+    file: push-apps/ci/tasks/acceptance-tests.yml
 
-            echo "Running Acceptance Tests!"
-
-            cd built-push-apps
-            ./gradlew -g .gradleCache acceptanceTest
 - name: build-push-apps
   build_logs_to_retain: 25
   serial: true
@@ -105,40 +55,7 @@ jobs:
     - get: metrics-app-dev-release
     - get: deployments-metrics
   - task: assemble
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: pcfmetrics/metrics-app-dev-release-docker
-          tag: latest
-      inputs:
-      - name: push-apps
-      outputs:
-      - name: push-apps-jar-output
-        path: ""
-      - name: push-apps-bumped
-        path: ""
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash
-            set -ex
-
-            pushd push-apps
-              ./gradlew bumpPatch
-
-              git add -A
-              git commit -m "bump version"
-
-              ./gradlew assemble
-            popd
-
-            cp push-apps/applications/cli/build/libs/push-apps-*.jar push-apps-jar-output/
-
-            rsync -a push-apps/ push-apps-bumped
+    file: push-apps/ci/tasks/assemble.yml
   - put: push-apps-s3
     params:
       file: push-apps-jar-output/*.jar
@@ -147,56 +64,8 @@ jobs:
       repository: push-apps-bumped
       rebase: true
   - task: upload-blob
-    params:
-      S3_ACCESS_KEY: ((pcf-metrics-aws-access-key-id))
-      S3_SECRET_KEY: ((pcf-metrics-aws-secret-access-key))
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: pcfmetrics/metrics-app-dev-release-docker
-          tag: latest
-      inputs:
-      - name: metrics-app-dev-release
-      - name: deployments-metrics
-      - name: push-apps-jar-output
-      outputs:
-      - name: metrics-app-dev-release-bumped
-        path: ""
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash
-            set -ex
+    file: push-apps/ci/tasks/upload-blob.yml
 
-            source deployments-metrics/scripts/set-bosh-env.sh deployments-metrics/gcp-environments/versace
-
-            cat << EOF > metrics-app-dev-release/config/private.yml
-            ---
-            blobstore:
-              options:
-                secret_access_key: $S3_SECRET_KEY
-                access_key_id: $S3_ACCESS_KEY
-            EOF
-
-            pushd metrics-app-dev-release
-              CURRENT_BLOB=$(bosh blobs | grep push-apps | awk '{print $1}')
-              bosh remove-blob $CURRENT_BLOB
-
-              NEW_BLOB=$(basename $(ls ../push-apps-jar-output))
-              bosh add-blob ../push-apps-jar-output/push-apps-*.jar $NEW_BLOB
-
-              bosh upload-blobs
-              bosh sync-blobs
-
-              git add -A
-              git commit -m "update push-apps blob"
-            popd
-
-            rsync -a metrics-app-dev-release/ metrics-app-dev-release-bumped
   - put: metrics-app-dev-release
     params:
       repository: metrics-app-dev-release-bumped

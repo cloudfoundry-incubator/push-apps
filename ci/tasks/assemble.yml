@@ -1,0 +1,34 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: openjdk
+    tag: 8-alpine
+inputs:
+- name: push-apps
+outputs:
+- name: push-apps-jar-output
+  path: ""
+- name: push-apps-bumped
+  path: ""
+run:
+  path: sh
+  args:
+    - -c
+    - |
+      #!/bin/sh
+      set -ex
+
+      cd push-apps
+      ./gradlew bumpPatch
+
+      git add -A
+      git commit -m "bump version"
+
+      ./gradlew assemble
+      cd ..
+
+      cp push-apps/applications/cli/build/libs/push-apps-*.jar push-apps-jar-output/
+
+      rsync -a push-apps/ push-apps-bumped

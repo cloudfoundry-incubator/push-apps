@@ -1,6 +1,7 @@
 package acceptance
 
 import junit.framework.TestCase.assertTrue
+import org.apache.commons.io.FilenameUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.fail
 import org.cloudfoundry.client.v2.securitygroups.Protocol
@@ -41,11 +42,14 @@ class EndToEndAcceptanceTest : Spek({
                 optional = true
             )
 
+
+            val helloAppJar = FilenameUtils.normalize(
+                "${acceptanceTestSupport.acceptanceTestProjectDir}../../applications/hello/build/libs/hello.jar"
+            )
+
             val helloApp = AppConfig(
                 name = "hello",
-                path = "${acceptanceTestSupport.acceptanceTestProjectDir}/src/test/kotlin/support/helloapp.zip",
-                buildpack = "binary_buildpack",
-                command = "./helloapp",
+                path = helloAppJar,
                 environment = mapOf(
                     "NAME" to "Steve",
                     "VERB" to "walk",
@@ -61,16 +65,18 @@ class EndToEndAcceptanceTest : Spek({
                 )
             )
 
+            val goodbyeAppJar = FilenameUtils.normalize(
+                "${acceptanceTestSupport.acceptanceTestProjectDir}../../applications/goodbye/build/libs/goodbye.jar"
+            )
+
             val blueGreenApp = AppConfig(
                 name = "generic",
-                path = "${acceptanceTestSupport.acceptanceTestProjectDir}/src/test/kotlin/support/goodbyeapp.zip",
-                buildpack = "binary_buildpack",
-                command = "./goodbyeapp",
+                path = goodbyeAppJar,
                 environment = mapOf(
                     "NAME" to "BLUE OR GREEN"
                 ),
                 noRoute = true,
-                domain = System.getenv("CF_DOMAIN"),
+                domain = getCfDomain(),
                 route = Route(
                     hostname = "generic"
                 ),
@@ -176,7 +182,7 @@ class EndToEndAcceptanceTest : Spek({
                     .toFuture()
                     .get()
 
-                val helloResponse = acceptanceTestSupport.httpGet("http://$helloUrl/v1").block()
+                val helloResponse = acceptanceTestSupport.httpGet("http://$helloUrl").block()
                 assertThat(helloResponse).contains("hello Steve, you are handsome!")
                 assertThat(helloResponse).contains("compliment-service")
                 assertThat(helloResponse).contains("my-mf-service")
@@ -208,13 +214,13 @@ class EndToEndAcceptanceTest : Spek({
                 assertThat(routes).hasSize(1)
                 assertThat(routes[0].applications).containsOnly("generic")
 
-                assertTrue("new_db DB exists in Mysql",docker.checkIfDatabaseExists(mysqlConnection, "new_db"))
-                assertTrue("Test table 1 exists in Mysql",docker.checkIfTableExists(mysqlConnection, "new_db", "test_table_1"))
-                assertTrue("Test table 2 exists in Mysql",docker.checkIfTableExists(mysqlConnection, "new_db", "test_table_2"))
+                assertTrue("new_db DB exists in Mysql", docker.checkIfDatabaseExists(mysqlConnection, "new_db"))
+                assertTrue("Test table 1 exists in Mysql", docker.checkIfTableExists(mysqlConnection, "new_db", "test_table_1"))
+                assertTrue("Test table 2 exists in Mysql", docker.checkIfTableExists(mysqlConnection, "new_db", "test_table_2"))
 
                 assertTrue("Metrics DB exists in Postgres", docker.checkIfDatabaseExists(pgConnection, "metrics"))
                 assertTrue("Test table 1 exists in Postgres", docker.checkIfTableExists(pgConnection, "metrics", "test_table_1"))
-                assertTrue("Test table 2 exists in Postgres",docker.checkIfTableExists(pgConnection, "metrics", "test_table_2"))
+                assertTrue("Test table 2 exists in Postgres", docker.checkIfTableExists(pgConnection, "metrics", "test_table_2"))
 
                 organizations = tc.cfClient.listOrganizations().toIterable().toList()
                 assertThat(organizations).contains(tc.organization)
@@ -237,3 +243,12 @@ class EndToEndAcceptanceTest : Spek({
         }
     }
 })
+
+private fun getCfDomain(): String {
+    val env = System.getenv("CF_DOMAIN")
+    if (env === null) {
+        throw AssertionError("Must set CF_DOMAIN env var")
+    }
+
+    return env as String
+}

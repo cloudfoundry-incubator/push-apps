@@ -1,0 +1,25 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: openjdk
+    tag: 8-alpine
+inputs:
+- name: push-apps
+outputs:
+- name: built-push-apps
+run:
+  path: sh
+  args:
+    - -c
+    - |
+      #!/bin/sh
+      set -ex
+
+      echo "Running tests!"
+      cd push-apps
+      ./gradlew -g .gradleCache clean build
+      cd ..
+
+      rsync -a push-apps/ built-push-apps/

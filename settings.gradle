@@ -2,6 +2,8 @@ rootProject.name = "push-apps"
 
 //Applications
 include ":applications:cli"
+include ":applications:hello"
+include ":applications:goodbye"
 
 //Components
 include ":components:push-apps"

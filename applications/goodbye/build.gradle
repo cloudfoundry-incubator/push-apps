@@ -1,0 +1,14 @@
+apply from: "$rootProject.rootDir/gradle/kotlin.gradle"
+apply from: "$rootProject.rootDir/gradle/idea.gradle"
+
+apply plugin: 'java'
+apply plugin: 'org.springframework.boot'
+
+dependencies {
+    compile "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
+}
+
+jar {
+    baseName = "goodbye"
+    version = null
+}

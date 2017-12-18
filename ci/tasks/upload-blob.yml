@@ -1,0 +1,50 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: governmentpaas/bosh-cli-v2
+    tag: latest
+inputs:
+- name: metrics-app-dev-release
+- name: deployments-metrics
+- name: push-apps-jar-output
+outputs:
+- name: metrics-app-dev-release-bumped
+  path: ""
+params:
+  S3_ACCESS_KEY: ((pcf-metrics-aws-access-key-id))
+  S3_SECRET_KEY: ((pcf-metrics-aws-secret-access-key))
+run:
+  path: sh
+  args:
+    - -c
+    - |
+      #!/bin/sh
+      set -ex
+
+      source deployments-metrics/scripts/set-bosh-env.sh deployments-metrics/gcp-environments/versace
+
+      cat << EOF > metrics-app-dev-release/config/private.yml
+      ---
+      blobstore:
+        options:
+          secret_access_key: $S3_SECRET_KEY
+          access_key_id: $S3_ACCESS_KEY
+      EOF
+
+      pushd metrics-app-dev-release
+        CURRENT_BLOB=$(bosh blobs | grep push-apps | awk '{print $1}')
+        bosh remove-blob $CURRENT_BLOB
+
+        NEW_BLOB=$(basename $(ls ../push-apps-jar-output))
+        bosh add-blob ../push-apps-jar-output/push-apps-*.jar $NEW_BLOB
+
+        bosh upload-blobs
+        bosh sync-blobs
+
+        git add -A
+        git commit -m "update push-apps blob"
+      popd
+
+      rsync -a metrics-app-dev-release/ metrics-app-dev-release-bumped

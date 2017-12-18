@@ -1,0 +1,33 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: openjdk
+    tag: 8-alpine
+inputs:
+- name: built-push-apps
+params:
+  CF_API: ((cf-api))
+  CF_USERNAME: ((cf-username))
+  CF_PASSWORD: ((cf-password))
+  CF_DOMAIN: ((cf-domain))
+  DOCKER_HOST: "10.150.0.6:4243"
+  INTEGRATION_HOST: "10.150.0.6"
+  LOG_LEVEL: "debug"
+  CF_LOG_LEVEL: "debug"
+run:
+  path: sh
+  args:
+    - -c
+    - |
+      #!/bin/sh
+      set -ex
+
+      apk add --update py-pip
+      pip install docker-compose
+
+      echo "Running Acceptance Tests!"
+
+      cd built-push-apps
+      ./gradlew -g .gradleCache acceptanceTest

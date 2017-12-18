@@ -17,38 +17,8 @@ dependencies {
     testCompile 'com.fasterxml.jackson.module:jackson-module-kotlin:2.9.2'
 }
 
-task buildHelloApp(type: Exec) {
-    environment GOOS: "linux", GOPATH: "${System.getenv("HOME")}/workspace/go"
-    workingDir "${project.projectDir}/src/test/kotlin/support/helloapp"
-    commandLine "go", "build", "-o", "helloapp"
-}
-
-task packageHelloApp(type: Zip) {
-    dependsOn "buildHelloApp"
-
-    from "${project.projectDir}/src/test/kotlin/support/helloapp"
-    include "*"
-    archiveName "helloapp.zip"
-    destinationDir file("${project.projectDir}/src/test/kotlin/support")
-}
-
-task buildGoodbyeApp(type: Exec) {
-    environment GOOS: "linux", GOPATH: "${System.getenv("HOME")}/workspace/go"
-    workingDir "${project.projectDir}/src/test/kotlin/support/goodbyeapp"
-    commandLine "go", "build", "-o", "goodbyeapp"
-}
-
-task packageGoodbyeApp(type: Zip) {
-    dependsOn "buildGoodbyeApp"
-
-    from "${project.projectDir}/src/test/kotlin/support/goodbyeapp"
-    include "*"
-    archiveName "goodbyeapp.zip"
-    destinationDir file("${project.projectDir}/src/test/kotlin/support")
-}
-
 task buildSampleApps {
-    dependsOn "packageHelloApp", "packageGoodbyeApp"
+    dependsOn ":applications:hello:assemble", ":applications:goodbye:assemble"
 }
 
 task acceptanceTest(
