@@ -37,7 +37,8 @@ class CloudFoundryClient(
 
         return operation()
             .timeout(Duration.ofMinutes(operationTimeoutInMinutes))
-            .onErrorResume {
+            .onErrorResume { error ->
+                logger.debug("Resuming operation due to error ${error.message}")
                 buildMonoCfOperationWithRetries(operation, numberOfRetries - 1)
             }
     }
@@ -49,7 +50,8 @@ class CloudFoundryClient(
 
         return operation()
             .timeout(Duration.ofMinutes(operationTimeoutInMinutes))
-            .onErrorResume {
+            .onErrorResume { error ->
+                logger.debug("Resuming operation due to error ${error.message}")
                 buildFluxCfOperationWithRetries(operation, numberOfRetries - 1)
             }
     }

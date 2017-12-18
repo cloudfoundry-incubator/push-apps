@@ -3,6 +3,9 @@ configuration:
     property:
       name: LOG_LEVEL
       value: error
+    property:
+      name: CF_LOG_LEVEL
+      value: error
   appenders:
     Console:
       name: STDOUT
@@ -36,17 +39,17 @@ configuration:
       AppenderRef:
         ref: STDOUT
     - name: cloudfoundry-client.operations
-      level: error
+      level: ${env:CF_LOG_LEVEL}
       additivity: false
       AppenderRef:
         ref: STDOUT
     - name: cloudfoundry-client.request
-      level: error
+      level: ${env:CF_LOG_LEVEL}
       additivity: false
       AppenderRef:
         ref: STDOUT
     - name: cloudfoundry-client.response
-      level: error
+      level: ${env:CF_LOG_LEVEL}
       additivity: false
       AppenderRef:
         ref: STDOUT
