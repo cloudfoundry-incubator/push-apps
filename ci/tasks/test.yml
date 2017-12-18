@@ -3,8 +3,8 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: oracle/serverjre
-    tag: 8
+    repository: openjdk
+    tag: 9-alpine
 inputs:
 - name: push-apps
 outputs:
