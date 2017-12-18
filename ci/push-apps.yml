@@ -42,7 +42,7 @@ jobs:
   - task: acceptance-test
     attempts: 3
     timeout: 15m
-    file: push-apps/ci/tasks/acceptance-tests.yml
+    file: push-apps/ci/tasks/acceptance-test.yml
 
 - name: build-push-apps
   build_logs_to_retain: 25
