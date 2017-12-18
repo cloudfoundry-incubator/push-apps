@@ -4,7 +4,7 @@ image_resource:
   type: docker-image
   source:
     repository: openjdk
-    tag: 9-alpine
+    tag: 9-slim
 inputs:
 - name: push-apps
 outputs:
