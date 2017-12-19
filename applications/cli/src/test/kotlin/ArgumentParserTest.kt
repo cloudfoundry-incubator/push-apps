@@ -1,4 +1,4 @@
-import org.cloudfoundry.pushappscli.ArgumentParser
+import org.cloudfoundry.tools.pushapps.ArgumentParser
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.jetbrains.spek.api.Spek

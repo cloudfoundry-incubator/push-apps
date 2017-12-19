@@ -1,7 +1,10 @@
-package org.cloudfoundry.pushapps
+package org.cloudfoundry.tools.pushapps
 
 import org.cloudfoundry.operations.CloudFoundryOperations
-import org.cloudfoundry.pushapps.CloudFoundryOperationsBuilder.Companion.cloudFoundryOperationsBuilder
+
+fun cloudFoundryClientBuilder(): CloudFoundryClientBuilder {
+    return CloudFoundryClientBuilder()
+}
 
 class CloudFoundryClientBuilder(
     private var cloudFoundryOperationsBuilder: CloudFoundryOperationsBuilder = cloudFoundryOperationsBuilder(),
@@ -9,13 +12,6 @@ class CloudFoundryClientBuilder(
     var operationTimeoutInMinutes: Long = DEFAULT_OPERATION_TIMEOUT,
     var retryCount: Int = DEFAULT_OPERATION_RETRY_COUNT
 ) {
-    companion object {
-        @JvmStatic
-        fun cloudFoundryClientBuilder(): CloudFoundryClientBuilder {
-            return CloudFoundryClientBuilder()
-        }
-    }
-
     fun build(): CloudFoundryClient {
         val cfOperations = cloudFoundryOperations
 

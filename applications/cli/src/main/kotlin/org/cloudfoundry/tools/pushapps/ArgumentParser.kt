@@ -1,4 +1,4 @@
-package org.cloudfoundry.pushappscli
+package org.cloudfoundry.tools.pushapps
 
 import com.beust.jcommander.JCommander
 import com.beust.jcommander.Parameter

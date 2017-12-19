@@ -15,7 +15,7 @@ configuration:
       AppenderRef:
         ref: STDOUT
     logger:
-    - name: org.cloudfoundry.pushapps
+    - name: org.cloudfoundry.tools.pushapps
       level: ${env:LOG_LEVEL}
       additivity: false
       AppenderRef:

@@ -1,9 +1,8 @@
-package org.cloudfoundry.pushapps
+package org.cloudfoundry.tools.pushapps
 
 import org.apache.logging.log4j.LogManager
 import org.cloudfoundry.UnknownCloudFoundryException
 import org.cloudfoundry.doppler.LogMessage
-import org.cloudfoundry.pushapps.CloudFoundryOperationsBuilder.Companion.cloudFoundryOperationsBuilder
 import org.flywaydb.core.Flyway
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -234,7 +233,7 @@ class PushApps(
         retryCount: Int,
         cloudFoundryClient: CloudFoundryClient
     ): Flux<OperationResult> {
-        val appDeployer = org.cloudfoundry.pushapps.AppDeployer(cloudFoundryClient, this, availableServices, maxInFlight, retryCount)
+        val appDeployer = org.cloudfoundry.tools.pushapps.AppDeployer(cloudFoundryClient, this, availableServices, maxInFlight, retryCount)
         val results = appDeployer.deployApps()
 
         return handleOperationResults(results, "Deploying application")

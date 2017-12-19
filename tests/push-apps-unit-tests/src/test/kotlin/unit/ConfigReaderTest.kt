@@ -2,8 +2,8 @@ package unit
 
 import org.apache.commons.io.FilenameUtils
 import org.assertj.core.api.Assertions.assertThat
-import org.cloudfoundry.pushapps.ConfigReader
-import org.cloudfoundry.pushapps.DatabaseDriver
+import org.cloudfoundry.tools.pushapps.ConfigReader
+import org.cloudfoundry.tools.pushapps.DatabaseDriver
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it

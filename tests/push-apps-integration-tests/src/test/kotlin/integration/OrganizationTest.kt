@@ -3,7 +3,7 @@ package integration
 import com.nhaarman.mockito_kotlin.*
 import org.assertj.core.api.Assertions.assertThat
 import org.cloudfoundry.operations.organizations.OrganizationSummary
-import org.cloudfoundry.pushapps.PushApps
+import org.cloudfoundry.tools.pushapps.PushApps
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
