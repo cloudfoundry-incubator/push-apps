@@ -20,10 +20,6 @@ run:
       #!/bin/bash
       set -ex
 
-      echo "Getting rsync"
-      apt-get update
-      apt-get install -y rsync
-
       pushd push-apps
         ./gradlew bumpPatch
 

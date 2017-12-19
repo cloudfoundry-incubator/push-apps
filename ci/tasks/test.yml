@@ -17,10 +17,6 @@ run:
       #!/bin/bash
       set -ex
 
-      echo "Getting rsync"
-      apt-get update
-      apt-get install -y rsync
-
       echo "Running tests!"
       pushd push-apps
         ./gradlew -g .gradleCache clean build

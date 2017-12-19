@@ -24,10 +24,6 @@ run:
       #!/bin/bash
       set -ex
 
-      apt-get update
-      apt-get install -y python-pip
-      pip install docker-compose
-
       echo "Running Acceptance Tests!"
 
       pushd built-push-apps
