@@ -5,9 +5,9 @@ import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.verifyNoMoreInteractions
 import com.nhaarman.mockito_kotlin.whenever
 import org.assertj.core.api.Assertions
-import org.cloudfoundry.pushapps.DatabaseDriver
-import org.cloudfoundry.pushapps.Migration
-import org.cloudfoundry.pushapps.PushApps
+import org.cloudfoundry.tools.pushapps.DatabaseDriver
+import org.cloudfoundry.tools.pushapps.Migration
+import org.cloudfoundry.tools.pushapps.PushApps
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it

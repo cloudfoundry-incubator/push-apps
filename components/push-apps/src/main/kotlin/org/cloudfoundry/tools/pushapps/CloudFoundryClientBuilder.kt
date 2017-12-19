@@ -1,7 +1,7 @@
-package org.cloudfoundry.pushapps
+package org.cloudfoundry.tools.pushapps
 
 import org.cloudfoundry.operations.CloudFoundryOperations
-import org.cloudfoundry.pushapps.CloudFoundryOperationsBuilder.Companion.cloudFoundryOperationsBuilder
+import org.cloudfoundry.tools.pushapps.CloudFoundryOperationsBuilder.Companion.cloudFoundryOperationsBuilder
 
 class CloudFoundryClientBuilder(
     private var cloudFoundryOperationsBuilder: CloudFoundryOperationsBuilder = cloudFoundryOperationsBuilder(),

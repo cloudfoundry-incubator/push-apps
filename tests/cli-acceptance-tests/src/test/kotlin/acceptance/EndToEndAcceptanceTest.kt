@@ -9,8 +9,8 @@ import org.cloudfoundry.operations.DefaultCloudFoundryOperations
 import org.cloudfoundry.operations.applications.GetApplicationRequest
 import org.cloudfoundry.operations.routes.Level
 import org.cloudfoundry.operations.routes.ListRoutesRequest
-import org.cloudfoundry.pushapps.*
-import org.cloudfoundry.pushapps.CloudFoundryOperationsBuilder.Companion.cloudFoundryOperationsBuilder
+import org.cloudfoundry.tools.pushapps.*
+import org.cloudfoundry.tools.pushapps.CloudFoundryOperationsBuilder.Companion.cloudFoundryOperationsBuilder
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.context
 import org.jetbrains.spek.api.dsl.describe

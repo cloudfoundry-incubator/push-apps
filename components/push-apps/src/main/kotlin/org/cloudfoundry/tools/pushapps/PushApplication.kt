@@ -1,4 +1,4 @@
-package org.cloudfoundry.pushapps
+package org.cloudfoundry.tools.pushapps
 
 import org.cloudfoundry.operations.CloudFoundryOperations
 import org.cloudfoundry.operations.applications.ApplicationHealthCheck

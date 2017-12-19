@@ -1,4 +1,4 @@
-package org.cloudfoundry.pushapps
+package org.cloudfoundry.tools.pushapps
 
 import org.cloudfoundry.doppler.LogMessage
 import reactor.core.publisher.Flux

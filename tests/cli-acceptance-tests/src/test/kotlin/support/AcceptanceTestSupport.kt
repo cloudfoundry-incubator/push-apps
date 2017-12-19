@@ -15,8 +15,8 @@ import org.cloudfoundry.operations.CloudFoundryOperations
 import org.cloudfoundry.operations.DefaultCloudFoundryOperations
 import org.cloudfoundry.operations.organizations.OrganizationDetail
 import org.cloudfoundry.operations.organizations.OrganizationInfoRequest
-import org.cloudfoundry.pushapps.*
-import org.cloudfoundry.pushapps.CloudFoundryOperationsBuilder.Companion.cloudFoundryOperationsBuilder
+import org.cloudfoundry.tools.pushapps.*
+import org.cloudfoundry.tools.pushapps.CloudFoundryOperationsBuilder.Companion.cloudFoundryOperationsBuilder
 import reactor.core.publisher.Mono
 import java.io.File
 import java.io.InputStream

@@ -21,12 +21,12 @@ configuration:
       AppenderRef:
         ref: STDOUT
     logger:
-    - name: org.cloudfoundry.pushapps
+    - name: org.cloudfoundry.tools.pushapps
       level: ${env:LOG_LEVEL}
       additivity: false
       AppenderRef:
         ref: STDOUT
-    - name: org.cloudfoundry.pushappscli
+    - name: org.cloudfoundry.tools.pushappscli
       level: ${env:LOG_LEVEL}
       additivity: false
       AppenderRef:

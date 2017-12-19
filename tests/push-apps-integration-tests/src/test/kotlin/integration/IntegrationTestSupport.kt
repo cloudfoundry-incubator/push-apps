@@ -16,7 +16,7 @@ import org.cloudfoundry.operations.services.ServiceInstanceSummary
 import org.cloudfoundry.operations.services.Services
 import org.cloudfoundry.operations.spaces.SpaceDetail
 import org.cloudfoundry.operations.spaces.Spaces
-import org.cloudfoundry.pushapps.*
+import org.cloudfoundry.tools.pushapps.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import javax.sql.DataSource

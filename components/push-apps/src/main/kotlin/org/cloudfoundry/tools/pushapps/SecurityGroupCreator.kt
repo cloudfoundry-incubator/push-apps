@@ -1,4 +1,4 @@
-package org.cloudfoundry.pushapps
+package org.cloudfoundry.tools.pushapps
 
 import org.apache.logging.log4j.LogManager
 import org.cloudfoundry.client.v2.ClientV2Exception

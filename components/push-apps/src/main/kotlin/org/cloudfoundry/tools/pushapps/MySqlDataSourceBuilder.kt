@@ -1,39 +1,40 @@
-package org.cloudfoundry.pushapps
+package org.cloudfoundry.tools.pushapps
 
-import org.postgresql.ds.PGSimpleDataSource
+import com.mysql.jdbc.jdbc2.optional.MysqlConnectionPoolDataSource
 import javax.sql.DataSource
 
-fun postgresDataSourceBuilder(dataSource: DataSource?): PostgresDataSourceBuilder {
+fun mySqlDataSourceBuilder(dataSource: DataSource?): MySqlDataSourceBuilder {
     if (dataSource !== null) {
-        val ds = dataSource as PGSimpleDataSource
-        val builder = PostgresDataSourceBuilder()
+        val ds = dataSource as MysqlConnectionPoolDataSource
+        val builder = MySqlDataSourceBuilder()
 
         builder.user = ds.user
         builder.host = ds.serverName
         builder.databaseName = ds.databaseName
-        builder.port = ds.portNumber
+        builder.port = ds.port
 
         return builder
     }
 
-    return PostgresDataSourceBuilder()
+    return MySqlDataSourceBuilder()
 }
 
-class PostgresDataSourceBuilder: DataSourceBuilder {
+class MySqlDataSourceBuilder : DataSourceBuilder {
     override var user: String? = null
     override var host: String? = null
     override var databaseName: String? = null
     override var password: String? = null
     override var port: Int = 0
 
-    override fun build(): PGSimpleDataSource {
-        val dataSource = PGSimpleDataSource()
+    override fun build(): DataSource {
+        val dataSource = MysqlConnectionPoolDataSource()
 
         if (user !== null) dataSource.user = user
         if (host !== null) dataSource.serverName = host
-        if (port > 0) dataSource.portNumber = port
+        if (port > 0) dataSource.port = port
         if (databaseName !== null) dataSource.databaseName = databaseName
-        if (password !== null) dataSource.password = password
+
+        if (password !== null) dataSource.setPassword(password)
 
         return dataSource
     }

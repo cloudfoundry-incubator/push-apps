@@ -1,4 +1,4 @@
-package org.cloudfoundry.pushapps
+package org.cloudfoundry.tools.pushapps
 
 import org.apache.commons.io.FilenameUtils
 import org.flywaydb.core.Flyway

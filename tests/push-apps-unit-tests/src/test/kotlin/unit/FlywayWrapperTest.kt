@@ -6,7 +6,7 @@ import com.nhaarman.mockito_kotlin.verifyNoMoreInteractions
 import com.nhaarman.mockito_kotlin.whenever
 import org.apache.commons.io.FilenameUtils
 import org.assertj.core.api.Assertions.assertThatExceptionOfType
-import org.cloudfoundry.pushapps.FlywayWrapper
+import org.cloudfoundry.tools.pushapps.FlywayWrapper
 import org.flywaydb.core.Flyway
 import org.flywaydb.core.api.FlywayException
 import org.jetbrains.spek.api.Spek

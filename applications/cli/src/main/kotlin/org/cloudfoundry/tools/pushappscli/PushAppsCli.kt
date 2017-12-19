@@ -1,9 +1,9 @@
-package org.cloudfoundry.pushappscli
+package org.cloudfoundry.tools.pushappscli
 
 import org.apache.logging.log4j.LogManager
-import org.cloudfoundry.pushapps.CloudFoundryClientBuilder.Companion.cloudFoundryClientBuilder
-import org.cloudfoundry.pushapps.ConfigReader
-import org.cloudfoundry.pushapps.PushApps
+import org.cloudfoundry.tools.pushapps.CloudFoundryClientBuilder.Companion.cloudFoundryClientBuilder
+import org.cloudfoundry.tools.pushapps.ConfigReader
+import org.cloudfoundry.tools.pushapps.PushApps
 
 class PushAppsCli {
     companion object {

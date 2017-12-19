@@ -4,8 +4,8 @@ import com.nhaarman.mockito_kotlin.*
 import org.cloudfoundry.operations.CloudFoundryOperations
 import org.cloudfoundry.operations.applications.ApplicationHealthCheck
 import org.cloudfoundry.operations.applications.Applications
-import org.cloudfoundry.pushapps.AppConfig
-import org.cloudfoundry.pushapps.PushApplication
+import org.cloudfoundry.tools.pushapps.AppConfig
+import org.cloudfoundry.tools.pushapps.PushApplication
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
