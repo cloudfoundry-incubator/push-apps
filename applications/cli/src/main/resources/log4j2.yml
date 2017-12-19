@@ -6,6 +6,9 @@ configuration:
     property:
       name: CF_LOG_LEVEL
       value: error
+    property:
+      name: FLYWAY_LOG_LEVEL
+      value: error
   appenders:
     Console:
       name: STDOUT
@@ -50,6 +53,11 @@ configuration:
         ref: STDOUT
     - name: cloudfoundry-client.response
       level: ${env:CF_LOG_LEVEL}
+      additivity: false
+      AppenderRef:
+        ref: STDOUT
+    - name: org.flywaydb.core
+      level: ${env:FLYWAY_LOG_LEVEL}
       additivity: false
       AppenderRef:
         ref: STDOUT
