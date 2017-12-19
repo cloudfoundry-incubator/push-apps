@@ -33,18 +33,18 @@ run:
           access_key_id: $S3_ACCESS_KEY
       EOF
 
-      pushd metrics-app-dev-release
-        CURRENT_BLOB=$(bosh blobs | grep push-apps | awk '{print $1}')
-        bosh remove-blob $CURRENT_BLOB
+      cd metrics-app-dev-release
+      CURRENT_BLOB=$(bosh blobs | grep push-apps | awk '{print $1}')
+      bosh remove-blob $CURRENT_BLOB
 
-        NEW_BLOB=$(basename $(ls ../push-apps-jar-output))
-        bosh add-blob ../push-apps-jar-output/push-apps-*.jar $NEW_BLOB
+      NEW_BLOB=$(basename $(ls ../push-apps-jar-output))
+      bosh add-blob ../push-apps-jar-output/push-apps-*.jar $NEW_BLOB
 
-        bosh upload-blobs
-        bosh sync-blobs
+      bosh upload-blobs
+      bosh sync-blobs
 
-        git add -A
-        git commit -m "update push-apps blob"
-      popd
+      git add -A
+      git commit -m "update push-apps blob"
+      cd ..
 
       rsync -a metrics-app-dev-release/ metrics-app-dev-release-bumped
