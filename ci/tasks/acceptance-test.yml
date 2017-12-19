@@ -12,10 +12,10 @@ params:
   INTEGRATION_HOST: "10.150.0.6"
   LOG_LEVEL: "debug"
   CF_LOG_LEVEL: "error"
-  CF_API:
-  CF_USERNAME:
-  CF_PASSWORD:
-  CF_DOMAIN:
+  CF_API: ((cf-api))
+  CF_USERNAME: ((cf-username))
+  CF_PASSWORD: ((cf-password))
+  CF_DOMAIN: ((cf-domain))
 run:
   path: bash
   args:
