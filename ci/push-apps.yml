@@ -61,9 +61,6 @@ jobs:
     - get: deployments-metrics
   - task: assemble
     file: push-apps/ci/tasks/assemble.yml
-    params:
-      S3_ACCESS_KEY: ((pcf-metrics-aws-access-key-id))
-      S3_SECRET_KEY: ((pcf-metrics-aws-secret-access-key))
   - put: push-apps-s3
     params:
       file: push-apps-jar-output/*.jar
@@ -73,6 +70,9 @@ jobs:
       rebase: true
   - task: upload-blob
     file: push-apps/ci/tasks/upload-blob.yml
+    params:
+      S3_ACCESS_KEY: ((pcf-metrics-aws-access-key-id))
+      S3_SECRET_KEY: ((pcf-metrics-aws-secret-access-key))
 
   - put: metrics-app-dev-release
     params:

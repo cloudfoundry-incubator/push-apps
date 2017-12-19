@@ -12,9 +12,6 @@ outputs:
   path: ""
 - name: push-apps-bumped
   path: ""
-params:
-  S3_ACCESS_KEY: ((pcf-metrics-aws-access-key-id))
-  S3_SECRET_KEY: ((pcf-metrics-aws-secret-access-key))
 run:
   path: bash
   args:
