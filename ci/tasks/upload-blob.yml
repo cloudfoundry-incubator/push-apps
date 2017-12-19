@@ -13,8 +13,8 @@ outputs:
 - name: metrics-app-dev-release-bumped
   path: ""
 params:
-  S3_ACCESS_KEY: ((pcf-metrics-aws-access-key-id))
-  S3_SECRET_KEY: ((pcf-metrics-aws-secret-access-key))
+  S3_ACCESS_KEY:
+  S3_SECRET_KEY:
 run:
   path: sh
   args:

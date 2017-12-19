@@ -8,14 +8,14 @@ image_resource:
 inputs:
 - name: built-push-apps
 params:
-  CF_API: ((cf-api))
-  CF_USERNAME: ((cf-username))
-  CF_PASSWORD: ((cf-password))
-  CF_DOMAIN: ((cf-domain))
   DOCKER_HOST: "10.150.0.6:4243"
   INTEGRATION_HOST: "10.150.0.6"
   LOG_LEVEL: "debug"
-  CF_LOG_LEVEL: "debug"
+  CF_LOG_LEVEL: "error"
+  CF_API:
+  CF_USERNAME:
+  CF_PASSWORD:
+  CF_DOMAIN:
 run:
   path: bash
   args:
