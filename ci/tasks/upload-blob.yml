@@ -16,11 +16,11 @@ params:
   S3_ACCESS_KEY:
   S3_SECRET_KEY:
 run:
-  path: sh
+  path: bash
   args:
     - -c
     - |
-      #!/bin/sh
+      #!/bin/bash
       set -ex
 
       source deployments-metrics/scripts/set-bosh-env.sh deployments-metrics/gcp-environments/versace
@@ -33,18 +33,18 @@ run:
           access_key_id: $S3_ACCESS_KEY
       EOF
 
-      cd metrics-app-dev-release
-      CURRENT_BLOB=$(bosh blobs | grep push-apps | awk '{print $1}')
-      bosh remove-blob $CURRENT_BLOB
+      pushd metrics-app-dev-release
+        CURRENT_BLOB=$(bosh blobs | grep push-apps | awk '{print $1}')
+        bosh remove-blob $CURRENT_BLOB
 
-      NEW_BLOB=$(basename $(ls ../push-apps-jar-output))
-      bosh add-blob ../push-apps-jar-output/push-apps-*.jar $NEW_BLOB
+        NEW_BLOB=$(basename $(ls ../push-apps-jar-output))
+        bosh add-blob ../push-apps-jar-output/push-apps-*.jar $NEW_BLOB
 
-      bosh upload-blobs
-      bosh sync-blobs
+        bosh upload-blobs
+        bosh sync-blobs
 
-      git add -A
-      git commit -m "update push-apps blob"
-      cd ..
+        git add -A
+        git commit -m "update push-apps blob"
+      popd
 
       rsync -a metrics-app-dev-release/ metrics-app-dev-release-bumped
