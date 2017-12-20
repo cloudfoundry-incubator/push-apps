@@ -1,0 +1,63 @@
+apply plugin: 'maven'
+apply plugin: 'signing'
+
+ext."signing.keyId" = System.getenv("PGP_SIGNING_KEY_ID")
+ext."signing.password" = System.getenv("PGP_SIGNING_KEY_PASSWORD")
+ext."signing.secretKeyRingFile" = System.getenv("PGP_SIGNING_KEY_RING_FILE")
+
+task javadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from javadoc
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+signing {
+    sign configurations.archives
+}
+
+def ossrhUsername
+def ossrhPassword
+task getCredentials {
+    ossrhUsername = System.getenv("OSSRH_USERNAME")
+    ossrhPassword = System.getenv("OSSRH_PASSWORD")
+}
+
+uploadArchives {
+    dependsOn("getCredentials")
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+
+            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+
+            pom.project {
+                name 'Push Apps'
+                packaging 'jar'
+                // optionally artifactId can be defined here
+                description 'A Jar to help developers push apps and create services on Cloud Foundry'
+                url 'https://github.com/cloudfoundry-incubator/push-apps'
+
+                scm {
+                    url 'https://github.com/cloudfoundry-incubator/push-apps.git'
+                }
+
+                licenses {
+                    license {
+                        name 'The Apache License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+            }
+        }
+    }
+}
