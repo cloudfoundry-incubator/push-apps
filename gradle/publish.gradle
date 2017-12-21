@@ -1,24 +1,23 @@
 apply plugin: 'com.jfrog.bintray'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
-apply plugin: 'java'
 
-task javadocJar(type: Jar, dependsOn: classes) {
-    classifier = 'javadoc'
-    from javadoc
+bintray {
+    user = getEnvOrThrow('BINTRAY_USER')
+    key = getEnvOrThrow('BINTRAY_API_KEY')
 }
 
-task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = 'sources'
-    from sourceSets.main.allSource
+private String getEnvOrThrow(String env) {
+    def envVar = System.getenv(env)
+
+    if (envVar == null) {
+        throw new GradleException("Must set $env env variable")
+    }
+
+    return envVar
 }
 
-artifacts {
-    archives sourcesJar
-    archives javadocJar
-}
-
-def pomConfig = {
+ext.pomConfig = {
     licenses {
         license {
             name "The Apache Software License, Version 2.0"
@@ -39,46 +38,3 @@ def pomConfig = {
         url "https://github.com/cloudfoundry-incubator/push-apps"
     }
 }
-
-def description = 'A jar that helps automated deployments of applications to Cloud Foundry.'
-
-publishing {
-    publications {
-        PushAppsPublication(MavenPublication) {
-            from components.java
-            artifact sourcesJar
-            artifact javadocJar
-            groupId 'org.cloudfoundry.tools'
-            artifactId 'push-apps'
-            version pushAppsVersion
-            pom.withXml {
-                def root = asNode()
-                root.appendNode('description', description)
-                root.appendNode('name', 'Push Apps')
-                root.appendNode('url', 'https://github.com/cloudfoundry-incubator/push-apps')
-                root.children().last() + pomConfig
-            }
-        }
-    }
-}
-
-bintray {
-    user = System.getenv('BINTRAY_USER')
-    key = System.getenv('BINTRAY_API_KEY')
-    publications = ['PushAppsPublication']
-    pkg {
-        repo = 'maven'
-        name = 'push-apps'
-        userOrg = user
-        licenses = ['Apache-2.0']
-        vcsUrl = 'https://github.com/cloudfoundry-incubator/push-apps.git'
-        labels = ['cf', 'cloudfoundry']
-        publicDownloadNumbers = true
-        version {
-            name = pushAppsVersion
-            desc = description
-            released = new Date()
-        }
-    }
-}
-

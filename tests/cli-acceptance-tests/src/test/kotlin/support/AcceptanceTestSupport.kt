@@ -253,19 +253,17 @@ class AcceptanceTestSupport {
         val inputStream: InputStream = File("$pushAppsRootDir/gradle/version.gradle").inputStream()
         val versionFileString = inputStream.bufferedReader().use { it.readText() }
 
-        val version = versionFileString.removePrefix("version = '").removeSuffix("'\n")
+        val version = versionFileString.removePrefix("ext.pushAppsVersion = '").removeSuffix("'\n")
 
         val pushAppsCommand = mutableListOf("java")
 
-        if (debug) pushAppsCommand.addAll(
-            listOf(
-                "-agentlib:jdwp=transport=dt_socket,server=n,address=127.0.0.1:5005,suspend=y"
-            )
+        if (debug) pushAppsCommand.add(
+            "-agentlib:jdwp=transport=dt_socket,server=n,address=127.0.0.1:5005,suspend=y"
         )
 
         pushAppsCommand.addAll(
             listOf("-jar",
-                "$pushAppsRootDir/applications/cli/build/libs/push-apps-$version.jar",
+                "$pushAppsRootDir/applications/cli/build/libs/push-apps-standalone-$version.jar",
                 "-c",
                 configFilePath
             )

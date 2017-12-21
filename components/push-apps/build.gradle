@@ -1,8 +1,7 @@
 apply from: "$rootProject.rootDir/gradle/kotlin.gradle"
-apply from: "$rootProject.rootDir/gradle/idea.gradle"
+apply from: "$rootProject.rootDir/gradle/publish.gradle"
 
 dependencies {
-    compile 'com.beust:jcommander:1.72'
     compile 'org.cloudfoundry:cloudfoundry-client-reactor:3.3.0.RELEASE'
     compile 'org.cloudfoundry:cloudfoundry-operations:3.3.0.RELEASE'
     compile 'io.projectreactor:reactor-core:3.1.2.RELEASE'
@@ -15,4 +14,70 @@ dependencies {
     compile 'mysql:mysql-connector-java:5.1.6'
     compile 'org.postgresql:postgresql:42.1.4'
     compile 'org.apache.commons:commons-io:1.3.2'
+}
+
+jar {
+    baseName "push-apps"
+    version pushAppsVersion
+}
+
+task javadocJar(type: Jar, dependsOn: classes) {
+    baseName "push-apps"
+    classifier = 'javadoc'
+    version version
+    from javadoc
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    baseName "push-apps"
+    classifier = 'sources'
+    version version
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}
+
+def description = 'A library that helps automate deployments of applications to Cloud Foundry.'
+
+afterEvaluate {
+    publishing {
+        publications {
+            PushApps(MavenPublication) {
+                from components.java
+                artifact sourcesJar
+                artifact javadocJar
+                groupId 'org.cloudfoundry.tools'
+                artifactId 'push-apps'
+                version pushAppsVersion
+                pom.withXml {
+                    def root = asNode()
+                    root.appendNode('description', description)
+                    root.appendNode('name', 'Push Apps')
+                    root.appendNode('url', 'https://github.com/cloudfoundry-incubator/push-apps')
+                    root.children().last() + pomConfig
+                }
+            }
+        }
+    }
+}
+
+bintray {
+    publications = ['PushApps']
+    pkg {
+        repo = 'maven'
+        name = 'push-apps'
+        userOrg = user
+        licenses = ['Apache-2.0']
+        vcsUrl = 'https://github.com/cloudfoundry-incubator/push-apps.git'
+        labels = ['cf', 'cloudfoundry']
+        publicDownloadNumbers = true
+        version {
+            name = pushAppsVersion
+            desc = description
+            released = new Date()
+        }
+    }
 }

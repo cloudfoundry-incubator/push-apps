@@ -18,7 +18,20 @@ buildscript {
 }
 
 apply from: "$rootProject.rootDir/gradle/version.gradle"
-apply from: "$rootProject.rootDir/gradle/idea.gradle"
+
+allprojects {
+    apply plugin: 'java'
+    apply from: "$rootProject.rootDir/gradle/version.gradle"
+    apply from: "$rootProject.rootDir/gradle/idea.gradle"
+
+    repositories {
+        jcenter()
+        mavenCentral()
+    }
+
+    group = 'org.cloudfoundry.tools'
+    version = pushAppsVersion
+}
 
 task wrapper(type: Wrapper) {
     gradleVersion = '4.3.1'

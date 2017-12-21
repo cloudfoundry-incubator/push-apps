@@ -1,7 +1,5 @@
 apply from: "$rootProject.rootDir/gradle/kotlin.gradle"
 apply from: "$rootProject.rootDir/gradle/test.gradle"
-apply from: "$rootProject.rootDir/gradle/version.gradle"
-apply from: "$rootProject.rootDir/gradle/idea.gradle"
 apply from: "$rootProject.rootDir/gradle/publish.gradle"
 
 apply plugin: 'java'
@@ -10,6 +8,7 @@ apply plugin: 'application'
 dependencies {
     compile project(":components:push-apps")
 
+    compile 'com.beust:jcommander:1.72'
     compile 'org.apache.logging.log4j:log4j-slf4j-impl:2.9.1'
     compile 'org.apache.logging.log4j:log4j-core:2.9.1'
 }
@@ -25,6 +24,68 @@ jar {
     // files or particular types at will
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
 
-    baseName = "push-apps"
-    version = version
+    baseName "push-apps-standalone"
+    version pushAppsVersion
+}
+
+task javadocJar(type: Jar, dependsOn: classes) {
+    classifier = 'javadoc'
+    baseName "push-apps-standalone"
+    version version
+    from javadoc
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    baseName "push-apps-standalone"
+    version version
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives jar
+    archives sourcesJar
+    archives javadocJar
+}
+
+def description = 'A standalone JAR that helps automate deployments of applications to Cloud Foundry.'
+
+afterEvaluate {
+    publishing {
+        publications {
+            PushAppsStandalone(MavenPublication) {
+                artifact jar
+                artifact sourcesJar
+                artifact javadocJar
+                groupId 'org.cloudfoundry.tools'
+                artifactId 'push-apps-standalone'
+                version pushAppsVersion
+                pom.withXml {
+                    def root = asNode()
+                    root.appendNode('description', description)
+                    root.appendNode('name', 'Push Apps Standalone')
+                    root.appendNode('url', 'https://github.com/cloudfoundry-incubator/push-apps')
+                    root.children().last() + pomConfig
+                }
+            }
+        }
+    }
+}
+
+bintray {
+    publications = ['PushAppsStandalone']
+    pkg {
+        repo = 'maven'
+        name = 'push-apps-standalone'
+        userOrg = user
+        licenses = ['Apache-2.0']
+        vcsUrl = 'https://github.com/cloudfoundry-incubator/push-apps.git'
+        labels = ['cf', 'cloudfoundry']
+        publicDownloadNumbers = true
+        version {
+            name = pushAppsVersion
+            desc = description
+            released = new Date()
+        }
+    }
 }
