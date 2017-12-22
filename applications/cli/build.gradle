@@ -1,3 +1,5 @@
+import groovy.json.JsonSlurper
+
 apply from: "$rootProject.rootDir/gradle/kotlin.gradle"
 apply from: "$rootProject.rootDir/gradle/test.gradle"
 apply from: "$rootProject.rootDir/gradle/publish.gradle"
@@ -87,5 +89,73 @@ bintray {
             desc = description
             released = new Date()
         }
+    }
+}
+
+//noinspection GroovyAssignabilityCheck
+task publishUploadedStandaloneArchives {
+    doLast {
+        def bintrayApiKey = getEnvOrThrow('BINTRAY_API_KEY')
+
+        def publishUploadedArtifact = [
+                'curl',
+                '-u',
+                "trevorwhitney:$bintrayApiKey",
+                '-X', 'POST',
+                "https://api.bintray.com/content/trevorwhitney/maven/push-apps-standalone/$pushAppsVersion/publish",
+        ].execute()
+
+        def publishUploadedArtifactJson = new JsonSlurper().parseText(publishUploadedArtifact.text)
+
+        println("Publishing uploaded push-apps-standalone artifacts: $publishUploadedArtifactJson")
+    }
+}
+
+//noinspection GroovyAssignabilityCheck
+task signStandaloneArtifacts {
+    doLast {
+        def bintrayApiKey = getEnvOrThrow('BINTRAY_API_KEY')
+        def bintrayGpgPassphrase = getEnvOrThrow('BINTRAY_GPG_PASSPHRASE')
+
+        def pushAppsStandalone = [
+                'curl',
+                '-u',
+                "trevorwhitney:$bintrayApiKey",
+                '-X', 'POST',
+                "https://api.bintray.com/gpg/trevorwhitney/maven/push-apps-standalone/versions/$pushAppsVersion",
+                '-H',
+                "X-GPG-PASSPHRASE: $bintrayGpgPassphrase"
+        ].execute()
+
+        def pushAppsStandaloneJson = new JsonSlurper().parseText(pushAppsStandalone.text)
+
+        println("Signing push-apps-standalone: $pushAppsStandaloneJson")
+    }
+}
+
+//noinspection GroovyAssignabilityCheck
+task syncStandaloneToMavenCentral {
+    doLast {
+        def bintrayApiKey = getEnvOrThrow('BINTRAY_API_KEY')
+        def mavenCentralTokenUser = getEnvOrThrow('MAVEN_CENTRAL_TOKEN_USER')
+        def mavenCentralTokenPassword = getEnvOrThrow('MAVEN_CENTRAL_TOKEN_PASSWORD')
+
+        def syncPushAppsStandalone = [
+                'curl',
+                '-u',
+                "trevorwhitney:$bintrayApiKey",
+                '-X',
+                'POST',
+                "https://api.bintray.com/maven_central_sync/trevorwhitney/maven/push-apps-standalone/versions/$pushAppsVersion",
+                '-d',
+                "{\"username\": \"$mavenCentralTokenUser\",\"password\": \"$mavenCentralTokenPassword\", \"close\": \"1\"}",
+                '-H',
+                "Content-Type: application/json",
+                "-H",
+                "Accept: application/json"
+        ].execute()
+
+        def syncPushAppsStandaloneJson = new JsonSlurper().parseText(syncPushAppsStandalone.text)
+        println("Sycning push-apps-standalone to maven central: $syncPushAppsStandaloneJson")
     }
 }

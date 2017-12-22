@@ -60,3 +60,26 @@ class UpdatePatchVersionTask extends DefaultTask {
         versionFile.text = versionStringParts.join(".")
     }
 }
+
+//noinspection GroovyAssignabilityCheck
+task publishUploadedBintrayArtifactes {
+    dependsOn(":components:push-apps:publishUploadedLibraryArchives", ":applications:cli:publishUploadedStandaloneArchives")
+}
+//noinspection GroovyAssignabilityCheck
+task signBintrayArtifacts {
+    dependsOn(":components:push-apps:signLibraryArtifacts", ":applications:cli:signStandaloneArtifacts")
+}
+//noinspection GroovyAssignabilityCheck
+task syncArtifactsToMavenCentral {
+    dependsOn(":components:push-apps:syncLibraryToMavenCentral", ":applications:cli:syncStandaloneToMavenCentral")
+}
+
+static String getEnvOrThrow(String env) {
+    def envVar = System.getenv(env)
+
+    if (envVar == null) {
+        throw new GradleException("Must set $env env variable")
+    }
+
+    return envVar
+}

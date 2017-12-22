@@ -7,16 +7,6 @@ bintray {
     key = getEnvOrThrow('BINTRAY_API_KEY')
 }
 
-private String getEnvOrThrow(String env) {
-    def envVar = System.getenv(env)
-
-    if (envVar == null) {
-        throw new GradleException("Must set $env env variable")
-    }
-
-    return envVar
-}
-
 ext.pomConfig = {
     licenses {
         license {
