@@ -22,6 +22,11 @@ ext.pomConfig = {
             name "Trevor Whitney"
             email "twhitney@pivotal.io"
         }
+        developer {
+            id "maxeshleman"
+            name "Max Eshleman"
+            email "meshleman@pivotal.io"
+        }
     }
 
     scm {
