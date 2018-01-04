@@ -2,6 +2,7 @@ build
 .gradle
 .idea
 .envrc
+*.iml
 config.yml
 out
 tests/cli-acceptance-tests/src/test/kotlin/support/goodbyeapp/*
