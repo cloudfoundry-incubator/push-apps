@@ -16,7 +16,7 @@ java -jar "applications/cli/build/libs/push-apps-${version}.jar" -c config.yml
 
 Push Apps is configured using a YAML configuration file. Below is an example,
 we will try to keep this up to date, but just in case, you should be able to use
-the types is the [ConfigReader.kt](components/push-apps/src/main/kotlin/io/pivotal/pushapps/ConfigReader.kt) 
+the types is the [ConfigReader.kt](components/push-apps/src/main/kotlin/org/cloudfoundry/tools/pushapps/ConfigReader.kt) 
 class to determine the type it is expecting for each field, and which are and are not required.
 
 ```yaml
@@ -33,19 +33,19 @@ cf: #required hash
   organization: dewey #required
   space: outer #required
   skipSslValidation: true #optional, default false
-  dialTimeoutInMillis: #optional
+  dialTimeoutInMillis: #optional, CF default
 apps: #required array
 - name: backend #required
   path: "/var/vcap/packages/metrics-data/backend.zip" #required
-  buildpack: binary_buildpack #optional
-  healthCheckType: none #optional
-  instances: 2 #optional
-  memory: 4096 #optional
-  noRoute: true #optional
-  blueGreenDeploy: true #optional
-  command: "./backend/backend" #optional
-  domain: "cfapps.example.com" #optional
-  timeout: 180 #optional
+  buildpack: binary_buildpack #optional, CF default
+  healthCheckType: none #optional, CF default
+  instances: 2 #optional, CF default
+  memory: 4096 #optional, CF default
+  noRoute: true #optional, CF default
+  blueGreenDeploy: true #optional, default false
+  command: "./backend/backend" #optional, CF default
+  domain: "cfapps.example.com" #optional, required if route is provided
+  timeout: 180 #optional, CF default
   environment: #optional hash
     MYSQL_HOSTS: 127.0.0.1
     MYSQL_USER: admin
@@ -55,15 +55,18 @@ apps: #required array
   - "metrics_forwarder"
 - name: frontent #required
   path: "/var/vcap/packages/metrics-data/frontend.zip" #required
-  buildpack: binary_buildpack #optional
-  healthCheckType: none #optional
-  instances: 2 #optional
-  memory: 4096 #optional
-  noRoute: true #optional
-  blueGreenDeploy: true #optional
-  command: "./frontend/frontend" #optional
-  domain: "cfapps.example.com" #optional
-  timeout: 180 #optional
+  buildpack: binary_buildpack #optional, CF default
+  healthCheckType: none #optional, CF default
+  instances: 2 #optional, CF default
+  memory: 4096 #optional, CF default
+  noRoute: true #optional, CF default
+  blueGreenDeploy: true #optional, default false
+  command: "./frontend/frontend" #optional, CF default
+  domain: "cfapps.example.com" #optional, required if route is provided, required if route is provided
+  timeout: 180 #optional, CF default
+  route: #optional hash
+    hostname: some-app
+    path: /api/v1 #optional, default null
   environment: #optional hash
     MYSQL_HOSTS: 127.0.0.1
     MYSQL_USER: admin
