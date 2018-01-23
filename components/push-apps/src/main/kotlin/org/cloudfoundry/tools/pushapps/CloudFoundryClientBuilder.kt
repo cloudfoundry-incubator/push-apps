@@ -1,16 +1,18 @@
 package org.cloudfoundry.tools.pushapps
 
 import org.cloudfoundry.operations.CloudFoundryOperations
+import org.cloudfoundry.tools.pushapps.config.DEFAULT_OPERATION_RETRY_COUNT
+import org.cloudfoundry.tools.pushapps.config.DEFAULT_OPERATION_TIMEOUT
 
 fun cloudFoundryClientBuilder(): CloudFoundryClientBuilder {
     return CloudFoundryClientBuilder()
 }
 
 class CloudFoundryClientBuilder(
-    private var cloudFoundryOperationsBuilder: CloudFoundryOperationsBuilder = cloudFoundryOperationsBuilder(),
-    var cloudFoundryOperations: CloudFoundryOperations? = null,
-    var operationTimeoutInMinutes: Long = DEFAULT_OPERATION_TIMEOUT,
-    var retryCount: Int = DEFAULT_OPERATION_RETRY_COUNT
+        private var cloudFoundryOperationsBuilder: CloudFoundryOperationsBuilder = cloudFoundryOperationsBuilder(),
+        var cloudFoundryOperations: CloudFoundryOperations? = null,
+        var operationTimeoutInMinutes: Long = DEFAULT_OPERATION_TIMEOUT,
+        var retryCount: Int = DEFAULT_OPERATION_RETRY_COUNT
 ) {
     fun build(): CloudFoundryClient {
         val cfOperations = cloudFoundryOperations

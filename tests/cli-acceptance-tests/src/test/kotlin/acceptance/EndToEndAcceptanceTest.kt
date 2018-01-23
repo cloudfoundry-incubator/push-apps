@@ -10,6 +10,7 @@ import org.cloudfoundry.operations.applications.GetApplicationRequest
 import org.cloudfoundry.operations.routes.Level
 import org.cloudfoundry.operations.routes.ListRoutesRequest
 import org.cloudfoundry.tools.pushapps.*
+import org.cloudfoundry.tools.pushapps.config.*
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.context
 import org.jetbrains.spek.api.dsl.describe
@@ -24,21 +25,21 @@ class EndToEndAcceptanceTest : Spek({
             val acceptanceTestSupport = AcceptanceTestSupport()
 
             val complimentService = UserProvidedServiceConfig(
-                name = "compliment-service",
-                credentials = mapOf("compliment" to "handsome")
+                    name = "compliment-service",
+                    credentials = mapOf("compliment" to "handsome")
             )
 
             val metricsForwarderService = ServiceConfig(
-                name = "my-mf-service",
-                plan = "unlimited",
-                broker = "metrics-forwarder"
+                    name = "my-mf-service",
+                    plan = "unlimited",
+                    broker = "metrics-forwarder"
             )
 
             val optionalService = ServiceConfig(
-                name = "optional-service",
-                plan = "some-plan",
-                broker = "something-that-does-not-exist",
-                optional = true
+                    name = "optional-service",
+                    plan = "some-plan",
+                    broker = "something-that-does-not-exist",
+                    optional = true
             )
 
 
@@ -47,21 +48,21 @@ class EndToEndAcceptanceTest : Spek({
             )
 
             val helloApp = AppConfig(
-                name = "hello",
-                path = helloAppJar,
-                environment = mapOf(
-                    "NAME" to "Steve",
-                    "VERB" to "walk",
-                    "ANIMAL_TYPE" to "dog",
-                    "ANIMAL_NAME" to "Sally",
-                    "HOUR" to "12",
-                    "MINUTE" to "15"
-                ),
-                serviceNames = listOf(
-                    "compliment-service",
-                    "my-mf-service",
-                    "optional-service"
-                )
+                    name = "hello",
+                    path = helloAppJar,
+                    environment = mapOf(
+                            "NAME" to "Steve",
+                            "VERB" to "walk",
+                            "ANIMAL_TYPE" to "dog",
+                            "ANIMAL_NAME" to "Sally",
+                            "HOUR" to "12",
+                            "MINUTE" to "15"
+                    ),
+                    serviceNames = listOf(
+                            "compliment-service",
+                            "my-mf-service",
+                            "optional-service"
+                    )
             )
 
             val goodbyeAppJar = FilenameUtils.normalize(
@@ -69,45 +70,45 @@ class EndToEndAcceptanceTest : Spek({
             )
 
             val blueGreenApp = AppConfig(
-                name = "generic",
-                path = goodbyeAppJar,
-                environment = mapOf(
-                    "NAME" to "BLUE OR GREEN"
-                ),
-                noRoute = true,
-                domain = getCfDomain(),
-                route = Route(
-                    hostname = "generic"
-                ),
-                blueGreenDeploy = true
+                    name = "generic",
+                    path = goodbyeAppJar,
+                    environment = mapOf(
+                            "NAME" to "BLUE OR GREEN"
+                    ),
+                    noRoute = true,
+                    domain = getCfDomain(),
+                    route = Route(
+                            hostname = "generic"
+                    ),
+                    blueGreenDeploy = true
             )
 
             val mysqlMigration = Migration(
-                host = acceptanceTestSupport.getEnvOrDefault("INTEGRATION_HOST", "127.0.0.1"),
-                port = "3338",
-                user = "root",
-                password = "supersecret",
-                schema = "new_db",
-                driver = DatabaseDriver.MySql(),
-                migrationDir = "${acceptanceTestSupport.acceptanceTestProjectDir}/src/test/kotlin/support/dbmigrations",
-                repair = false
+                    host = acceptanceTestSupport.getEnvOrDefault("INTEGRATION_HOST", "127.0.0.1"),
+                    port = "3338",
+                    user = "root",
+                    password = "supersecret",
+                    schema = "new_db",
+                    driver = DatabaseDriver.MySql(),
+                    migrationDir = "${acceptanceTestSupport.acceptanceTestProjectDir}/src/test/kotlin/support/dbmigrations",
+                    repair = false
             )
 
             val pgMigration = Migration(
-                host = acceptanceTestSupport.getEnvOrDefault("INTEGRATION_HOST", "127.0.0.1"),
-                port = "6442",
-                user = "metrics",
-                password = "metrics_secret",
-                schema = "metrics",
-                driver = DatabaseDriver.Postgres(),
-                migrationDir = "${acceptanceTestSupport.acceptanceTestProjectDir}/src/test/kotlin/support/dbmigrations",
-                repair = false
+                    host = acceptanceTestSupport.getEnvOrDefault("INTEGRATION_HOST", "127.0.0.1"),
+                    port = "6442",
+                    user = "metrics",
+                    password = "metrics_secret",
+                    schema = "metrics",
+                    driver = DatabaseDriver.Postgres(),
+                    migrationDir = "${acceptanceTestSupport.acceptanceTestProjectDir}/src/test/kotlin/support/dbmigrations",
+                    repair = false
             )
 
             val securityGroup = SecurityGroup(
-                name = "some-name",
-                destination = "0.0.0.0-255.255.255.255",
-                protocol = "all"
+                    name = "some-name",
+                    destination = "0.0.0.0-255.255.255.255",
+                    protocol = "all"
             )
 
             var acceptanceTestContext: AcceptanceTestContext? = null

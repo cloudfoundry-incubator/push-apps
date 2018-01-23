@@ -7,6 +7,10 @@ import org.cloudfoundry.operations.applications.ApplicationSummary
 import org.cloudfoundry.operations.routes.MapRouteRequest
 import org.cloudfoundry.operations.routes.UnmapRouteRequest
 import org.cloudfoundry.tools.pushapps.*
+import org.cloudfoundry.tools.pushapps.config.AppConfig
+import org.cloudfoundry.tools.pushapps.config.Route
+import org.cloudfoundry.tools.pushapps.config.ServiceConfig
+import org.cloudfoundry.tools.pushapps.config.UserProvidedServiceConfig
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
@@ -17,45 +21,45 @@ import java.nio.file.Paths
 class DeployAppTest : Spek({
     describe("pushApps interacts with applications by") {
         val helloApp = AppConfig(
-            name = "hello",
-            path = "$workingDir/src/test/kotlin/support/helloapp.zip",
-            buildpack = "binary_buildpack",
-            command = "./helloapp",
-            environment = mapOf(
-                "NAME" to "Steve"
-            )
+                name = "hello",
+                path = "$workingDir/src/test/kotlin/support/helloapp.zip",
+                buildpack = "binary_buildpack",
+                command = "./helloapp",
+                environment = mapOf(
+                        "NAME" to "Steve"
+                )
         )
 
         val goodbyeApp = AppConfig(
-            name = "goodbye",
-            path = "$workingDir/src/test/kotlin/support/goodbyeapp.zip",
-            buildpack = "binary_buildpack",
-            command = "./goodbyeapp",
-            noRoute = true,
-            domain = "example.com",
-            route = Route(
-                hostname = "oranges",
-                path = "/v1"
-            ),
-            environment = mapOf(
-                "NAME" to "George"
-            )
+                name = "goodbye",
+                path = "$workingDir/src/test/kotlin/support/goodbyeapp.zip",
+                buildpack = "binary_buildpack",
+                command = "./goodbyeapp",
+                noRoute = true,
+                domain = "example.com",
+                route = Route(
+                        hostname = "oranges",
+                        path = "/v1"
+                ),
+                environment = mapOf(
+                        "NAME" to "George"
+                )
         )
 
         val blueGreenApp = AppConfig(
-            name = "generic",
-            path = "$workingDir/src/test/kotlin/support/goodbyeapp.zip",
-            buildpack = "binary_buildpack",
-            command = "./goodbyeapp",
-            environment = mapOf(
-                "NAME" to "BLUE OR GREEN"
-            ),
-            noRoute = true,
-            domain = "example.com",
-            route = Route(
-                hostname = "generic"
-            ),
-            blueGreenDeploy = true
+                name = "generic",
+                path = "$workingDir/src/test/kotlin/support/goodbyeapp.zip",
+                buildpack = "binary_buildpack",
+                command = "./goodbyeapp",
+                environment = mapOf(
+                        "NAME" to "BLUE OR GREEN"
+                ),
+                noRoute = true,
+                domain = "example.com",
+                route = Route(
+                        hostname = "generic"
+                ),
+                blueGreenDeploy = true
         )
 
         it("pushing every application in the config file") {
@@ -91,20 +95,20 @@ class DeployAppTest : Spek({
 
         it("setting the env vars on the app") {
             val appsWithEnvs = AppConfig(
-                name = "best-app",
-                path = "omfgdogs.com",
-                buildpack = "binary_buildpack",
-                command = "./doges",
-                environment = mapOf(
-                    "DISNEY" to "Zootopia",
-                    "PIXAR" to "Finding Dory",
-                    "DREAMWORKS" to "How to Train Your Dragon"
-                ),
-                serviceNames = listOf(
-                    "compliment-service",
-                    "my-mf-service",
-                    "optional-service"
-                )
+                    name = "best-app",
+                    path = "omfgdogs.com",
+                    buildpack = "binary_buildpack",
+                    command = "./doges",
+                    environment = mapOf(
+                            "DISNEY" to "Zootopia",
+                            "PIXAR" to "Finding Dory",
+                            "DREAMWORKS" to "How to Train Your Dragon"
+                    ),
+                    serviceNames = listOf(
+                            "compliment-service",
+                            "my-mf-service",
+                            "optional-service"
+                    )
             )
 
             val tc = buildTestContext(
@@ -144,26 +148,26 @@ class DeployAppTest : Spek({
 
         it("creating and binding requested services") {
             val dogService = UserProvidedServiceConfig(
-                name = "dog-walking-service",
-                credentials = mapOf("alan" to "walker")
+                    name = "dog-walking-service",
+                    credentials = mapOf("alan" to "walker")
             )
 
             val catService = ServiceConfig(
-                name = "my-cat-service",
-                plan = "scratches",
-                broker = "cat-service",
-                optional = true
+                    name = "my-cat-service",
+                    plan = "scratches",
+                    broker = "cat-service",
+                    optional = true
             )
 
             val appsWithServices = AppConfig(
-                name = "best-app",
-                path = "omfgdogs.com",
-                buildpack = "binary_buildpack",
-                command = "./doges",
-                serviceNames = listOf(
-                    "my-cat-service",
-                    "dog-walking-service"
-                )
+                    name = "best-app",
+                    path = "omfgdogs.com",
+                    buildpack = "binary_buildpack",
+                    command = "./doges",
+                    serviceNames = listOf(
+                            "my-cat-service",
+                            "dog-walking-service"
+                    )
             )
 
             val tc = buildTestContext(
@@ -306,54 +310,54 @@ class DeployAppTest : Spek({
         it("retries failed deployments correctly when the number of deployments is higher than maxInFlight count") {
             //max in flight of 2, deploy 3 apps, have 2nd app fail 2 times
             val blueGreenGoodbye1 = AppConfig(
-                name = "goodbye",
-                path = "$workingDir/src/test/kotlin/support/goodbyeapp.zip",
-                buildpack = "binary_buildpack",
-                command = "./goodbyeapp",
-                environment = mapOf(
-                    "NAME" to "BLUE OR GREEN",
-                    "TRUTH" to "OUT THERE"
-                ),
-                noRoute = true,
-                domain = "example.com",
-                route = Route(
-                    hostname = "generic"
-                ),
-                blueGreenDeploy = true
+                    name = "goodbye",
+                    path = "$workingDir/src/test/kotlin/support/goodbyeapp.zip",
+                    buildpack = "binary_buildpack",
+                    command = "./goodbyeapp",
+                    environment = mapOf(
+                            "NAME" to "BLUE OR GREEN",
+                            "TRUTH" to "OUT THERE"
+                    ),
+                    noRoute = true,
+                    domain = "example.com",
+                    route = Route(
+                            hostname = "generic"
+                    ),
+                    blueGreenDeploy = true
             )
 
             val blueGreenGoodbye2 = AppConfig(
-                name = "shalom",
-                path = "$workingDir/src/test/kotlin/support/goodbyeapp.zip",
-                buildpack = "binary_buildpack",
-                command = "./goodbyeapp",
-                environment = mapOf(
-                    "NAME" to "BLUE OR GREEN",
-                    "HELLO" to "WORLD"
-                ),
-                noRoute = true,
-                domain = "example.com",
-                route = Route(
-                    hostname = "generic"
-                ),
-                blueGreenDeploy = true
+                    name = "shalom",
+                    path = "$workingDir/src/test/kotlin/support/goodbyeapp.zip",
+                    buildpack = "binary_buildpack",
+                    command = "./goodbyeapp",
+                    environment = mapOf(
+                            "NAME" to "BLUE OR GREEN",
+                            "HELLO" to "WORLD"
+                    ),
+                    noRoute = true,
+                    domain = "example.com",
+                    route = Route(
+                            hostname = "generic"
+                    ),
+                    blueGreenDeploy = true
             )
 
             val blueGreenHello = AppConfig(
-                name = "hello",
-                path = "$workingDir/src/test/kotlin/support/helloapp.zip",
-                buildpack = "binary_buildpack",
-                command = "./helloapp",
-                environment = mapOf(
-                    "NAME" to "BLUE OR GREEN",
-                    "RED_FISH" to "BLUE_FISH"
-                ),
-                noRoute = true,
-                domain = "example.com",
-                route = Route(
-                    hostname = "generic"
-                ),
-                blueGreenDeploy = true
+                    name = "hello",
+                    path = "$workingDir/src/test/kotlin/support/helloapp.zip",
+                    buildpack = "binary_buildpack",
+                    command = "./helloapp",
+                    environment = mapOf(
+                            "NAME" to "BLUE OR GREEN",
+                            "RED_FISH" to "BLUE_FISH"
+                    ),
+                    noRoute = true,
+                    domain = "example.com",
+                    route = Route(
+                            hostname = "generic"
+                    ),
+                    blueGreenDeploy = true
             )
 
             val tc = buildTestContext(

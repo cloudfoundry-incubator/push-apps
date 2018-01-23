@@ -40,7 +40,7 @@ apps: #required array
   buildpack: binary_buildpack #optional, CF default
   healthCheckType: none #optional, CF default
   instances: 2 #optional, CF default
-  memory: 4096 #optional, CF default
+  memory: 4096M #optional, CF default
   noRoute: true #optional, CF default
   blueGreenDeploy: true #optional, default false
   command: "./backend/backend" #optional, CF default
@@ -58,7 +58,7 @@ apps: #required array
   buildpack: binary_buildpack #optional, CF default
   healthCheckType: none #optional, CF default
   instances: 2 #optional, CF default
-  memory: 4096 #optional, CF default
+  memory: 4G #optional, CF default
   noRoute: true #optional, CF default
   blueGreenDeploy: true #optional, default false
   command: "./frontend/frontend" #optional, CF default

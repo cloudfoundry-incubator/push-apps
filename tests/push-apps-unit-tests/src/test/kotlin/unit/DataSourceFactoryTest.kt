@@ -6,6 +6,8 @@ import com.nhaarman.mockito_kotlin.verifyNoMoreInteractions
 import com.nhaarman.mockito_kotlin.whenever
 import org.assertj.core.api.Assertions.assertThat
 import org.cloudfoundry.tools.pushapps.*
+import org.cloudfoundry.tools.pushapps.config.DatabaseDriver
+import org.cloudfoundry.tools.pushapps.config.Migration
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.context
 import org.jetbrains.spek.api.dsl.describe
@@ -30,14 +32,14 @@ class DataSourceFactoryTest : Spek({
                 whenever(mySqlDataSourceBuilder.build()).thenReturn(mysqlDataSource)
 
                 val migration = Migration(
-                    driver = DatabaseDriver.MySql(),
-                    port = "42",
-                    host = "localhost",
-                    schema = "metrics",
-                    user = "metrics",
-                    password = "secret",
-                    migrationDir = "/tmp",
-                    repair = false
+                        driver = DatabaseDriver.MySql(),
+                        port = "42",
+                        host = "localhost",
+                        schema = "metrics",
+                        user = "metrics",
+                        password = "secret",
+                        migrationDir = "/tmp",
+                        repair = false
                 )
 
                 val dataSourceFactory = DataSourceFactory(
@@ -58,9 +60,9 @@ class DataSourceFactoryTest : Spek({
 
         context("when database driver is postgres") {
             data class PostgresTestContext(
-                val migration: Migration,
-                val postgresDataSource: PGSimpleDataSource,
-                val dataSourceFactory: DataSourceFactory
+                    val migration: Migration,
+                    val postgresDataSource: PGSimpleDataSource,
+                    val dataSourceFactory: DataSourceFactory
             )
 
             fun buildPostgresTextContext(
@@ -71,14 +73,14 @@ class DataSourceFactoryTest : Spek({
                 whenever(postgresDataSourceBuilder.build()).thenReturn(postgresDataSource)
 
                 val migration = Migration(
-                    driver = DatabaseDriver.Postgres(),
-                    port = "42",
-                    host = "localhost",
-                    schema = "metrics",
-                    user = "metrics",
-                    password = "secret",
-                    migrationDir = "/tmp",
-                    repair = false
+                        driver = DatabaseDriver.Postgres(),
+                        port = "42",
+                        host = "localhost",
+                        schema = "metrics",
+                        user = "metrics",
+                        password = "secret",
+                        migrationDir = "/tmp",
+                        repair = false
                 )
 
                 val dataSourceFactory = DataSourceFactory(
@@ -129,14 +131,14 @@ class DataSourceFactoryTest : Spek({
             whenever(mySqlDataSourceBuilder.build()).thenReturn(newDataSource)
 
             val migration = Migration(
-                driver = DatabaseDriver.MySql(),
-                port = "42",
-                host = "localhost",
-                schema = "metrics",
-                user = "metrics",
-                password = "secret",
-                migrationDir = "/tmp",
-                repair = false
+                    driver = DatabaseDriver.MySql(),
+                    port = "42",
+                    host = "localhost",
+                    schema = "metrics",
+                    user = "metrics",
+                    password = "secret",
+                    migrationDir = "/tmp",
+                    repair = false
             )
 
             var passedDataSource: DataSource? = null
@@ -163,14 +165,14 @@ class DataSourceFactoryTest : Spek({
             whenever(mySqlDataSourceBuilder.build()).thenReturn(newDataSource)
 
             val migration = Migration(
-                driver = DatabaseDriver.MySql(),
-                port = "42",
-                host = "localhost",
-                schema = "metrics",
-                user = "metrics",
-                password = "secret",
-                migrationDir = "/tmp",
-                repair = false
+                    driver = DatabaseDriver.MySql(),
+                    port = "42",
+                    host = "localhost",
+                    schema = "metrics",
+                    user = "metrics",
+                    password = "secret",
+                    migrationDir = "/tmp",
+                    repair = false
             )
 
             val dataSourceFactory = DataSourceFactory(

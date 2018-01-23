@@ -17,6 +17,7 @@ import org.cloudfoundry.operations.services.Services
 import org.cloudfoundry.operations.spaces.SpaceDetail
 import org.cloudfoundry.operations.spaces.Spaces
 import org.cloudfoundry.tools.pushapps.*
+import org.cloudfoundry.tools.pushapps.config.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import javax.sql.DataSource
@@ -24,25 +25,25 @@ import javax.sql.DataSource
 val workingDir = System.getProperty("user.dir")!!
 
 data class IntegrationTestContext(
-    val config: Config,
-    val cfOperations: DefaultCloudFoundryOperations,
-    val cfClientBuilder: CloudFoundryClientBuilder,
-    val flyway: FlywayWrapper,
-    val dataSourceFactory: DataSourceFactory,
-    val dataSource: DataSource
+        val config: Config,
+        val cfOperations: DefaultCloudFoundryOperations,
+        val cfClientBuilder: CloudFoundryClientBuilder,
+        val flyway: FlywayWrapper,
+        val dataSourceFactory: DataSourceFactory,
+        val dataSource: DataSource
 )
 
 fun buildTestContext(
-    apps: List<AppConfig> = emptyList(),
-    services: List<ServiceConfig> = emptyList(),
-    userProvidedServices: List<UserProvidedServiceConfig> = emptyList(),
-    migrations: List<Migration> = emptyList(),
-    securityGroups: List<SecurityGroup> = emptyList(),
-    organization: String = "dewey_decimal",
-    space: String = "test",
-    retryCount: Int = 0,
-    cfOperationTimeoutInMinutes: Long = 1L,
-    maxInFlight: Int = 2
+        apps: List<AppConfig> = emptyList(),
+        services: List<ServiceConfig> = emptyList(),
+        userProvidedServices: List<UserProvidedServiceConfig> = emptyList(),
+        migrations: List<Migration> = emptyList(),
+        securityGroups: List<SecurityGroup> = emptyList(),
+        organization: String = "dewey_decimal",
+        space: String = "test",
+        retryCount: Int = 0,
+        cfOperationTimeoutInMinutes: Long = 1L,
+        maxInFlight: Int = 2
 ): IntegrationTestContext {
     val cfOperations = buildMockCfOperations()
     val cfOperationsBuilder = buildMockCfOperationsBuilder(cfOperations)
@@ -182,32 +183,32 @@ private fun buildMockCfOperations(): DefaultCloudFoundryOperations {
 }
 
 private fun createConfig(
-    apiHost: String,
-    username: String,
-    password: String,
-    organization: String,
-    space: String,
-    apps: List<AppConfig>,
-    userProvidedServices: List<UserProvidedServiceConfig>,
-    services: List<ServiceConfig>,
-    migrations: List<Migration>,
-    securityGroups: List<SecurityGroup>,
-    skipSslValidation: Boolean,
-    retryCount: Int,
-    maxInFlight: Int,
-    cfOperationTimeoutInMinutes: Long
+        apiHost: String,
+        username: String,
+        password: String,
+        organization: String,
+        space: String,
+        apps: List<AppConfig>,
+        userProvidedServices: List<UserProvidedServiceConfig>,
+        services: List<ServiceConfig>,
+        migrations: List<Migration>,
+        securityGroups: List<SecurityGroup>,
+        skipSslValidation: Boolean,
+        retryCount: Int,
+        maxInFlight: Int,
+        cfOperationTimeoutInMinutes: Long
 ): Config {
     val cf = CfConfig(
-        apiHost = apiHost,
-        username = username,
-        password = password,
-        organization = organization,
-        space = space,
-        skipSslValidation = skipSslValidation
+            apiHost = apiHost,
+            username = username,
+            password = password,
+            organization = organization,
+            space = space,
+            skipSslValidation = skipSslValidation
     )
     return Config(PushAppsConfig(
-        operationRetryCount = retryCount,
-        maxInFlight = maxInFlight,
-        cfOperationTimeoutInMinutes = cfOperationTimeoutInMinutes
+            operationRetryCount = retryCount,
+            maxInFlight = maxInFlight,
+            cfOperationTimeoutInMinutes = cfOperationTimeoutInMinutes
     ), cf, apps, services, userProvidedServices, migrations, securityGroups)
 }

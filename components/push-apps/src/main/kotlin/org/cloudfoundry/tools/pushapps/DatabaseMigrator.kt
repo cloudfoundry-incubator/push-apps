@@ -1,6 +1,8 @@
 package org.cloudfoundry.tools.pushapps
 
 import org.apache.logging.log4j.LogManager
+import org.cloudfoundry.tools.pushapps.config.DatabaseDriver
+import org.cloudfoundry.tools.pushapps.config.Migration
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.sql.Connection
@@ -9,12 +11,12 @@ import java.time.Duration
 import java.util.concurrent.ConcurrentLinkedQueue
 
 class DatabaseMigrator(
-    private val migrations: List<Migration>,
-    private val flywayWrapper: FlywayWrapper,
-    private val dataSourceFactory: DataSourceFactory,
-    private val maxInFlight: Int,
-    private val retryCount: Int,
-    private val timeoutInMinutes: Long
+        private val migrations: List<Migration>,
+        private val flywayWrapper: FlywayWrapper,
+        private val dataSourceFactory: DataSourceFactory,
+        private val maxInFlight: Int,
+        private val retryCount: Int,
+        private val timeoutInMinutes: Long
 ) {
     private val logger = LogManager.getLogger(DatabaseMigrator::class.java)
 

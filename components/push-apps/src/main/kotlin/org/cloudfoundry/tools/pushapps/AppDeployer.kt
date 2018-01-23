@@ -2,6 +2,7 @@ package org.cloudfoundry.tools.pushapps
 
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
+import org.cloudfoundry.tools.pushapps.config.AppConfig
 import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -9,11 +10,11 @@ import reactor.core.publisher.whenComplete
 import java.util.concurrent.ConcurrentLinkedQueue
 
 class AppDeployer(
-    private val cloudFoundryClient: CloudFoundryClient,
-    private val appConfigs: List<AppConfig>,
-    private val availableServices: List<String>,
-    private val maxInFlight: Int,
-    private val retryCount: Int
+        private val cloudFoundryClient: CloudFoundryClient,
+        private val appConfigs: List<AppConfig>,
+        private val availableServices: List<String>,
+        private val maxInFlight: Int,
+        private val retryCount: Int
 ) {
     private val logger: Logger = LogManager.getLogger(AppDeployer::class.java)
 

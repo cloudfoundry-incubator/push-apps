@@ -17,6 +17,10 @@ import org.cloudfoundry.operations.spaces.CreateSpaceRequest
 import org.cloudfoundry.operations.spaces.GetSpaceRequest
 import org.cloudfoundry.operations.spaces.SpaceDetail
 import org.cloudfoundry.operations.spaces.SpaceSummary
+import org.cloudfoundry.tools.pushapps.config.AppConfig
+import org.cloudfoundry.tools.pushapps.config.SecurityGroup
+import org.cloudfoundry.tools.pushapps.config.ServiceConfig
+import org.cloudfoundry.tools.pushapps.config.UserProvidedServiceConfig
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.time.Duration

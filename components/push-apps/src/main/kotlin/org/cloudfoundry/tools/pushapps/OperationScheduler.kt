@@ -2,6 +2,7 @@ package org.cloudfoundry.tools.pushapps
 
 import org.apache.logging.log4j.LogManager
 import org.cloudfoundry.doppler.LogMessage
+import org.cloudfoundry.tools.pushapps.config.OperationConfig
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription

@@ -2,16 +2,17 @@ package org.cloudfoundry.tools.pushapps
 
 import org.apache.logging.log4j.LogManager
 import org.cloudfoundry.client.v2.ClientV2Exception
+import org.cloudfoundry.tools.pushapps.config.SecurityGroup
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.util.concurrent.ConcurrentLinkedQueue
 
 class SecurityGroupCreator(
-    private val securityGroups: List<SecurityGroup>,
-    private val cloudFoundryClient: CloudFoundryClient,
-    private val space: String, //TODO: not used
-    private val maxInFlight: Int,
-    private val retryCount: Int
+        private val securityGroups: List<SecurityGroup>,
+        private val cloudFoundryClient: CloudFoundryClient,
+        private val space: String, //TODO: not used
+        private val maxInFlight: Int,
+        private val retryCount: Int
 ) {
     private val logger = LogManager.getLogger(SecurityGroupCreator::class.java)
 

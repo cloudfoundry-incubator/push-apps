@@ -3,6 +3,7 @@ package org.cloudfoundry.tools.pushapps
 import org.apache.logging.log4j.LogManager
 import org.cloudfoundry.UnknownCloudFoundryException
 import org.cloudfoundry.doppler.LogMessage
+import org.cloudfoundry.tools.pushapps.config.*
 import org.flywaydb.core.Flyway
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -10,10 +11,10 @@ import reactor.util.function.component1
 import reactor.util.function.component2
 
 class PushApps(
-    private val config: Config,
-    private val cloudFoundryClientBuilder: CloudFoundryClientBuilder,
-    private val flywayWrapper: FlywayWrapper = FlywayWrapper({ Flyway() }),
-    private val dataSourceFactory: DataSourceFactory = DataSourceFactory(
+        private val config: Config,
+        private val cloudFoundryClientBuilder: CloudFoundryClientBuilder,
+        private val flywayWrapper: FlywayWrapper = FlywayWrapper({ Flyway() }),
+        private val dataSourceFactory: DataSourceFactory = DataSourceFactory(
         { mySqlDataSourceBuilder(it) },
         { postgresDataSourceBuilder(it) }
     )
@@ -95,10 +96,10 @@ class PushApps(
     }
 
     private fun List<SecurityGroup>.createSecurityGroupsFlux(
-        cloudFoundryClient: CloudFoundryClient,
-        cf: CfConfig,
-        pushAppsConfig: PushAppsConfig,
-        spaceId: String
+            cloudFoundryClient: CloudFoundryClient,
+            cf: CfConfig,
+            pushAppsConfig: PushAppsConfig,
+            spaceId: String
     ): Flux<OperationResult> {
         if (isEmpty()) return Flux.empty()
 
@@ -114,9 +115,9 @@ class PushApps(
     }
 
     private fun buildTargetedCfGenerator(
-        cf: CfConfig,
-        cfOperationTimeoutInMinutes: Long,
-        retryCount: Int
+            cf: CfConfig,
+            cfOperationTimeoutInMinutes: Long,
+            retryCount: Int
     ): Flux<CloudFoundryClient> {
         return Mono.fromSupplier {
             val cloudFoundryOperations = cloudFoundryOperationsBuilder()

@@ -4,7 +4,7 @@ import com.nhaarman.mockito_kotlin.*
 import org.cloudfoundry.operations.CloudFoundryOperations
 import org.cloudfoundry.operations.applications.ApplicationHealthCheck
 import org.cloudfoundry.operations.applications.Applications
-import org.cloudfoundry.tools.pushapps.AppConfig
+import org.cloudfoundry.tools.pushapps.config.AppConfig
 import org.cloudfoundry.tools.pushapps.PushApplication
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
@@ -39,9 +39,9 @@ class PushApplicationTest : Spek({
         describe("optional app config variables") {
             it("sets buildpack variable if present in config") {
                 val appConfig = AppConfig(
-                    name = "Foo bar",
-                    path = "/tmp/foo/bar",
-                    buildpack = "bob_the_builder"
+                        name = "Foo bar",
+                        path = "/tmp/foo/bar",
+                        buildpack = "bob_the_builder"
                 )
                 val tc = buildTestContext(appConfig)
 
@@ -54,9 +54,9 @@ class PushApplicationTest : Spek({
 
             it("sets command variable if present in config") {
                 val appConfig = AppConfig(
-                    name = "Foo bar",
-                    path = "/tmp/foo/bar",
-                    command = "some-command"
+                        name = "Foo bar",
+                        path = "/tmp/foo/bar",
+                        command = "some-command"
                 )
                 val tc = buildTestContext(appConfig)
 
@@ -69,9 +69,9 @@ class PushApplicationTest : Spek({
 
             it("sets instances variable if present in config") {
                 val appConfig = AppConfig(
-                    name = "Foo bar",
-                    path = "/tmp/foo/bar",
-                    instances = 1
+                        name = "Foo bar",
+                        path = "/tmp/foo/bar",
+                        instances = 1
                 )
                 val tc = buildTestContext(appConfig)
 
@@ -84,9 +84,9 @@ class PushApplicationTest : Spek({
 
             it("sets disk quota variable if present in config") {
                 val appConfig = AppConfig(
-                    name = "Foo bar",
-                    path = "/tmp/foo/bar",
-                    diskQuota = 512
+                        name = "Foo bar",
+                        path = "/tmp/foo/bar",
+                        diskQuota = 512
                 )
                 val tc = buildTestContext(appConfig)
 
@@ -99,9 +99,9 @@ class PushApplicationTest : Spek({
 
             it("sets memory variable if present in config") {
                 val appConfig = AppConfig(
-                    name = "Foo bar",
-                    path = "/tmp/foo/bar",
-                    memory = 512
+                        name = "Foo bar",
+                        path = "/tmp/foo/bar",
+                        memory = 512
                 )
                 val tc = buildTestContext(appConfig)
 
@@ -114,9 +114,9 @@ class PushApplicationTest : Spek({
 
             it("sets noHostname variable if present in config") {
                 val appConfig = AppConfig(
-                    name = "Foo bar",
-                    path = "/tmp/foo/bar",
-                    noHostname = true
+                        name = "Foo bar",
+                        path = "/tmp/foo/bar",
+                        noHostname = true
                 )
                 val tc = buildTestContext(appConfig)
 
@@ -129,9 +129,9 @@ class PushApplicationTest : Spek({
 
             it("sets noRoute variable if present in config") {
                 val appConfig = AppConfig(
-                    name = "Foo bar",
-                    path = "/tmp/foo/bar",
-                    noRoute = true
+                        name = "Foo bar",
+                        path = "/tmp/foo/bar",
+                        noRoute = true
                 )
                 val tc = buildTestContext(appConfig)
 
@@ -144,9 +144,9 @@ class PushApplicationTest : Spek({
 
             it("sets timeout variable if present in config") {
                 val appConfig = AppConfig(
-                    name = "Foo bar",
-                    path = "/tmp/foo/bar",
-                    timeout = 100
+                        name = "Foo bar",
+                        path = "/tmp/foo/bar",
+                        timeout = 100
                 )
                 val tc = buildTestContext(appConfig)
 
@@ -159,9 +159,9 @@ class PushApplicationTest : Spek({
 
             it("sets domain variable if present in config") {
                 val appConfig = AppConfig(
-                    name = "Foo bar",
-                    path = "/tmp/foo/bar",
-                    domain = "lemons"
+                        name = "Foo bar",
+                        path = "/tmp/foo/bar",
+                        domain = "lemons"
                 )
                 val tc = buildTestContext(appConfig)
 
@@ -174,9 +174,9 @@ class PushApplicationTest : Spek({
 
             it("sets healthcheck type if present in config") {
                 val appConfig = AppConfig(
-                    name = "Foo bar",
-                    path = "/tmp/foo/bar",
-                    healthCheckType = "none"
+                        name = "Foo bar",
+                        path = "/tmp/foo/bar",
+                        healthCheckType = "none"
                 )
                 val tc = buildTestContext(appConfig)
 

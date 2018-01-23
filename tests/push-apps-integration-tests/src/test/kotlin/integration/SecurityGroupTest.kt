@@ -8,7 +8,7 @@ import org.cloudfoundry.client.v2.securitygroups.CreateSecurityGroupRequest
 import org.cloudfoundry.client.v2.securitygroups.Protocol
 import org.cloudfoundry.operations.spaces.SpaceDetail
 import org.cloudfoundry.tools.pushapps.PushApps
-import org.cloudfoundry.tools.pushapps.SecurityGroup
+import org.cloudfoundry.tools.pushapps.config.SecurityGroup
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
@@ -17,9 +17,9 @@ import reactor.core.publisher.Mono
 class SecurityGroupTest : Spek({
     describe("create security groups for given organization and space") {
         val securityGroup = SecurityGroup(
-            name = "some-name",
-            destination = "0.0.0.0-255.255.255.255",
-            protocol = "all"
+                name = "some-name",
+                destination = "0.0.0.0-255.255.255.255",
+                protocol = "all"
         )
 
         it("it creates the security groups") {

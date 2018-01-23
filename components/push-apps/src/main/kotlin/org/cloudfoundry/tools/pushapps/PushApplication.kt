@@ -3,6 +3,7 @@ package org.cloudfoundry.tools.pushapps
 import org.cloudfoundry.operations.CloudFoundryOperations
 import org.cloudfoundry.operations.applications.ApplicationHealthCheck
 import org.cloudfoundry.operations.applications.PushApplicationRequest
+import org.cloudfoundry.tools.pushapps.config.AppConfig
 import reactor.core.publisher.Mono
 import java.io.File
 

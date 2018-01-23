@@ -5,6 +5,8 @@ import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
 import org.cloudfoundry.tools.pushapps.*
+import org.cloudfoundry.tools.pushapps.config.DatabaseDriver
+import org.cloudfoundry.tools.pushapps.config.Migration
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
@@ -17,14 +19,14 @@ class DatabaseMigratorTest : Spek({
     describe("#migrate") {
         it("uses a FlywayWrapper to migrate the mysql database") {
             val migration = Migration(
-                host = "example.com",
-                port = "3338",
-                user = "root",
-                password = "supersecret",
-                schema = "new_db",
-                driver = DatabaseDriver.MySql(),
-                migrationDir = "some/location",
-                repair = false
+                    host = "example.com",
+                    port = "3338",
+                    user = "root",
+                    password = "supersecret",
+                    schema = "new_db",
+                    driver = DatabaseDriver.MySql(),
+                    migrationDir = "some/location",
+                    repair = false
             )
 
             val flywayWrapper = mock<FlywayWrapper>()

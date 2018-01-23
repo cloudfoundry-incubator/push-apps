@@ -1,15 +1,16 @@
 package org.cloudfoundry.tools.pushapps
 
 import org.apache.logging.log4j.LogManager
+import org.cloudfoundry.tools.pushapps.config.UserProvidedServiceConfig
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.util.concurrent.ConcurrentLinkedQueue
 
 class UserProvidedServiceCreator(
-    private val cloudFoundryClient: CloudFoundryClient,
-    private val serviceConfigs: List<UserProvidedServiceConfig>,
-    private val maxInFlight: Int,
-    private val retryCount: Int
+        private val cloudFoundryClient: CloudFoundryClient,
+        private val serviceConfigs: List<UserProvidedServiceConfig>,
+        private val maxInFlight: Int,
+        private val retryCount: Int
 ) {
     private val logger = LogManager.getLogger(UserProvidedServiceCreator::class.java)
 

@@ -3,7 +3,7 @@ package unit
 import com.nhaarman.mockito_kotlin.*
 import org.assertj.core.api.Assertions.assertThat
 import org.cloudfoundry.doppler.LogMessage
-import org.cloudfoundry.tools.pushapps.AppConfig
+import org.cloudfoundry.tools.pushapps.config.AppConfig
 import org.cloudfoundry.tools.pushapps.OperationResult
 import org.cloudfoundry.tools.pushapps.OperationScheduler
 import org.jetbrains.spek.api.Spek

@@ -1,6 +1,7 @@
 package org.cloudfoundry.tools.pushapps
 
 import org.apache.logging.log4j.LogManager
+import org.cloudfoundry.tools.pushapps.config.ConfigReader
 
 class PushAppsCli {
     companion object {

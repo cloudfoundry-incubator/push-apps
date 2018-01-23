@@ -5,8 +5,8 @@ import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.verifyNoMoreInteractions
 import com.nhaarman.mockito_kotlin.whenever
 import org.assertj.core.api.Assertions
-import org.cloudfoundry.tools.pushapps.DatabaseDriver
-import org.cloudfoundry.tools.pushapps.Migration
+import org.cloudfoundry.tools.pushapps.config.DatabaseDriver
+import org.cloudfoundry.tools.pushapps.config.Migration
 import org.cloudfoundry.tools.pushapps.PushApps
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
@@ -17,14 +17,14 @@ import java.sql.Statement
 class MigrateDatabaseTest : Spek({
     describe("pushApps interacts with databases by") {
         val migration = Migration(
-            host = "example.com",
-            port = "3338",
-            user = "root",
-            password = "supersecret",
-            schema = "new_db",
-            driver = DatabaseDriver.MySql(),
-            migrationDir = "$workingDir/src/test/kotlin/support/dbmigrations",
-            repair = false
+                host = "example.com",
+                port = "3338",
+                user = "root",
+                password = "supersecret",
+                schema = "new_db",
+                driver = DatabaseDriver.MySql(),
+                migrationDir = "$workingDir/src/test/kotlin/support/dbmigrations",
+                repair = false
         )
 
         it("performing the given migrations") {
@@ -58,14 +58,14 @@ class MigrateDatabaseTest : Spek({
         }
         it("does not create the database if postgres") {
             val postgresMigration = Migration(
-                host = "example.com",
-                port = "3338",
-                user = "root",
-                password = "supersecret",
-                schema = "new_db",
-                driver = DatabaseDriver.Postgres(),
-                migrationDir = "$workingDir/src/test/kotlin/support/dbmigrations",
-                repair = false
+                    host = "example.com",
+                    port = "3338",
+                    user = "root",
+                    password = "supersecret",
+                    schema = "new_db",
+                    driver = DatabaseDriver.Postgres(),
+                    migrationDir = "$workingDir/src/test/kotlin/support/dbmigrations",
+                    repair = false
             )
 
             val tc = buildTestContext(

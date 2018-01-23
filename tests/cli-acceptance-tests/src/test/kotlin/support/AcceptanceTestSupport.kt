@@ -16,6 +16,7 @@ import org.cloudfoundry.operations.DefaultCloudFoundryOperations
 import org.cloudfoundry.operations.organizations.OrganizationDetail
 import org.cloudfoundry.operations.organizations.OrganizationInfoRequest
 import org.cloudfoundry.tools.pushapps.*
+import org.cloudfoundry.tools.pushapps.config.*
 import reactor.core.publisher.Mono
 import java.io.File
 import java.io.InputStream
@@ -25,11 +26,11 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 
 data class AcceptanceTestContext(
-    val cfOperations: CloudFoundryOperations,
-    val cfClient: CloudFoundryClient,
-    val configFilePath: String,
-    val securityGroups: List<SecurityGroup>?,
-    val organization: String
+        val cfOperations: CloudFoundryOperations,
+        val cfClient: CloudFoundryClient,
+        val configFilePath: String,
+        val securityGroups: List<SecurityGroup>?,
+        val organization: String
 )
 
 class AcceptanceTestSupport {
@@ -68,14 +69,14 @@ class AcceptanceTestSupport {
     }
 
     fun buildTestContext(
-        space: String,
-        apps: List<AppConfig> = emptyList(),
-        services: List<ServiceConfig> = emptyList(),
-        userProvidedServices: List<UserProvidedServiceConfig> = emptyList(),
-        migrations: List<Migration> = emptyList(),
-        securityGroups: List<SecurityGroup> = emptyList(),
-        retryCount: Int,
-        maxInFlight: Int
+            space: String,
+            apps: List<AppConfig> = emptyList(),
+            services: List<ServiceConfig> = emptyList(),
+            userProvidedServices: List<UserProvidedServiceConfig> = emptyList(),
+            migrations: List<Migration> = emptyList(),
+            securityGroups: List<SecurityGroup> = emptyList(),
+            retryCount: Int,
+            maxInFlight: Int
     ): AcceptanceTestContext {
         val organization = "pushapps_test_${UUID.randomUUID().toString()}"
 
@@ -216,29 +217,29 @@ class AcceptanceTestSupport {
     }
 
     fun writeConfigFile(
-        apiHost: String,
-        username: String,
-        password: String,
-        organization: String,
-        space: String,
-        apps: List<AppConfig>,
-        userProvidedServices: List<UserProvidedServiceConfig>,
-        services: List<ServiceConfig>,
-        migrations: List<Migration>,
-        securityGroups: List<SecurityGroup>,
-        skipSslValidation: Boolean,
-        retryCount: Int,
-        maxInFlight: Int
+            apiHost: String,
+            username: String,
+            password: String,
+            organization: String,
+            space: String,
+            apps: List<AppConfig>,
+            userProvidedServices: List<UserProvidedServiceConfig>,
+            services: List<ServiceConfig>,
+            migrations: List<Migration>,
+            securityGroups: List<SecurityGroup>,
+            skipSslValidation: Boolean,
+            retryCount: Int,
+            maxInFlight: Int
     ): String {
         val cf = CfConfig(apiHost, username, password, organization, space, skipSslValidation)
         val config = Config(
-            PushAppsConfig(retryCount, maxInFlight),
-            cf,
-            apps,
-            services,
-            userProvidedServices,
-            migrations,
-            securityGroups
+                PushAppsConfig(retryCount, maxInFlight),
+                cf,
+                apps,
+                services,
+                userProvidedServices,
+                migrations,
+                securityGroups
         )
 
         val objectMapper = ObjectMapper(YAMLFactory()).registerModule(KotlinModule())
@@ -290,12 +291,12 @@ class AcceptanceTestSupport {
 
     fun buildCfClient(apiHost: String, username: String, password: String, organization: String, retryCount: Int): CloudFoundryClient {
         val config = CfConfig(
-            apiHost = apiHost,
-            username = username,
-            password = password,
-            skipSslValidation = true,
-            organization = organization,
-            space = ""
+                apiHost = apiHost,
+                username = username,
+                password = password,
+                skipSslValidation = true,
+                organization = organization,
+                space = ""
         )
 
         val cloudFoundryOperations = cloudFoundryOperationsBuilder()

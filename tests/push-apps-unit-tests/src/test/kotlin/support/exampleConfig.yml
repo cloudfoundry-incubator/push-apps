@@ -16,6 +16,8 @@ apps:
 - name: some-name
   path: some-path
   buildpack: some-buildpack
+  memory: 456M
+  diskQuota: 500M
   route:
     hostname: "lemons"
     path: "/citrus"
@@ -23,6 +25,10 @@ apps:
     FRUIT: lemons
     MISSING: ""
   serviceNames: [some-service-name]
+- name: some-other-name
+  path: some-path
+  memory: 1G
+  diskQuota: 2G
 services:
 - name: some-service-name
   plan: a-good-one

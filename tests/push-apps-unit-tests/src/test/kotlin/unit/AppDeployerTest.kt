@@ -3,10 +3,10 @@ package unit
 import com.nhaarman.mockito_kotlin.*
 import org.assertj.core.api.Assertions.assertThat
 import org.cloudfoundry.doppler.LogMessage
-import org.cloudfoundry.tools.pushapps.AppConfig
+import org.cloudfoundry.tools.pushapps.config.AppConfig
 import org.cloudfoundry.tools.pushapps.CloudFoundryClient
 import org.cloudfoundry.tools.pushapps.OperationResult
-import org.cloudfoundry.tools.pushapps.Route
+import org.cloudfoundry.tools.pushapps.config.Route
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
@@ -38,12 +38,12 @@ class AppDeployerTest : Spek({
     describe("#deployApps") {
         it("Deploys the apps") {
             val appConfig = AppConfig(
-                name = "Foo bar",
-                path = "/tmp/foo/bar",
-                buildpack = "bob_the_builder",
-                environment = mapOf("LEMONS" to "LIMES"),
-                serviceNames = listOf("grapefruit"),
-                route = Route("kiwi", "orange")
+                    name = "Foo bar",
+                    path = "/tmp/foo/bar",
+                    buildpack = "bob_the_builder",
+                    environment = mapOf("LEMONS" to "LIMES"),
+                    serviceNames = listOf("grapefruit"),
+                    route = Route("kiwi", "orange")
             )
             val tc = buildTestContext(appConfig = appConfig, retryCount = 1)
 
@@ -68,12 +68,12 @@ class AppDeployerTest : Spek({
 
         it("Deploys the app despite unavailable services") {
             val appConfig = AppConfig(
-                name = "Foo bar",
-                path = "/tmp/foo/bar",
-                buildpack = "bob_the_builder",
-                environment = mapOf("LEMONS" to "LIMES"),
-                serviceNames = listOf("unavailable"),
-                route = Route("kiwi", "orange")
+                    name = "Foo bar",
+                    path = "/tmp/foo/bar",
+                    buildpack = "bob_the_builder",
+                    environment = mapOf("LEMONS" to "LIMES"),
+                    serviceNames = listOf("unavailable"),
+                    route = Route("kiwi", "orange")
             )
             val tc = buildTestContext(appConfig = appConfig, retryCount = 1)
 
@@ -93,12 +93,12 @@ class AppDeployerTest : Spek({
 
         it("Returns a failed operation result when an operation fails, without losing successful results") {
             val appConfig = AppConfig(
-                name = "Foo bar",
-                path = "/tmp/foo/bar",
-                buildpack = "bob_the_builder",
-                environment = mapOf("LEMONS" to "LIMES"),
-                serviceNames = listOf("grapefruit"),
-                route = Route("kiwi", "orange")
+                    name = "Foo bar",
+                    path = "/tmp/foo/bar",
+                    buildpack = "bob_the_builder",
+                    environment = mapOf("LEMONS" to "LIMES"),
+                    serviceNames = listOf("grapefruit"),
+                    route = Route("kiwi", "orange")
             )
             val tc = buildTestContext(appConfig = appConfig, retryCount = 0)
 

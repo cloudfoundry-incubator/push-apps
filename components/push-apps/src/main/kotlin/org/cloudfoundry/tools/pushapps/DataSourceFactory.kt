@@ -1,5 +1,7 @@
 package org.cloudfoundry.tools.pushapps
 
+import org.cloudfoundry.tools.pushapps.config.DatabaseDriver
+import org.cloudfoundry.tools.pushapps.config.Migration
 import javax.sql.DataSource
 
 typealias GetDataSourceBuilder = (dataSource: DataSource?) -> DataSourceBuilder

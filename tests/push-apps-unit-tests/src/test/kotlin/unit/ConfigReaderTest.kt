@@ -2,8 +2,8 @@ package unit
 
 import org.apache.commons.io.FilenameUtils
 import org.assertj.core.api.Assertions.assertThat
-import org.cloudfoundry.tools.pushapps.ConfigReader
-import org.cloudfoundry.tools.pushapps.DatabaseDriver
+import org.cloudfoundry.tools.pushapps.config.ConfigReader
+import org.cloudfoundry.tools.pushapps.config.DatabaseDriver
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
@@ -99,18 +99,24 @@ class ConfigReaderTest : Spek({
             val pushAppsConfig = ConfigReader.parseConfig(findConigPath("exampleConfig.yml"))
 
             val apps = pushAppsConfig.apps
-            assertThat(apps).hasSize(1)
+            assertThat(apps).hasSize(2)
 
             val app1 = apps[0]
             assertThat(app1.name).isEqualTo("some-name")
             assertThat(app1.path).isEqualTo("some-path")
             assertThat(app1.buildpack).isEqualTo("some-buildpack")
+            assertThat(app1.memory).isEqualTo(456)
+            assertThat(app1.diskQuota).isEqualTo(500)
 
             assertThat(app1.environment).isEqualTo(mapOf("FRUIT" to "lemons", "MISSING" to ""))
             assertThat(app1.serviceNames).isEqualTo(listOf("some-service-name"))
 
             assertThat(app1.route!!.hostname).isEqualTo("lemons")
             assertThat(app1.route!!.path).isEqualTo("/citrus")
+
+            val app2 = apps[1]
+            assertThat(app2.memory).isEqualTo(1024)
+            assertThat(app2.diskQuota).isEqualTo(2048)
         }
 
         it("Parses the services config") {

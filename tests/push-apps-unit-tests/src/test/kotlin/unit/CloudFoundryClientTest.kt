@@ -18,6 +18,7 @@ import org.cloudfoundry.operations.spaces.SpaceDetail
 import org.cloudfoundry.operations.spaces.SpaceSummary
 import org.cloudfoundry.operations.spaces.Spaces
 import org.cloudfoundry.tools.pushapps.*
+import org.cloudfoundry.tools.pushapps.config.*
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
@@ -86,9 +87,9 @@ class CloudFoundryClientTest : Spek({
             whenever(tc.services.createInstance(any())).thenReturn(Mono.empty())
 
             val serviceConfig = ServiceConfig(
-                name = "some-service",
-                plan = "some-plan",
-                broker = "some-broker"
+                    name = "some-service",
+                    plan = "some-plan",
+                    broker = "some-broker"
             )
 
             tc.cloudFoundryClient.createService(serviceConfig)
@@ -109,11 +110,11 @@ class CloudFoundryClientTest : Spek({
             whenever(tc.services.createUserProvidedInstance(any())).thenReturn(Mono.empty())
 
             val serviceConfig = UserProvidedServiceConfig(
-                name = "Foo bar",
-                credentials = mapOf(
-                    "FOO" to "BAR",
-                    "BAR" to "BAZ"
-                )
+                    name = "Foo bar",
+                    credentials = mapOf(
+                            "FOO" to "BAR",
+                            "BAR" to "BAZ"
+                    )
             )
 
             tc.cloudFoundryClient.createUserProvidedService(serviceConfig)
@@ -133,11 +134,11 @@ class CloudFoundryClientTest : Spek({
             whenever(tc.services.updateUserProvidedInstance(any())).thenReturn(Mono.empty())
 
             val serviceConfig = UserProvidedServiceConfig(
-                name = "Foo bar",
-                credentials = mapOf(
-                    "FOO" to "BAR",
-                    "BAR" to "BAZ"
-                )
+                    name = "Foo bar",
+                    credentials = mapOf(
+                            "FOO" to "BAR",
+                            "BAR" to "BAZ"
+                    )
             )
 
             tc.cloudFoundryClient.updateUserProvidedService(serviceConfig)
@@ -187,12 +188,12 @@ class CloudFoundryClientTest : Spek({
             whenever(tc.applications.setEnvironmentVariable(any())).thenReturn(Mono.empty())
 
             val appConfig = AppConfig(
-                name = "Foo bar",
-                path = "/tmp/foo/bar",
-                environment = mapOf(
-                    "FOO" to "BAR",
-                    "BAR" to "BAZ"
-                )
+                    name = "Foo bar",
+                    path = "/tmp/foo/bar",
+                    environment = mapOf(
+                            "FOO" to "BAR",
+                            "BAR" to "BAZ"
+                    )
             )
 
             tc.cloudFoundryClient.setApplicationEnvironment(appConfig).block()
@@ -217,9 +218,9 @@ class CloudFoundryClientTest : Spek({
         it("does not set environment variables if none in config") {
             val tc = buildTestContext()
             val appConfig = AppConfig(
-                name = "Foo bar",
-                path = "/tmp/foo/bar",
-                environment = mapOf()
+                    name = "Foo bar",
+                    path = "/tmp/foo/bar",
+                    environment = mapOf()
             )
 
             tc.cloudFoundryClient.setApplicationEnvironment(appConfig)
@@ -249,14 +250,14 @@ class CloudFoundryClientTest : Spek({
         it("it maps the routes") {
             val tc = buildTestContext()
             val appConfig = AppConfig(
-                name = "Foo bar",
-                path = "/tmp/foo/bar",
-                environment = mapOf(),
-                domain = "tree",
-                route = Route(
-                    hostname = "lemons",
-                    path = "citrus"
-                )
+                    name = "Foo bar",
+                    path = "/tmp/foo/bar",
+                    environment = mapOf(),
+                    domain = "tree",
+                    route = Route(
+                            hostname = "lemons",
+                            path = "citrus"
+                    )
             )
 
             whenever(tc.routes.map(any())).thenReturn(Mono.empty())
@@ -277,14 +278,14 @@ class CloudFoundryClientTest : Spek({
     describe("#unmapRoute") {
         val tc = buildTestContext()
         val appConfig = AppConfig(
-            name = "Foo bar",
-            path = "/tmp/foo/bar",
-            environment = mapOf(),
-            domain = "tree",
-            route = Route(
-                hostname = "lemons",
-                path = "citrus"
-            )
+                name = "Foo bar",
+                path = "/tmp/foo/bar",
+                environment = mapOf(),
+                domain = "tree",
+                route = Route(
+                        hostname = "lemons",
+                        path = "citrus"
+                )
         )
 
         whenever(tc.routes.unmap(any())).thenReturn(Mono.empty())
@@ -304,9 +305,9 @@ class CloudFoundryClientTest : Spek({
     describe("#createSecurityGroup") {
         val tc = buildTestContext()
         val securityConfig = SecurityGroup(
-            name = "Foo bar",
-            destination = "destination somewhere",
-            protocol = "all"
+                name = "Foo bar",
+                destination = "destination somewhere",
+                protocol = "all"
         )
 
         whenever(tc.securityGroups.create(any())).thenReturn(Mono.empty())
