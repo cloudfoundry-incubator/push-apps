@@ -85,6 +85,12 @@ class PushApps(
         val result = Flux
             .concat(createSecurityGroups, runMigrations, deployApps)
             .then(Mono.just(true))
+            .doOnError { error ->
+                logger.error(error.message)
+                if (logger.isDebugEnabled) {
+                    error.printStackTrace()
+                }
+            }
             .onErrorReturn(false)
             .block()
 

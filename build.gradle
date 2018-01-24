@@ -77,9 +77,10 @@ task syncArtifactsToMavenCentral {
 static String getEnvOrThrow(String env) {
     def envVar = System.getenv(env)
 
-    if (envVar == null) {
-        throw new GradleException("Must set $env env variable")
-    }
+    //FIXME: fix this, only throw when running the bintray tasks
+    //    if (envVar == null) {
+    //        throw new GradleException("Must set $env env variable")
+    //    }
 
     return envVar
 }
