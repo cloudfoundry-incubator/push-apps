@@ -62,7 +62,7 @@ class UpdatePatchVersionTask extends DefaultTask {
 }
 
 //noinspection GroovyAssignabilityCheck
-task publishUploadedBintrayArtifactes {
+task publishUploadedBintrayArtifacts {
     dependsOn(":components:push-apps:publishUploadedLibraryArchives", ":applications:cli:publishUploadedStandaloneArchives")
 }
 //noinspection GroovyAssignabilityCheck
@@ -74,13 +74,10 @@ task syncArtifactsToMavenCentral {
     dependsOn(":components:push-apps:syncLibraryToMavenCentral", ":applications:cli:syncStandaloneToMavenCentral")
 }
 
-static String getEnvOrThrow(String env) {
+static void checkEnv(String env) {
     def envVar = System.getenv(env)
 
-    //FIXME: fix this, only throw when running the bintray tasks
-    //    if (envVar == null) {
-    //        throw new GradleException("Must set $env env variable")
-    //    }
-
-    return envVar
+    if (envVar == null) {
+        throw new GradleException("Must set $env env variable")
+    }
 }
