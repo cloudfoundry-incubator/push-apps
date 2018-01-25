@@ -223,8 +223,6 @@ class CloudFoundryClient(
 
         val mapRouteRequest = mapRouteRequestBuilder.build()
 
-        logger.debug("Building request to map route $route for application ${appConfig.name}")
-
         val cfOperation = {
             cloudFoundryOperations
                 .routes()
@@ -240,16 +238,17 @@ class CloudFoundryClient(
             return Mono.empty()
         }
 
-        val route = "http://${appConfig.route.hostname}.${appConfig.domain}"
-        logger.debug("Building request to unmap route $route for application ${appConfig.name}")
-
-        val unmapRouteRequest = UnmapRouteRequest
+        val unmapRouteRequestBuilder = UnmapRouteRequest
             .builder()
             .applicationName(appConfig.name)
             .domain(appConfig.domain)
             .host(appConfig.route.hostname)
-            .path(appConfig.route.path)
-            .build()
+
+        if (appConfig.route.path !== null) {
+            unmapRouteRequestBuilder.path(appConfig.route.path)
+        }
+
+        val unmapRouteRequest = unmapRouteRequestBuilder.build()
 
         val cfOperation = {
             cloudFoundryOperations

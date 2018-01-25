@@ -58,10 +58,6 @@ class PushApplication(
             newBuilder.noHostname(appConfig.noHostname)
         }
 
-        if (appConfig.noRoute !== null) {
-            newBuilder.noRoute(appConfig.noRoute)
-        }
-
         if (appConfig.timeout !== null) {
             newBuilder.timeout(appConfig.timeout)
         }

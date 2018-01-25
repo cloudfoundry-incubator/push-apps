@@ -5,21 +5,22 @@ import org.assertj.core.api.Assertions.assertThat
 import org.cloudfoundry.tools.pushapps.config.ConfigReader
 import org.cloudfoundry.tools.pushapps.config.DatabaseDriver
 import org.jetbrains.spek.api.Spek
+import org.jetbrains.spek.api.dsl.context
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
 import java.nio.file.Paths
 
 class ConfigReaderTest : Spek({
-    fun findConigPath(fileName: String): String {
+    fun findConfigPath(fileName: String): String {
         val compiledFileLocation = ConfigReaderTest::class.java.getResource("${ConfigReaderTest::class.simpleName}.class")
         val projectPath = Paths.get(compiledFileLocation.path.toString(), "../../../../../../src/test/kotlin/support/$fileName").toAbsolutePath().toString()
         return FilenameUtils.normalize(projectPath)
     }
 
     describe("#parseConfig") {
-        describe("parsing a minimal config") {
+        context("parsing a minimal config") {
             it("correctly defaults values that are not provided for the pushAppsConfig config") {
-                val pushAppsConfig = ConfigReader.parseConfig(findConigPath("minimalConfig.yml"))
+                val pushAppsConfig = ConfigReader.parseConfig(findConfigPath("minimalConfig.yml")).get()
                 assertThat(pushAppsConfig.pushApps.operationRetryCount).isEqualTo(3)
                 assertThat(pushAppsConfig.pushApps.maxInFlight).isEqualTo(2)
                 assertThat(pushAppsConfig.pushApps.failedDeploymentLogLinesToShow).isEqualTo(50)
@@ -28,14 +29,14 @@ class ConfigReaderTest : Spek({
             }
 
             it("correctly defaults values that are not provided for the cf config") {
-                val pushAppsConfig = ConfigReader.parseConfig(findConigPath("minimalConfig.yml"))
+                val pushAppsConfig = ConfigReader.parseConfig(findConfigPath("minimalConfig.yml")).get()
 
                 assertThat(pushAppsConfig.cf.skipSslValidation).isFalse()
                 assertThat(pushAppsConfig.cf.dialTimeoutInMillis).isNull()
             }
 
             it("correctly defaults values that are not provided for the apps config") {
-                val pushAppsConfig = ConfigReader.parseConfig(findConigPath("minimalConfig.yml"))
+                val pushAppsConfig = ConfigReader.parseConfig(findConfigPath("minimalConfig.yml")).get()
 
                 val apps = pushAppsConfig.apps
                 assertThat(apps).hasSize(1)
@@ -54,7 +55,7 @@ class ConfigReaderTest : Spek({
             }
 
             it("correctly defaults values that are not provided for the services config") {
-                val pushAppsConfig = ConfigReader.parseConfig(findConigPath("minimalConfig.yml"))
+                val pushAppsConfig = ConfigReader.parseConfig(findConfigPath("minimalConfig.yml")).get()
 
                 val services = pushAppsConfig.services
                 assertThat(services).hasSize(1)
@@ -64,7 +65,7 @@ class ConfigReaderTest : Spek({
             }
 
             it("correctly defaults values that are not provided for the db migration config") {
-                val pushAppsConfig = ConfigReader.parseConfig(findConigPath("minimalConfig.yml"))
+                val pushAppsConfig = ConfigReader.parseConfig(findConfigPath("minimalConfig.yml")).get()
 
                 val migrations = pushAppsConfig.migrations
                 assertThat(migrations).hasSize(1)
@@ -75,7 +76,7 @@ class ConfigReaderTest : Spek({
         }
 
         it("Parses the pushAppsConfig config") {
-            val pushAppsConfig = ConfigReader.parseConfig(findConigPath("exampleConfig.yml"))
+            val pushAppsConfig = ConfigReader.parseConfig(findConfigPath("exampleConfig.yml")).get()
             assertThat(pushAppsConfig.pushApps.operationRetryCount).isEqualTo(3)
             assertThat(pushAppsConfig.pushApps.maxInFlight).isEqualTo(42)
             assertThat(pushAppsConfig.pushApps.failedDeploymentLogLinesToShow).isEqualTo(12)
@@ -84,7 +85,7 @@ class ConfigReaderTest : Spek({
         }
 
         it("Parses the cf config") {
-            val pushAppsConfig = ConfigReader.parseConfig(findConigPath("exampleConfig.yml"))
+            val pushAppsConfig = ConfigReader.parseConfig(findConfigPath("exampleConfig.yml")).get()
 
             assertThat(pushAppsConfig.cf.apiHost).isEqualTo("api.example.com")
             assertThat(pushAppsConfig.cf.username).isEqualTo("some-username")
@@ -95,8 +96,9 @@ class ConfigReaderTest : Spek({
             assertThat(pushAppsConfig.cf.dialTimeoutInMillis).isEqualTo(1000)
         }
 
-        it("Parses the apps config") {
-            val pushAppsConfig = ConfigReader.parseConfig(findConigPath("exampleConfig.yml"))
+        context("Parsing the apps config") {
+            it("correctly assigns values") {
+                val pushAppsConfig = ConfigReader.parseConfig(findConfigPath("exampleConfig.yml")).get()
 
             val apps = pushAppsConfig.apps
             assertThat(apps).hasSize(2)
@@ -108,8 +110,8 @@ class ConfigReaderTest : Spek({
             assertThat(app1.memory).isEqualTo(456)
             assertThat(app1.diskQuota).isEqualTo(500)
 
-            assertThat(app1.environment).isEqualTo(mapOf("FRUIT" to "lemons", "MISSING" to ""))
-            assertThat(app1.serviceNames).isEqualTo(listOf("some-service-name"))
+                assertThat(app1.environment).isEqualTo(mapOf("FRUIT" to "lemons", "MISSING" to ""))
+                assertThat(app1.serviceNames).isEqualTo(listOf("some-service-name"))
 
             assertThat(app1.route!!.hostname).isEqualTo("lemons")
             assertThat(app1.route!!.path).isEqualTo("/citrus")
@@ -119,8 +121,16 @@ class ConfigReaderTest : Spek({
             assertThat(app2.diskQuota).isEqualTo(2048)
         }
 
+            context("if blueGreenDeploy is true") {
+                it("throws an error unless a route is provided or noRoute is true") {
+                    val pushAppsConfig = ConfigReader.parseConfig(findConfigPath("blueGreenDeployConfig.yml"))
+                    assertThat(pushAppsConfig).isEmpty()
+                }
+            }
+        }
+
         it("Parses the services config") {
-            val pushAppsConfig = ConfigReader.parseConfig(findConigPath("exampleConfig.yml"))
+            val pushAppsConfig = ConfigReader.parseConfig(findConfigPath("exampleConfig.yml")).get()
 
             val services = pushAppsConfig.services
             assertThat(services).hasSize(1)
@@ -133,7 +143,7 @@ class ConfigReaderTest : Spek({
         }
 
         it("Parses the security group config") {
-            val pushAppsConfig = ConfigReader.parseConfig(findConigPath("exampleConfig.yml"))
+            val pushAppsConfig = ConfigReader.parseConfig(findConfigPath("exampleConfig.yml")).get()
 
             val securityGroups = pushAppsConfig.securityGroups
             assertThat(securityGroups).hasSize(1)
@@ -145,7 +155,7 @@ class ConfigReaderTest : Spek({
         }
 
         it("Parses the user provided services config") {
-            val pushAppsConfig = ConfigReader.parseConfig(findConigPath("exampleConfig.yml"))
+            val pushAppsConfig = ConfigReader.parseConfig(findConfigPath("exampleConfig.yml")).get()
 
             val userProvidedServices = pushAppsConfig.userProvidedServices
             assertThat(userProvidedServices).hasSize(1)
@@ -156,7 +166,7 @@ class ConfigReaderTest : Spek({
         }
 
         it("Parses the db migration config") {
-            val pushAppsConfig = ConfigReader.parseConfig(findConigPath("exampleConfig.yml"))
+            val pushAppsConfig = ConfigReader.parseConfig(findConfigPath("exampleConfig.yml")).get()
 
             val migrations = pushAppsConfig.migrations
             assertThat(migrations).hasSize(1)

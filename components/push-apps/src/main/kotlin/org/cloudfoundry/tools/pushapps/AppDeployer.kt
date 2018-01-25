@@ -42,7 +42,7 @@ class AppDeployer(
     }
 
     private fun deployApplication(appConfig: AppConfig): Flux<OperationResult> {
-        return if (appConfig.blueGreenDeploy == true) {
+        return if (appConfig.blueGreenDeploy) {
             asyncBlueGreenDeployApplication(appConfig)
         } else {
             asyncDeployApplication(appConfig)
@@ -55,41 +55,41 @@ class AppDeployer(
             .toIterable()
             .toList()
 
-        val blueAppConfig = appConfig.copy(name = appConfig.name + "-blue")
+        val greenAppConfig = appConfig.copy(noRoute = true)
+        val blueAppConfig = greenAppConfig.copy(name = "${greenAppConfig.name}-blue")
 
         val deployBlueApplication = asyncDeployApplication(blueAppConfig)
-            .transform(logAsyncOperation(logger, "Deploying blue application ${appConfig.name}"))
+            .transform(logAsyncOperation(logger, "Deploying blue application ${greenAppConfig.name}"))
 
         val operations = mutableListOf<Publisher<OperationResult>>()
 
-        if (applications.contains(appConfig.name)) {
+        if (applications.contains(greenAppConfig.name)) {
             operations.add(doOperation(
-                "Un-map current application routes ${appConfig.name}",
-                cloudFoundryClient.unmapRoute(appConfig),
-                appConfig
+                "Un-map current application routes ${greenAppConfig.name}",
+                cloudFoundryClient.unmapRoute(greenAppConfig),
+                greenAppConfig
             ))
         }
 
-        val deployGreenApplication = asyncDeployApplication(appConfig)
-            .transform(logAsyncOperation(logger, "Deploy green application ${appConfig.name}"))
+        val deployGreenApplication = asyncDeployApplication(greenAppConfig)
+            .transform(logAsyncOperation(logger, "Deploy green application ${greenAppConfig.name}"))
 
         val unmapBlueRoute = doOperation(
-            "Un-map blue routes ${appConfig.name}",
+            "Un-map blue routes ${greenAppConfig.name}",
             cloudFoundryClient.unmapRoute(blueAppConfig),
-            appConfig
+            greenAppConfig
         )
 
         val stopBlueApplication = doOperation(
-            "Stop blue application ${appConfig.name}",
+            "Stop blue application ${greenAppConfig.name}",
             cloudFoundryClient.stopApplication(blueAppConfig.name),
-            appConfig
+            greenAppConfig
         )
 
         operations.addAll(listOf(deployGreenApplication, unmapBlueRoute, stopBlueApplication))
 
         return Flux.concat(deployBlueApplication, *operations.toTypedArray())
     }
-
 
     private fun asyncDeployApplication(appConfig: AppConfig): Flux<OperationResult> {
         val pushAppAction = doOperation(

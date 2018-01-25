@@ -6,42 +6,54 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer
+import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
+import java.io.IOException
 
 @JsonDeserialize(using = ApplicationDeserializer::class)
 data class AppConfig(
-        override val name: String,
-        val path: String,
-        val buildpack: String? = null,
-        val command: String? = null,
-        val environment: Map<String, String>? = null,
-        val instances: Int? = null,
-        val diskQuota: Int? = null,
-        val memory: Int? = null,
-        val noHostname: Boolean? = null,
-        val noRoute: Boolean? = null,
-        val route: Route? = null,
-        val timeout: Int? = null,
-        val blueGreenDeploy: Boolean? = null,
-        val domain: String? = null,
-        val healthCheckType: String? = null,
-        val serviceNames: List<String> = emptyList(),
-        override val optional: Boolean = false
+    override val name: String,
+    val path: String,
+    val buildpack: String? = null,
+    val command: String? = null,
+    val environment: Map<String, String>? = null,
+    val instances: Int? = null,
+    val diskQuota: Int? = null,
+    val memory: Int? = null,
+    val noHostname: Boolean? = null,
+    val noRoute: Boolean = false,
+    val route: Route? = null,
+    val timeout: Int? = null,
+    val blueGreenDeploy: Boolean = false,
+    val domain: String? = null,
+    val healthCheckType: String? = null,
+    val serviceNames: List<String> = emptyList(),
+    override val optional: Boolean = false
 ) : OperationConfig
 
 
 class ApplicationDeserializer : StdDeserializer<AppConfig>(AppConfig::class.java) {
     override fun deserialize(p: JsonParser, ctxt: DeserializationContext): AppConfig {
         val node = p.codec.readTree<JsonNode>(p)
+        val mapper = ObjectMapper().registerModule(KotlinModule())
 
-        val mapper = ObjectMapper()
-        val envNode = node.get("environment")
-        val environment = mapper.convertValue(envNode, Map::class.java)
+        val blueGreenDeploy: Boolean = node.get("blueGreenDeploy")?.asBoolean() ?: false
+        val noRoute: Boolean = node.get("noRoute")?.asBoolean() ?: false
+        val route = if (node.has("route")) mapper.convertValue(node.get("route"), Route::class.java) else null
 
-        val routeNode = node.get("route")
-        val route = mapper.convertValue(routeNode, Route::class.java)
+        if (!blueGreenRequirementsMet(blueGreenDeploy, noRoute, route)) {
+            throw IOException("When doing a blue green deployment, either a route must be provided, or noRoute must be set to true.")
+        }
 
-        val serviceNamesNode = node.get("serviceNames")
-        val serviceNames = mapper.convertValue(serviceNamesNode, List::class.java) as? List<String> ?: emptyList()
+        val environment: Map<String, String>? = if (node.has("environment")) {
+            val typeReference = jacksonTypeRef<Map<String, String>>()
+            mapper.convertValue<Map<String, String>>(node.get("environment"), typeReference)
+        } else null
+
+        val serviceNames = if (node.has("serviceNames")) {
+            val typeReference = jacksonTypeRef<List<String>>()
+            mapper.convertValue<List<String>>(node.get("serviceNames"), typeReference)
+        } else emptyList()
 
         val memoryText = node.get("memory")?.asText()
         val memory = convertToMegabytes(memoryText)
@@ -55,32 +67,34 @@ class ApplicationDeserializer : StdDeserializer<AppConfig>(AppConfig::class.java
         val command = node.get("command")?.asText()
         val instances = node.get("instances")?.asInt()
         val noHostname = node.get("noHostname")?.asBoolean()
-        val noRoute = node.get("noRoute")?.asBoolean()
         val timeout = node.get("timeout")?.asInt()
-        val blueGreenDeploy = node.get("blueGreenDeploy")?.asBoolean()
         val domain = node.get("domain")?.asText()
         val healthCheckType = node.get("healthCheckType")?.asText()
         val optional = node.get("optional")?.asBoolean() ?: false
+
         return AppConfig(
-                name,
-                path,
-                buildpack,
-                command,
-                environment as? Map<String, String>,
-                instances,
-                diskQuota,
-                memory,
-                noHostname,
-                noRoute,
-                route,
-                timeout,
-                blueGreenDeploy,
-                domain,
-                healthCheckType,
-                serviceNames,
-                optional
+            name,
+            path,
+            buildpack,
+            command,
+            environment,
+            instances,
+            diskQuota,
+            memory,
+            noHostname,
+            noRoute,
+            route,
+            timeout,
+            blueGreenDeploy,
+            domain,
+            healthCheckType,
+            serviceNames,
+            optional
         )
     }
+
+    private fun blueGreenRequirementsMet(blueGreenDeploy: Boolean, noRoute: Boolean, route: Route?) =
+        if (blueGreenDeploy) (noRoute || route !== null) else true
 
     private fun convertToMegabytes(memoryText: String?): Int? {
         var memoryTextWithoutSuffix = memoryText
@@ -91,9 +105,7 @@ class ApplicationDeserializer : StdDeserializer<AppConfig>(AppConfig::class.java
         var multiplier = 1
         if (memoryTextWithoutSuffix.endsWith("M", true)) {
             memoryTextWithoutSuffix = memoryTextWithoutSuffix.dropLast(1)
-        }
-
-        else if (memoryTextWithoutSuffix.endsWith("G", true)) {
+        } else if (memoryTextWithoutSuffix.endsWith("G", true)) {
             memoryTextWithoutSuffix = memoryTextWithoutSuffix.dropLast(1)
             multiplier = 1024
         }

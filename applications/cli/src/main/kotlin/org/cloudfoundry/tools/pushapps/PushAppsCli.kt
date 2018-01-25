@@ -12,17 +12,20 @@ class PushAppsCli {
             val configPath: String = ArgumentParser.parseConfigPath(args)
             val config = ConfigReader.parseConfig(configPath)
 
-            logger.info("Pushing applications to the platform")
-            val pushApps = PushApps(
-                config,
-                cloudFoundryClientBuilder()
-            )
+            if (config.isPresent) {
+                logger.info("Pushing applications to the platform")
+                val pushApps = PushApps(
+                    config.get(),
+                    cloudFoundryClientBuilder()
+                )
 
-            val result = pushApps.pushApps()
+                val result = pushApps.pushApps()
 
-            if (!result) System.exit(3)
+                if (!result) System.exit(3)
+            } else {
+                System.exit(3)
+            }
 
-            //TODO capture errors and print
             logger.info("SUCCESS")
         }
     }
