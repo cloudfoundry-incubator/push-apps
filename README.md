@@ -14,10 +14,10 @@ java -jar "applications/cli/build/libs/push-apps-${version}.jar" -c config.yml
 
 ## Configuration
 
-Push Apps is configured using a YAML configuration file. Below is an example,
-we will try to keep this up to date, but just in case, you should be able to use
-the types is the [ConfigReader.kt](components/push-apps/src/main/kotlin/org/cloudfoundry/tools/pushapps/ConfigReader.kt) 
-class to determine the type it is expecting for each field, and which are and are not required.
+Push Apps is configured using a YAML configuration file. Below is an example.
+We will try to keep this up to date, but just in case, you should be able to use
+the types in the classes within [`pushapps/config`](components/push-apps/src/main/kotlin/org/cloudfoundry/tools/pushapps/config)
+to determine which types are expected for each field, and which are and are not required.
 
 ```yaml
 pushApps: #required hash
@@ -96,7 +96,7 @@ securityGroups: #optional array
 - name: outer-api #required
   destination: "0.0.0.0-255.255.255.255" #required
   protocol: all #required
-``` 
+```
 
 ## Development and Debugging
 
@@ -109,7 +109,7 @@ helpful in debugging problems. Make sure to spin up a remote debugger in Idea fo
 this script.
 * There is an [End to End Acceptance Test](applications/acceptance-tests/src/test/kotlin/acceptance/EndToEndAcceptanceTest.kt)
 that will actually hit a real Cloud Foundry instance. The test will looking for the following environment
-variables to determine which environment to hit. 
+variables to determine which environment to hit.
 
     ```
     CF_API=api.cf.example.com
@@ -118,7 +118,7 @@ variables to determine which environment to hit.
     CF_DOMAIN=cf.example.com
     ```
 
-This test does not run as a part of the build `./gradlew build`, but will run on CI, and is available via the 
+This test does not run as a part of the build `./gradlew build`, but will run on CI, and is available via the
 `acceptanceTest` gradle task.
 
 ## Known Issues
