@@ -47,14 +47,14 @@ jobs:
       MAVEN_CENTRAL_TOKEN_PASSWORD: ((maven-central-token-password))
 
 - name: build-docker-images
-build_logs_to_retain: 25
-serial: true
-plan:
-- aggregate:
-  - get: push-apps
-    trigger: false
-- task: build-docker
-  file: push-apps/ci/tasks/build-docker.yml
-  params:
-    DOCKER_USERNAME: "((docker-username))"
-    DOCKER_PASSWORD: "((docker-password))"
+  build_logs_to_retain: 25
+  serial: true
+  plan:
+  - aggregate:
+    - get: push-apps
+      trigger: false
+  - task: build-docker
+    file: push-apps/ci/tasks/build-docker.yml
+    params:
+      DOCKER_USERNAME: "((docker-username))"
+      DOCKER_PASSWORD: "((docker-password))"

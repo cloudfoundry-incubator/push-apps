@@ -38,7 +38,7 @@ task wrapper(type: Wrapper) {
 }
 
 task setCiPipeline(type: Exec) {
-    def secrets = ['lpass', 'show', 'push-apps-ci'].execute().text
+    def secrets = getSecretsFromLastpass()
     def secretsFile = File.createTempFile("secrets", ".tmp")
     secretsFile.write secrets
 
@@ -46,6 +46,10 @@ task setCiPipeline(type: Exec) {
     commandLine = [
             'fly', '-twings', 'sp', '-n', '-ppush-apps', '-cpush-apps.yml', '-l', "${secretsFile.absolutePath}"
     ]
+}
+
+private String getSecretsFromLastpass() {
+    ['lpass', 'show', 'push-apps-ci'].execute().text
 }
 
 task version {
