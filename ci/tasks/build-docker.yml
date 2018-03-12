@@ -1,0 +1,25 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: pcfmetrics/push-apps-ci
+    tag: latest
+inputs:
+- name: push-apps
+params:
+  DOCKER_USERNAME: ((docker-username))
+  DOCKER_PASSWORD: ((docker-password))
+run:
+  path: bash
+  args:
+    - -c
+    - |
+      #!/bin/bash
+      set -ex
+
+      pushd push-apps/ci
+        docker login -u "${DOCKER_USERNAME} -p "${DOCKER_PASSWORD}
+        docker build -t pcfmetrics/push-apps-ci .
+        docker push pcfmetrics/push-apps-ci
+      popd

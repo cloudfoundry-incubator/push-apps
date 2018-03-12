@@ -85,11 +85,29 @@ bintray {
 }
 
 //noinspection GroovyAssignabilityCheck
-task signLibraryArtifacts {
-    dependsOn("checkBintrayCredentials")
+task publishUploadedLibraryArchives(dependsOn: ["checkBintrayCredentials"]) {
     doLast {
-        def bintrayApiKey = getEnvOrThrow('BINTRAY_API_KEY')
-        def bintrayGpgPassphrase = getEnvOrThrow('BINTRAY_GPG_PASSPHRASE')
+        def bintrayApiKey = System.getenv('BINTRAY_API_KEY')
+
+        def publishUploadedArtifact = [
+                'curl',
+                '-u',
+                "trevorwhitney:$bintrayApiKey",
+                '-X', 'POST',
+                "https://api.bintray.com/content/trevorwhitney/maven/push-apps/$pushAppsVersion/publish",
+        ].execute()
+
+        def publishUploadedArtifactJson = new JsonSlurper().parseText(publishUploadedArtifact.text)
+
+        println("Publishing uploaded push-apps artifacts: $publishUploadedArtifactJson")
+    }
+}
+
+//noinspection GroovyAssignabilityCheck
+task signLibraryArtifacts(dependsOn: ["checkBintrayCredentials", "checkMavenCredentials"]) {
+    doLast {
+        def bintrayApiKey = System.getenv('BINTRAY_API_KEY')
+        def bintrayGpgPassphrase = System.getenv('BINTRAY_GPG_PASSPHRASE')
 
         def pushAppsCommand = [
                 'curl',
@@ -108,32 +126,11 @@ task signLibraryArtifacts {
 }
 
 //noinspection GroovyAssignabilityCheck
-task publishUploadedLibraryArchives {
-    dependsOn("checkBintrayCredentials")
+task syncLibraryToMavenCentral(dependsOn: ["checkBintrayCredentials", "checkMavenCredentials"]) {
     doLast {
-        def bintrayApiKey = getEnvOrThrow('BINTRAY_API_KEY')
-
-        def publishUploadedArtifact = [
-                'curl',
-                '-u',
-                "trevorwhitney:$bintrayApiKey",
-                '-X', 'POST',
-                "https://api.bintray.com/content/trevorwhitney/maven/push-apps/$pushAppsVersion/publish",
-        ].execute()
-
-        def publishUploadedArtifactJson = new JsonSlurper().parseText(publishUploadedArtifact.text)
-
-        println("Publishing uploaded push-apps artifacts: $publishUploadedArtifactJson")
-    }
-}
-
-//noinspection GroovyAssignabilityCheck
-task syncLibraryToMavenCentral {
-    dependsOn("checkBintrayCredentials")
-    doLast {
-        def bintrayApiKey = getEnvOrThrow('BINTRAY_API_KEY')
-        def mavenCentralTokenUser = getEnvOrThrow('MAVEN_CENTRAL_TOKEN_USER')
-        def mavenCentralTokenPassword = getEnvOrThrow('MAVEN_CENTRAL_TOKEN_PASSWORD')
+        def bintrayApiKey = System.getenv('BINTRAY_API_KEY')
+        def mavenCentralTokenUser = System.getenv('MAVEN_CENTRAL_TOKEN_USER')
+        def mavenCentralTokenPassword = System.getenv('MAVEN_CENTRAL_TOKEN_PASSWORD')
 
         def synPushAppsLibrary = [
                 'curl',

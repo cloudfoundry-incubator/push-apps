@@ -1,12 +1,5 @@
 ---
 resources:
-- name: metrics-app-dev-release
-  type: git
-  source:
-    uri: git@github.com:pivotal-cf/metrics-app-dev-release.git
-    branch: release-v1.5
-    private_key: ((metrics-git-key))
-    submodules: all
 - name: push-apps
   type: git
   source:
@@ -14,19 +7,6 @@ resources:
     branch: master
     private_key: ((push-apps-git-key))
     submodules: all
-- name: deployments-metrics
-  type: git
-  source:
-    uri: git@github.com:pivotal-cf/deployments-metrics.git
-    private_key: ((metrics-git-key))
-
-- name: push-apps-s3
-  type: s3
-  source:
-    bucket: pcf-metrics
-    regexp: pcf-metrics-push-apps/push-apps-(.*).jar
-    access_key_id: ((pcf-metrics-aws-access-key-id))
-    secret_access_key: ((pcf-metrics-aws-secret-access-key))
 
 jobs:
 - name: test-push-apps
@@ -49,7 +29,7 @@ jobs:
       CF_PASSWORD: ((cf-password))
       CF_DOMAIN: ((cf-domain))
 
-- name: build-push-apps
+- name: publish-push-apps
   build_logs_to_retain: 25
   serial: true
   plan:
@@ -57,24 +37,24 @@ jobs:
     - get: push-apps
       trigger: true
       passed: [ test-push-apps ]
-    - get: metrics-app-dev-release
-    - get: deployments-metrics
-  - task: assemble
-    file: push-apps/ci/tasks/assemble.yml
-  - put: push-apps-s3
+  - task: publish
+    file: push-apps/ci/tasks/publish.yml
     params:
-      file: push-apps-jar-output/*.jar
-  - put: push-apps
-    params:
-      repository: push-apps-bumped
-      rebase: true
-  - task: upload-blob
-    file: push-apps/ci/tasks/upload-blob.yml
-    params:
-      S3_ACCESS_KEY: ((pcf-metrics-aws-access-key-id))
-      S3_SECRET_KEY: ((pcf-metrics-aws-secret-access-key))
+      BINTRAY_USER: ((bintray-user))
+      BINTRAY_API_KEY: ((bintray-api-key))
+      BINTRAY_GPG_PASSPHRASE: ((bintray-gpg-passphrase))
+      MAVEN_CENTRAL_TOKEN_USER: ((maven-central-token-user))
+      MAVEN_CENTRAL_TOKEN_PASSWORD: ((maven-central-token-password))
 
-  - put: metrics-app-dev-release
-    params:
-      repository: metrics-app-dev-release-bumped
-      rebase: true
+- name: build-docker-images
+build_logs_to_retain: 25
+serial: true
+plan:
+- aggregate:
+  - get: push-apps
+    trigger: false
+- task: build-docker
+  file: push-apps/ci/tasks/build-docker.yml
+  params:
+    DOCKER_USERNAME: "((docker-username))"
+    DOCKER_PASSWORD: "((docker-password))"

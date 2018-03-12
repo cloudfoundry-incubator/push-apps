@@ -40,3 +40,11 @@ task checkBintrayCredentials {
         checkEnv('BINTRAY_API_KEY')
     }
 }
+
+task checkMavenCredentials {
+    doLast {
+        checkEnv('BINTRAY_GPG_PASSPHRASE')
+        checkEnv('MAVEN_CENTRAL_TOKEN_USER')
+        checkEnv('MAVEN_CENTRAL_TOKEN_PASSWORD')
+    }
+}

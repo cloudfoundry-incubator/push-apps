@@ -3,7 +3,7 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: trevorwhitney/push-apps-ci
+    repository: pcfmetrics/push-apps-ci
     tag: latest
 inputs:
 - name: push-apps
@@ -26,9 +26,8 @@ run:
         git add -A
         git commit -m "bump version"
 
-        ./gradlew assemble
+        ./gradlew assemble bintrayUpload
+        ./gradlew publishUploadedBintrayArtifacts
+        ./gradlew signBintrayArtifacts
+        ./gradlew syncArtifactsToMavenCentral
       popd
-
-      cp push-apps/applications/cli/build/libs/push-apps-*.jar push-apps-jar-output/
-
-      rsync -a push-apps/ push-apps-bumped

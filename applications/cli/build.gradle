@@ -93,10 +93,9 @@ bintray {
 }
 
 //noinspection GroovyAssignabilityCheck
-task publishUploadedStandaloneArchives {
-    dependsOn("checkBintrayCredentials")
+task publishUploadedStandaloneArchives(dependsOn: ["checkBintrayCredentials"]) {
     doLast {
-        def bintrayApiKey = getEnvOrThrow('BINTRAY_API_KEY')
+        def bintrayApiKey = System.getenv('BINTRAY_API_KEY')
 
         def publishUploadedArtifact = [
                 'curl',
@@ -113,11 +112,10 @@ task publishUploadedStandaloneArchives {
 }
 
 //noinspection GroovyAssignabilityCheck
-task signStandaloneArtifacts {
-    dependsOn("checkBintrayCredentials")
+task signStandaloneArtifacts(dependsOn: ["checkBintrayCredentials", "checkMavenCredentials"]) {
     doLast {
-        def bintrayApiKey = getEnvOrThrow('BINTRAY_API_KEY')
-        def bintrayGpgPassphrase = getEnvOrThrow('BINTRAY_GPG_PASSPHRASE')
+        def bintrayApiKey = System.getenv('BINTRAY_API_KEY')
+        def bintrayGpgPassphrase = System.getenv('BINTRAY_GPG_PASSPHRASE')
 
         def pushAppsStandalone = [
                 'curl',
@@ -136,12 +134,11 @@ task signStandaloneArtifacts {
 }
 
 //noinspection GroovyAssignabilityCheck
-task syncStandaloneToMavenCentral {
-    dependsOn("checkBintrayCredentials")
+task syncStandaloneToMavenCentral(dependsOn: ["checkBintrayCredentials", "checkMavenCredentials"]) {
     doLast {
-        def bintrayApiKey = getEnvOrThrow('BINTRAY_API_KEY')
-        def mavenCentralTokenUser = getEnvOrThrow('MAVEN_CENTRAL_TOKEN_USER')
-        def mavenCentralTokenPassword = getEnvOrThrow('MAVEN_CENTRAL_TOKEN_PASSWORD')
+        def bintrayApiKey = System.getenv('BINTRAY_API_KEY')
+        def mavenCentralTokenUser = System.getenv('MAVEN_CENTRAL_TOKEN_USER')
+        def mavenCentralTokenPassword = System.getenv('MAVEN_CENTRAL_TOKEN_PASSWORD')
 
         def syncPushAppsStandalone = [
                 'curl',
