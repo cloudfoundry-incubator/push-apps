@@ -43,9 +43,8 @@ def getSecretsFromLastpass = { ->
 
 task setCiPipeline {
     doLast {
-        def secrets = getSecretsFromLastpass()
         def secretsFile = File.createTempFile("secrets", ".tmp")
-        secretsFile.write secrets
+        secretsFile.write getSecretsFromLastpass()
          exec {
              workingDir = "$rootProject.rootDir/ci"
              commandLine = [
