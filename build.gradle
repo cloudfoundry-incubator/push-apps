@@ -38,7 +38,7 @@ task wrapper(type: Wrapper) {
 }
 
 task setCiPipeline(type: Exec) {
-    def secrets = getSecretsFromLastpass()
+    def secrets = "${getSecretsFromLastpass()}"
     def secretsFile = File.createTempFile("secrets", ".tmp")
     secretsFile.write secrets
 
