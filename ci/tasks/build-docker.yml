@@ -19,7 +19,7 @@ run:
       set -ex
 
       pushd push-apps/ci
-        docker login -u "${DOCKER_USERNAME} -p "${DOCKER_PASSWORD}
+        docker login -u "${DOCKER_USERNAME}" -p "${DOCKER_PASSWORD}"
         docker build -t pcfmetrics/push-apps-ci .
         docker push pcfmetrics/push-apps-ci
       popd
