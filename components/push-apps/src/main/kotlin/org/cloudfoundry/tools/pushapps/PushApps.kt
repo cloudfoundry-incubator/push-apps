@@ -7,6 +7,7 @@ import org.cloudfoundry.tools.pushapps.config.*
 import org.flywaydb.core.Flyway
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
 import reactor.util.function.component1
 import reactor.util.function.component2
 
@@ -84,6 +85,9 @@ class PushApps(
 
         val result = Flux
             .concat(createSecurityGroups, runMigrations, deployApps)
+            .parallel()
+            .runOn(Schedulers.parallel())
+            .sequential()
             .then(Mono.just(true))
             .doOnError { error ->
                 logger.error(error.message)

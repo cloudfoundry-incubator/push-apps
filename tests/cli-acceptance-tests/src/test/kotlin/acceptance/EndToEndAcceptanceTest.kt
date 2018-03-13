@@ -50,6 +50,8 @@ class EndToEndAcceptanceTest : Spek({
             val helloApp = AppConfig(
                     name = "hello",
                     path = helloAppJar,
+                    memory = 512,
+                    diskQuota = 512,
                     environment = mapOf(
                             "NAME" to "Steve",
                             "VERB" to "walk",
@@ -72,6 +74,8 @@ class EndToEndAcceptanceTest : Spek({
             val blueGreenApp = AppConfig(
                     name = "generic",
                     path = goodbyeAppJar,
+                    memory = 512,
+                    diskQuota = 512,
                     environment = mapOf(
                             "NAME" to "BLUE OR GREEN"
                     ),

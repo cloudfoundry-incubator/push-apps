@@ -277,7 +277,7 @@ class AcceptanceTestSupport {
         if (debug) pushAppsProcessBuilder.environment().put("LOG_LEVEL", "debug")
 
         val pushAppsProcess = pushAppsProcessBuilder.start()
-        pushAppsProcess.waitFor(5, TimeUnit.MINUTES)
+        pushAppsProcess.waitFor(10, TimeUnit.MINUTES)
 
         if (pushAppsProcess.isAlive) {
             Fail.fail("Process failed to finish within timeout window")
