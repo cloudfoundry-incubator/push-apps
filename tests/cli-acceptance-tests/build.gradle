@@ -24,12 +24,9 @@ task buildSampleApps {
 task acceptanceTest(
         type: JavaExec,
         description: 'Runs acceptance tests.',
-        group: 'Verification'
+        group: 'Verification',
+        dependsOn: [":applications:cli:assemble", 'testClasses', "buildSampleApps"]
 ) {
-    dependsOn ":applications:cli:assemble"
-    dependsOn 'testClasses'
-    dependsOn "buildSampleApps"
-
     environment([
             "PUSHAPPS_VERSION": "$version"
     ])

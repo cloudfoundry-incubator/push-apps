@@ -30,29 +30,28 @@ allprojects {
     }
 
     group = 'org.cloudfoundry.tools'
-    version = pushAppsVersion
+    version = "$pushAppsVersion"
 }
 
 task wrapper(type: Wrapper) {
     gradleVersion = '4.3.1'
 }
 
-def getSecretsFromLastpass = { ->
-    ['lpass', 'show', 'push-apps-ci'].execute().text
+static String getSecretsFromLastpass() {
+    return ['lpass', 'show', 'push-apps-ci'].execute().text
 }
 
 task setCiPipeline {
     doLast {
+        def secrets = getSecretsFromLastpass()
         def secretsFile = File.createTempFile("secrets", ".tmp")
-        secretsFile.write getSecretsFromLastpass()
+        secretsFile.write secrets
          exec {
              workingDir = "$rootProject.rootDir/ci"
              commandLine = [
-                     'fly', '-twings', 'sp', '-n', '-ppush-apps', '-cpush-apps.yml', '-l', "${secretsFile.absolutePath}"
+                     'fly', '-tconcourse', 'sp', '-n', '-ppush-apps', '-cpush-apps.yml', '-l', "${secretsFile.absolutePath}"
              ]
-
          }
-
     }
 }
 

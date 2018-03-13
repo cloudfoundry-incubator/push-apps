@@ -7,7 +7,6 @@ resources:
     branch: master
     private_key: ((push-apps-git-key))
     submodules: all
-
 jobs:
 - name: test-push-apps
   build_logs_to_retain: 25
@@ -18,16 +17,65 @@ jobs:
       trigger: true
   - task: test
     timeout: 10m
-    file: push-apps/ci/tasks/test.yml
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: pcfmetrics/push-apps-ci
+          tag: latest
+      inputs:
+      - name: push-apps
+      outputs:
+      - name: built-push-apps
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -ex
+
+            echo "Running tests!"
+            pushd push-apps
+              ./gradlew -g .gradleCache clean build
+            popd
+
+            rsync -a push-apps/ built-push-apps/
   - task: acceptance-test
     attempts: 3
     timeout: 15m
-    file: push-apps/ci/tasks/acceptance-test.yml
     params:
+      DOCKER_HOST: "10.150.0.6:4243"
+      INTEGRATION_HOST: "10.150.0.6"
+      LOG_LEVEL: "debug"
+      CF_LOG_LEVEL: "error"
       CF_API: ((cf-api))
       CF_USERNAME: ((cf-username))
       CF_PASSWORD: ((cf-password))
       CF_DOMAIN: ((cf-domain))
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: pcfmetrics/push-apps-ci
+          tag: latest
+      inputs:
+      - name: built-push-apps
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -ex
+
+            echo "Running Acceptance Tests!"
+
+            pushd built-push-apps
+              ./gradlew -g .gradleCache acceptanceTest
+            popd
 
 - name: publish-push-apps
   build_logs_to_retain: 25
@@ -38,13 +86,45 @@ jobs:
       trigger: true
       passed: [ test-push-apps ]
   - task: publish
-    file: push-apps/ci/tasks/publish.yml
     params:
       BINTRAY_USER: ((bintray-user))
       BINTRAY_API_KEY: ((bintray-api-key))
       BINTRAY_GPG_PASSPHRASE: ((bintray-gpg-passphrase))
       MAVEN_CENTRAL_TOKEN_USER: ((maven-central-token-user))
       MAVEN_CENTRAL_TOKEN_PASSWORD: ((maven-central-token-password))
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          tag: latest
+          repository: pcfmetrics/push-apps-ci
+      inputs:
+      - name: push-apps
+      outputs:
+      - name: push-apps-jar-output
+        path: ""
+      - name: push-apps-bumped
+        path: ""
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -ex
+
+            pushd push-apps
+              ./gradlew bumpPatch
+
+              git add -A
+              git commit -m "bump version"
+
+              ./gradlew assemble bintrayUpload
+              ./gradlew publishUploadedBintrayArtifacts
+              ./gradlew signBintrayArtifacts
+              ./gradlew syncArtifactsToMavenCentral
+            popd
 
 - name: build-docker-images
   build_logs_to_retain: 25
@@ -54,7 +134,33 @@ jobs:
     - get: push-apps
       trigger: false
   - task: build-docker
-    file: push-apps/ci/tasks/build-docker.yml
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: pcfmetrics/push-apps-ci
+          tag: latest
+      inputs:
+      - name: push-apps
+      params:
+        DOCKER_USERNAME: ((docker-username))
+        DOCKER_PASSWORD: ((docker-password))
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -ex
+
+            pushd push-apps/ci
+              docker login -u "${DOCKER_USERNAME}" -p "${DOCKER_PASSWORD}"
+              docker build -t pcfmetrics/push-apps-ci .
+              docker push pcfmetrics/push-apps-ci
+            popd
     params:
+      DOCKER_API_VERSION: 1.23
+      DOCKER_HOST: "10.150.0.6:4243"
       DOCKER_USERNAME: "((docker-username))"
       DOCKER_PASSWORD: "((docker-password))"
