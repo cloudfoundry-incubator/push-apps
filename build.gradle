@@ -37,11 +37,23 @@ task wrapper(type: Wrapper) {
     gradleVersion = '4.3.1'
 }
 
+task verifyLastpassLogin {
+    doLast{
+        def lsProcess = ['lpass', 'ls'].execute()
+        lsProcess.waitFor()
+        def exitValue = lsProcess.exitValue()
+
+        if (exitValue != 0) {
+            throw new GradleException('Must be logged in to lastpass')
+        }
+    }
+}
+
 static String getSecretsFromLastpass() {
     return ['lpass', 'show', 'push-apps-ci'].execute().text
 }
 
-task setCiPipeline {
+task setCiPipeline(dependsOn: 'verifyLastpassLogin') {
     doLast {
         def secrets = getSecretsFromLastpass()
         def secretsFile = File.createTempFile("secrets", ".tmp")

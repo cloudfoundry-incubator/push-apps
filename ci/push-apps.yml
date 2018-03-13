@@ -1,4 +1,11 @@
 ---
+resource_types:
+- name: slack-notification
+  type: docker-image
+  source:
+    repository: cfcommunity/slack-notification-resource
+    tag: latest
+
 resources:
 - name: push-apps
   type: git
@@ -7,10 +14,21 @@ resources:
     branch: master
     private_key: ((push-apps-git-key))
     submodules: all
+- name: slack-alert
+  type: slack-notification
+  source:
+    url: ((webhook-url))
+
 jobs:
 - name: test-push-apps
   build_logs_to_retain: 25
   serial: true
+  on_failure:
+    put: slack-alert
+    params:
+      text: |
+        The Push-Apps build failed
+        https://pcf-metrics.ci.cf-app.com/teams/main/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
   plan:
   - aggregate:
     - get: push-apps
@@ -80,6 +98,12 @@ jobs:
 - name: publish-push-apps
   build_logs_to_retain: 25
   serial: true
+  on_failure:
+    put: slack-alert
+    params:
+      text: |
+        Push-Apps failed to publish
+        https://pcf-metrics.ci.cf-app.com/teams/main/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
   plan:
   - aggregate:
     - get: push-apps
@@ -102,10 +126,7 @@ jobs:
       inputs:
       - name: push-apps
       outputs:
-      - name: push-apps-jar-output
-        path: ""
       - name: push-apps-bumped
-        path: ""
       run:
         path: bash
         args:
@@ -125,6 +146,12 @@ jobs:
               ./gradlew signBintrayArtifacts
               ./gradlew syncArtifactsToMavenCentral
             popd
+
+            rsync -a push-apps/ push-apps-bumped
+  - put: push-apps
+    params:
+      repository: push-apps-bumped
+      rebase: true
 
 - name: build-docker-images
   build_logs_to_retain: 25
