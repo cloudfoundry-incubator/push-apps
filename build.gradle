@@ -61,7 +61,7 @@ task setCiPipeline(dependsOn: 'verifyLastpassLogin') {
          exec {
              workingDir = "$rootProject.rootDir/ci"
              commandLine = [
-                     'fly', '-tconcourse', 'sp', '-n', '-ppush-apps', '-cpush-apps.yml', '-l', "${secretsFile.absolutePath}"
+                     'fly', '-tsuperpipe', 'sp', '-n', '-ppush-apps', '-cpush-apps.yml', '-l', "${secretsFile.absolutePath}"
              ]
          }
     }

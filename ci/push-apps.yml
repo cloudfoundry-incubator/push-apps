@@ -30,70 +30,66 @@ jobs:
         The Push-Apps build failed
         https://pcf-metrics.ci.cf-app.com/teams/main/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
   plan:
+  - get: push-apps
+    trigger: true
   - aggregate:
-    - get: push-apps
-      trigger: true
-  - task: test
-    timeout: 10m
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: pcfmetrics/push-apps-ci
-          tag: latest
-      inputs:
-      - name: push-apps
-      outputs:
-      - name: built-push-apps
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash
-            set -ex
+    - task: test
+      timeout: 10m
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: pcfmetrics/push-apps-ci
+            tag: latest
+        inputs:
+        - name: push-apps
+        run:
+          path: bash
+          args:
+            - -c
+            - |
+              #!/bin/bash
+              set -ex
 
-            echo "Running tests!"
-            pushd push-apps
-              ./gradlew -g .gradleCache clean build
-            popd
+              echo "Running tests!"
+              pushd push-apps
+                ./gradlew clean build
+              popd
+    - task: acceptance-test
+      attempts: 3
+      timeout: 15m
+      params:
+        DOCKER_HOST: "10.0.16.11:4243"
+        INTEGRATION_HOST: "10.0.16.11"
+        LOG_LEVEL: "debug"
+        CF_LOG_LEVEL: "error"
+        CF_API: ((cf-api))
+        CF_USERNAME: ((cf-username))
+        CF_PASSWORD: ((cf-password))
+        CF_DOMAIN: ((cf-domain))
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: pcfmetrics/push-apps-ci
+            tag: latest
+        inputs:
+        - name: push-apps
+        run:
+          path: bash
+          args:
+            - -c
+            - |
+              #!/bin/bash
+              set -ex
 
-            rsync -a push-apps/ built-push-apps/
-  - task: acceptance-test
-    attempts: 3
-    timeout: 15m
-    params:
-      DOCKER_HOST: "10.150.0.6:4243"
-      INTEGRATION_HOST: "10.150.0.6"
-      LOG_LEVEL: "debug"
-      CF_LOG_LEVEL: "error"
-      CF_API: ((cf-api))
-      CF_USERNAME: ((cf-username))
-      CF_PASSWORD: ((cf-password))
-      CF_DOMAIN: ((cf-domain))
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: pcfmetrics/push-apps-ci
-          tag: latest
-      inputs:
-      - name: built-push-apps
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash
-            set -ex
+              echo "Running Acceptance Tests!"
 
-            echo "Running Acceptance Tests!"
-
-            pushd built-push-apps
-              ./gradlew -g .gradleCache acceptanceTest
-            popd
+              pushd push-apps
+                ./gradlew acceptanceTest
+              popd
 
 - name: publish-push-apps
   build_logs_to_retain: 25
@@ -103,7 +99,7 @@ jobs:
     params:
       text: |
         Push-Apps failed to publish
-        https://pcf-metrics.ci.cf-app.com/teams/main/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+        https://concourse.superpipe.gcp.pcf-metrics.com/teams/main/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
   plan:
   - aggregate:
     - get: push-apps
@@ -188,6 +184,6 @@ jobs:
             popd
     params:
       DOCKER_API_VERSION: 1.23
-      DOCKER_HOST: "10.150.0.6:4243"
+      DOCKER_HOST: "10.0.16.11:4243"
       DOCKER_USERNAME: "((docker-username))"
       DOCKER_PASSWORD: "((docker-password))"
