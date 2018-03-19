@@ -40,7 +40,7 @@ task wrapper(type: Wrapper) {
 task verifyLastpassLogin {
     doLast{
         def lsProcess = ['lpass', 'ls'].execute()
-        lsProcess.waitFor()
+        lsProcess.waitForOrKill(5000)
         def exitValue = lsProcess.exitValue()
 
         if (exitValue != 0) {
