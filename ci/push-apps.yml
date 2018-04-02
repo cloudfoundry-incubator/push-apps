@@ -90,6 +90,27 @@ jobs:
               pushd push-apps
                 ./gradlew acceptanceTest
               popd
+  - task: docker-compose-down
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: pcfmetrics/push-apps-ci
+          tag: latest
+      inputs:
+      - name: push-apps
+      run:
+        path: bash
+        args:
+          - -c
+          - |
+            #!/bin/bash
+            set -ex
+
+            pushd push-apps/tests/cli-acceptance-tests/src/test/kotlin/support
+              docker-compose down
+            popd
 
 - name: publish-push-apps
   build_logs_to_retain: 25
