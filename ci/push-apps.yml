@@ -28,7 +28,7 @@ jobs:
     params:
       text: |
         The Push-Apps build failed
-        https://pcf-metrics.ci.cf-app.com/teams/main/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+        https://concourse.superpipe.gcp.pcf-metrics.com/teams/main/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
   plan:
   - get: push-apps
     trigger: true
@@ -44,6 +44,8 @@ jobs:
             tag: latest
         inputs:
         - name: push-apps
+        caches:
+        - path: "gradleCache"
         run:
           path: bash
           args:
@@ -52,9 +54,12 @@ jobs:
               #!/bin/bash
               set -ex
 
+              mkdir -p gradleCache
+              gradle_cache="$(pwd)/gradleCache"
+
               echo "Running tests!"
               pushd push-apps
-                ./gradlew clean build
+                ./gradlew -g ${gradle_cache} clean build
               popd
     - task: acceptance-test
       attempts: 3
@@ -77,6 +82,8 @@ jobs:
             tag: latest
         inputs:
         - name: push-apps
+        caches:
+        - path: "gradleCache"
         run:
           path: bash
           args:
@@ -85,10 +92,13 @@ jobs:
               #!/bin/bash
               set -ex
 
+              mkdir -p gradleCache
+              gradle_cache="$(pwd)/gradleCache"
+
               echo "Running Acceptance Tests!"
 
               pushd push-apps
-                ./gradlew acceptanceTest
+                ./gradlew -g ${gradle_cache} acceptanceTest
               popd
   - task: docker-compose-down
     config:
