@@ -101,6 +101,8 @@ jobs:
                 ./gradlew -g ${gradle_cache} acceptanceTest
               popd
   - task: docker-compose-down
+    params:
+      DOCKER_HOST: "10.0.16.11:4243"
     config:
       platform: linux
       image_resource:
