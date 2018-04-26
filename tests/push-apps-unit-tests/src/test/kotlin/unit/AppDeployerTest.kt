@@ -4,6 +4,7 @@ import com.nhaarman.mockito_kotlin.*
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.fail
 import org.cloudfoundry.doppler.LogMessage
+import org.cloudfoundry.tools.pushapps.AppDeployer
 import org.cloudfoundry.tools.pushapps.CloudFoundryClient
 import org.cloudfoundry.tools.pushapps.OperationResult
 import org.cloudfoundry.tools.pushapps.config.AppConfig
@@ -19,23 +20,28 @@ import java.time.temporal.ChronoUnit
 
 class AppDeployerTest : Spek({
     data class TestContext(
-        val appDeployer: org.cloudfoundry.tools.pushapps.AppDeployer,
+        val appDeployer: AppDeployer,
         val mockCfClient: CloudFoundryClient
     )
 
-    fun buildTestContext(appConfig: AppConfig, retryCount: Int): TestContext {
+    fun buildTestContext(appConfigs: List<AppConfig>, maxInFlight: Int = 1, existingApplications: List<String> = emptyList()): TestContext {
         val mockCfClient = mock<CloudFoundryClient>()
         val logMessage = mock<LogMessage>()
         whenever(mockCfClient.fetchRecentLogsForAsync(any())).thenReturn(Flux.fromIterable(listOf(logMessage)), Flux.fromIterable(listOf(logMessage)))
 
-        val appDeployer = org.cloudfoundry.tools.pushapps.AppDeployer(
+        val appDeployer = AppDeployer(
             cloudFoundryClient = mockCfClient,
-            appConfigs = listOf(appConfig),
-            availableServices = listOf("grapefruit"),
-            maxInFlight = 1
+            appConfigs = appConfigs,
+            availableServices = listOf("grapefruit", "rags"),
+            existingApplications = existingApplications,
+            maxInFlight = maxInFlight
         )
 
         return TestContext(appDeployer, mockCfClient)
+    }
+
+    fun buildTestContext(appConfig: AppConfig, maxInFlight: Int = 1, existingApplications: List<String> = emptyList()): TestContext {
+        return buildTestContext(listOf(appConfig), maxInFlight, existingApplications)
     }
 
     describe("#deployApps") {
@@ -48,7 +54,7 @@ class AppDeployerTest : Spek({
                 serviceNames = listOf("grapefruit"),
                 route = Route("kiwi", "orange")
             )
-            val tc = buildTestContext(appConfig = appConfig, retryCount = 1)
+            val tc = buildTestContext(appConfig = appConfig)
 
             whenever(tc.mockCfClient.pushApplication(any())).thenReturn(Mono.empty())
             whenever(tc.mockCfClient.setApplicationEnvironment(any())).thenReturn(Mono.empty())
@@ -78,7 +84,7 @@ class AppDeployerTest : Spek({
                 serviceNames = listOf("unavailable"),
                 route = Route("kiwi", "orange")
             )
-            val tc = buildTestContext(appConfig = appConfig, retryCount = 1)
+            val tc = buildTestContext(appConfig = appConfig)
 
             whenever(tc.mockCfClient.pushApplication(any())).thenReturn(Mono.empty())
             whenever(tc.mockCfClient.setApplicationEnvironment(any())).thenReturn(Mono.empty())
@@ -103,7 +109,7 @@ class AppDeployerTest : Spek({
                 serviceNames = listOf("grapefruit"),
                 route = Route("kiwi", "orange")
             )
-            val tc = buildTestContext(appConfig = appConfig, retryCount = 0)
+            val tc = buildTestContext(appConfig = appConfig)
 
             whenever(tc.mockCfClient.pushApplication(any())).thenReturn(Mono.empty())
             whenever(tc.mockCfClient.setApplicationEnvironment(any())).thenReturn(Mono.empty())
@@ -139,11 +145,10 @@ class AppDeployerTest : Spek({
 
             val greenAppConfig = appConfig.copy(noRoute = true)
             val blueAppConfig = greenAppConfig.copy(name = "${greenAppConfig.name}-blue")
-            val tc = buildTestContext(appConfig = appConfig, retryCount = 1)
+            val tc = buildTestContext(appConfig = appConfig, existingApplications = listOf(appConfig.name))
 
             beforeEachTest {
                 reset(tc.mockCfClient)
-                whenever(tc.mockCfClient.listApplications()).thenReturn(Flux.fromIterable(listOf(appConfig.name)))
                 whenever(tc.mockCfClient.pushApplication(any())).thenReturn(Mono.empty(), Mono.empty())
                 whenever(tc.mockCfClient.setApplicationEnvironment(any())).thenReturn(Mono.empty(), Mono.empty())
                 whenever(tc.mockCfClient.bindServicesToApplication(any(), any())).thenReturn(listOf(Mono.empty()), listOf(Mono.empty()))
@@ -154,7 +159,11 @@ class AppDeployerTest : Spek({
             }
 
             it("deploys both the regular app, as well as a blue one") {
-                val results = tc.appDeployer.deployApps().toIterable().toList()
+                val results = tc.appDeployer
+                    .deployApps()
+                    .timeout(Duration.of(5, ChronoUnit.SECONDS))
+                    .toIterable()
+                    .toList()
                 assertThat(results).hasSize(13)
 
                 verify(tc.mockCfClient, times(1)).pushApplication(greenAppConfig)
@@ -203,7 +212,7 @@ class AppDeployerTest : Spek({
                     serviceNames = listOf("grapefruit"),
                     route = Route("kiwi", "orange")
                 )
-                val tc = buildTestContext(appConfig = appConfig, retryCount = 1)
+                val tc = buildTestContext(appConfig = appConfig)
 
                 whenever(tc.mockCfClient.pushApplication(any())).thenReturn(Mono.empty())
                 whenever(tc.mockCfClient.setApplicationEnvironment(any())).thenThrow(NullPointerException())

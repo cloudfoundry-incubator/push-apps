@@ -4,45 +4,35 @@ import org.apache.logging.log4j.LogManager
 import org.cloudfoundry.tools.pushapps.config.ServiceConfig
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import java.util.concurrent.ConcurrentLinkedQueue
 
 class ServiceCreator(
-        private val serviceConfigs: List<ServiceConfig>,
-        private val cloudFoundryClient: CloudFoundryClient,
-        private val maxInFlight: Int,
-        private val retryCount: Int
+    private val serviceConfigs: List<ServiceConfig>,
+    private val cloudFoundryClient: CloudFoundryClient,
+    private val maxInFlight: Int
 ) {
     private val logger = LogManager.getLogger(ServiceCreator::class.java)
 
     fun createServices(): Flux<OperationResult> {
-        val serviceNames = serviceConfigs.map(ServiceConfig::name)
+        val servicesToCreate = filterExistingServices(serviceConfigs)
+        val serviceNames = servicesToCreate.map(ServiceConfig::name)
         logger.info("Creating services: ${serviceNames.joinToString(", ")}.")
 
-        val queue = ConcurrentLinkedQueue<ServiceConfig>()
-        queue.addAll(filterExistingServices())
-
-        return Flux.create<OperationResult> { sink ->
-            val subscriber = OperationScheduler<ServiceConfig>(
-                maxInFlight = maxInFlight,
-                sink = sink,
-                operation = this::createService,
-                operationIdentifier = ServiceConfig::name,
-                operationDescription = this::createServiceDescription,
-                operationConfigQueue = queue
-            )
-
-            val flux = createQueueBackedFlux(queue)
-            flux.subscribe(subscriber)
-        }
+        return scheduleOperations(
+            configs = servicesToCreate,
+            maxInFlight = maxInFlight,
+            operation = this::createService,
+            operationIdentifier = ServiceConfig::name,
+            operationDescription = this::createServiceDescription
+        )
     }
 
-    private fun filterExistingServices(): List<ServiceConfig> {
+    private fun filterExistingServices(configs: List<ServiceConfig>): List<ServiceConfig> {
         val existingServiceNames = cloudFoundryClient
             .listServices()
             .toIterable()
             .toList()
 
-        return serviceConfigs.filter { serviceConfig ->
+        return configs.filter { serviceConfig ->
             !existingServiceNames.contains(serviceConfig.name)
         }
     }

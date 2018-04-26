@@ -2,7 +2,6 @@ package org.cloudfoundry.tools.pushapps
 
 import org.apache.logging.log4j.LogManager
 import org.cloudfoundry.UnknownCloudFoundryException
-import org.cloudfoundry.doppler.LogMessage
 import org.cloudfoundry.tools.pushapps.config.*
 import org.flywaydb.core.Flyway
 import reactor.core.publisher.Flux
@@ -37,12 +36,11 @@ class PushApps(
             .zipWith(targetedCfClientGenerator.next())
             .flatMapMany { (spaceId, cloudFoundryClient) ->
                 securityGroups
-                    .createSecurityGroupsFlux(cloudFoundryClient, cf, pushAppsConfig, spaceId)
+                    .createSecurityGroupsFlux(cloudFoundryClient, pushAppsConfig, spaceId)
             }
 
         val runMigrations: Flux<OperationResult> = migrations.runMigrationsFlux(
             maxInFlight = pushAppsConfig.maxInFlight,
-            retryCount = pushAppsConfig.operationRetryCount,
             timeoutInMinutes = pushAppsConfig.migrationTimeoutInMinutes
         )
 
@@ -51,8 +49,7 @@ class PushApps(
             .flatMapMany { cloudFoundryClient ->
                 services.createServices(
                     cloudFoundryClient = cloudFoundryClient,
-                    maxInFlight = pushAppsConfig.maxInFlight,
-                    retryCount = pushAppsConfig.operationRetryCount
+                    maxInFlight = pushAppsConfig.maxInFlight
                 )
             }
 
@@ -61,8 +58,7 @@ class PushApps(
             .flatMapMany { cloudFoundryClient ->
                 userProvidedServices.createOrUpdateUserProvidedServices(
                     cloudFoundryClient = cloudFoundryClient,
-                    maxInFlight = pushAppsConfig.maxInFlight,
-                    retryCount = pushAppsConfig.operationRetryCount
+                    maxInFlight = pushAppsConfig.maxInFlight
                 )
             }
 
@@ -101,18 +97,15 @@ class PushApps(
     }
 
     private fun List<SecurityGroup>.createSecurityGroupsFlux(
-            cloudFoundryClient: CloudFoundryClient,
-            cf: CfConfig,
-            pushAppsConfig: PushAppsConfig,
-            spaceId: String
+        cloudFoundryClient: CloudFoundryClient,
+        pushAppsConfig: PushAppsConfig,
+        spaceId: String
     ): Flux<OperationResult> {
         if (isEmpty()) return Flux.empty()
 
         val createSecurityGroups: Flux<OperationResult> = createSecurityGroups(
             cloudFoundryClient,
-            cf.space,
             pushAppsConfig.maxInFlight,
-            pushAppsConfig.operationRetryCount,
             spaceId
         )
 
@@ -149,33 +142,27 @@ class PushApps(
 
     private fun List<SecurityGroup>.createSecurityGroups(
         cloudFoundryClient: CloudFoundryClient,
-        space: String,
         maxInFlight: Int,
-        retryCount: Int,
         spaceId: String
     ): Flux<OperationResult> {
         val securityGroupCreator = SecurityGroupCreator(
             this,
             cloudFoundryClient,
-            space,
-            maxInFlight,
-            retryCount
+            maxInFlight
         )
         return securityGroupCreator.createSecurityGroups(spaceId)
     }
 
     private fun List<ServiceConfig>.createServices(
         cloudFoundryClient: CloudFoundryClient,
-        maxInFlight: Int,
-        retryCount: Int
+        maxInFlight: Int
     ): Flux<String> {
         if (isEmpty()) return Flux.fromIterable(emptyList())
 
         val serviceCreator = ServiceCreator(
             serviceConfigs = this,
             cloudFoundryClient = cloudFoundryClient,
-            maxInFlight = maxInFlight,
-            retryCount = retryCount
+            maxInFlight = maxInFlight
         )
 
         return serviceCreator
@@ -191,16 +178,14 @@ class PushApps(
 
     private fun List<UserProvidedServiceConfig>.createOrUpdateUserProvidedServices(
         cloudFoundryClient: CloudFoundryClient,
-        maxInFlight: Int,
-        retryCount: Int
+        maxInFlight: Int
     ): Flux<String> {
         if (isEmpty()) return Flux.fromIterable(emptyList())
 
         val userProvidedServiceCreator = UserProvidedServiceCreator(
             cloudFoundryClient = cloudFoundryClient,
             serviceConfigs = this,
-            maxInFlight = maxInFlight,
-            retryCount = retryCount
+            maxInFlight = maxInFlight
         )
 
         return userProvidedServiceCreator
@@ -216,7 +201,6 @@ class PushApps(
 
     private fun List<Migration>.runMigrationsFlux(
         maxInFlight: Int,
-        retryCount: Int,
         timeoutInMinutes: Long
     ): Flux<OperationResult> {
         if (isEmpty()) return Flux.empty<OperationResult>()
@@ -226,7 +210,6 @@ class PushApps(
             flywayWrapper,
             dataSourceFactory,
             maxInFlight = maxInFlight,
-            retryCount = retryCount,
             timeoutInMinutes = timeoutInMinutes
         ).migrate()
 
@@ -238,7 +221,12 @@ class PushApps(
         maxInFlight: Int,
         cloudFoundryClient: CloudFoundryClient
     ): Flux<OperationResult> {
-        val appDeployer = org.cloudfoundry.tools.pushapps.AppDeployer(cloudFoundryClient, this, availableServices, maxInFlight)
+        val applications = cloudFoundryClient
+            .listApplications()
+            .toIterable()
+            .toList()
+
+        val appDeployer = AppDeployer(cloudFoundryClient, this, availableServices, applications, maxInFlight)
         val results = appDeployer.deployApps()
 
         return handleOperationResults(results, "Deploying application")
@@ -278,20 +266,11 @@ class PushApps(
 
         logger.error("$actionName $name failed with error messages: [${messages.joinToString(", ")}]")
 
-        val logs = recentLogs
-            .toIterable()
-            .sortedByDescending(LogMessage::getTimestamp)
-            .map(LogMessage::getMessage)
-            .toList()
-
-        if (logs.isNotEmpty()) {
-            val failedDeploymentLogLinesToShow = Math.min(logs.size - 1, this.config.pushApps.failedDeploymentLogLinesToShow)
-            val logsToShow = logs.subList(0, failedDeploymentLogLinesToShow)
-            logger.error("Deployment of $name failed, printing the most recent $failedDeploymentLogLinesToShow log lines")
-            logger.error(logsToShow.joinToString("\n\r"))
-        } else {
-            logger.error("Unable to fetch logs for failed operation $name")
-        }
+        val failedDeploymentLogLinesToShow = this.config.pushApps.failedDeploymentLogLinesToShow
+        logger.error("Deployment of $name failed")
+        recentLogs
+            .sort { o1, o2 -> (o1.timestamp - o2.timestamp).toInt() }
+            .take(failedDeploymentLogLinesToShow.toLong()).doOnEach(logger::error)
 
         throw PushAppsError("Non-optional operation $name failed", error)
     }

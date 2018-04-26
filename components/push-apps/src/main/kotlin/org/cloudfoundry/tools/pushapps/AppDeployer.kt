@@ -7,12 +7,12 @@ import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.publisher.whenComplete
-import java.util.concurrent.ConcurrentLinkedQueue
 
 class AppDeployer(
     private val cloudFoundryClient: CloudFoundryClient,
     private val appConfigs: List<AppConfig>,
     private val availableServices: List<String>,
+    val existingApplications: List<String>,
     private val maxInFlight: Int
 ) {
     private val logger: Logger = LogManager.getLogger(AppDeployer::class.java)
@@ -21,23 +21,14 @@ class AppDeployer(
         val appNames = appConfigs.map(AppConfig::name)
         logger.info("Deploying applications: ${appNames.joinToString(", ")}")
 
-        val queue = ConcurrentLinkedQueue<AppConfig>()
-        queue.addAll(appConfigs)
-
-        return Flux.create<OperationResult> { sink ->
-            val subscriber = OperationScheduler<AppConfig>(
-                maxInFlight = maxInFlight,
-                sink = sink,
-                operation = this::deployApplication,
-                operationIdentifier = AppConfig::name,
-                operationDescription = { appConfig: AppConfig -> "Push application ${appConfig.name}" },
-                operationConfigQueue = queue,
-                fetchLogs = { identifier -> cloudFoundryClient.fetchRecentLogsForAsync(identifier) }
-            )
-
-            val flux = createQueueBackedFlux(queue)
-            flux.subscribe(subscriber)
-        }
+        return scheduleOperations(
+            configs = appConfigs,
+            maxInFlight = maxInFlight,
+            operation = this::deployApplication,
+            operationIdentifier = AppConfig::name,
+            operationDescription = { appConfig: AppConfig -> "Push application ${appConfig.name}" },
+            fetchLogs = { identifier -> cloudFoundryClient.fetchRecentLogsForAsync(identifier) }
+        )
     }
 
     private fun deployApplication(appConfig: AppConfig): Flux<OperationResult> {
@@ -49,11 +40,6 @@ class AppDeployer(
     }
 
     private fun asyncBlueGreenDeployApplication(appConfig: AppConfig): Flux<OperationResult> {
-        val applications = cloudFoundryClient
-            .listApplications()
-            .toIterable()
-            .toList()
-
         val greenAppConfig = appConfig.copy(noRoute = true)
         val blueAppConfig = greenAppConfig.copy(name = "${greenAppConfig.name}-blue")
 
@@ -62,7 +48,7 @@ class AppDeployer(
 
         val operations = mutableListOf<Publisher<OperationResult>>()
 
-        if (applications.contains(greenAppConfig.name)) {
+        if (existingApplications.contains(greenAppConfig.name)) {
             operations.add(doOperation(
                 "Un-map current application routes ${greenAppConfig.name}",
                 { cloudFoundryClient.unmapRoute(greenAppConfig) },

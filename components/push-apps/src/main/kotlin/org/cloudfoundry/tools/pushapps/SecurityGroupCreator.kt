@@ -5,14 +5,11 @@ import org.cloudfoundry.client.v2.ClientV2Exception
 import org.cloudfoundry.tools.pushapps.config.SecurityGroup
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import java.util.concurrent.ConcurrentLinkedQueue
 
 class SecurityGroupCreator(
-        private val securityGroups: List<SecurityGroup>,
-        private val cloudFoundryClient: CloudFoundryClient,
-        private val space: String, //TODO: not used
-        private val maxInFlight: Int,
-        private val retryCount: Int
+    private val securityGroups: List<SecurityGroup>,
+    private val cloudFoundryClient: CloudFoundryClient,
+    private val maxInFlight: Int
 ) {
     private val logger = LogManager.getLogger(SecurityGroupCreator::class.java)
 
@@ -20,22 +17,13 @@ class SecurityGroupCreator(
         val securityGroupNames = securityGroups.map(SecurityGroup::name)
         logger.info("Creating security groups: ${securityGroupNames.joinToString(", ")}.")
 
-        val queue = ConcurrentLinkedQueue<SecurityGroup>()
-        queue.addAll(securityGroups)
-
-        return Flux.create<OperationResult> { sink ->
-            val subscriber = OperationScheduler(
-                maxInFlight = maxInFlight,
-                sink = sink,
-                operation = { group: SecurityGroup -> createSecurityGroup(spaceId, group) },
-                operationIdentifier = SecurityGroup::name,
-                operationDescription = { group -> "Create security group ${group.name}" },
-                operationConfigQueue = queue
-            )
-
-            val flux = createQueueBackedFlux(queue)
-            flux.subscribe(subscriber)
-        }
+        return scheduleOperations(
+            configs = securityGroups,
+            maxInFlight = maxInFlight,
+            operation = { group: SecurityGroup -> createSecurityGroup(spaceId, group) },
+            operationIdentifier = SecurityGroup::name,
+            operationDescription = { group -> "Create security group ${group.name}" }
+        )
     }
 
     private fun createSecurityGroup(spaceId: String, group: SecurityGroup): Mono<OperationResult> {

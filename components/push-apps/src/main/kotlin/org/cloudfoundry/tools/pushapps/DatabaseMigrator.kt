@@ -8,15 +8,13 @@ import reactor.core.publisher.Mono
 import java.sql.Connection
 import java.sql.SQLException
 import java.time.Duration
-import java.util.concurrent.ConcurrentLinkedQueue
 
 class DatabaseMigrator(
-        private val migrations: List<Migration>,
-        private val flywayWrapper: FlywayWrapper,
-        private val dataSourceFactory: DataSourceFactory,
-        private val maxInFlight: Int,
-        private val retryCount: Int,
-        private val timeoutInMinutes: Long
+    private val migrations: List<Migration>,
+    private val flywayWrapper: FlywayWrapper,
+    private val dataSourceFactory: DataSourceFactory,
+    private val maxInFlight: Int,
+    private val timeoutInMinutes: Long
 ) {
     private val logger = LogManager.getLogger(DatabaseMigrator::class.java)
 
@@ -24,22 +22,13 @@ class DatabaseMigrator(
         val schemas = migrations.map(Migration::schema)
         logger.info("Running migrations for the following schemas: ${schemas.joinToString(", ")}")
 
-        val queue = ConcurrentLinkedQueue<Migration>()
-        queue.addAll(migrations)
-
-        return Flux.create<OperationResult> { sink ->
-            val subscriber = OperationScheduler<Migration>(
-                maxInFlight = maxInFlight,
-                sink = sink,
-                operation = this::migrateDatabase,
-                operationIdentifier = Migration::schema,
-                operationDescription = this::migrationDescription,
-                operationConfigQueue = queue
-            )
-
-            val flux = createQueueBackedFlux(queue)
-            flux.subscribe(subscriber)
-        }
+        return scheduleOperations(
+            configs = migrations,
+            maxInFlight = maxInFlight,
+            operation = this::migrateDatabase,
+            operationIdentifier = Migration::schema,
+            operationDescription = this::migrationDescription
+        )
     }
 
     private fun migrationDescription(migration: Migration): String {

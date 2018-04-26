@@ -4,22 +4,17 @@ import org.apache.logging.log4j.LogManager
 import org.cloudfoundry.tools.pushapps.config.UserProvidedServiceConfig
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import java.util.concurrent.ConcurrentLinkedQueue
 
 class UserProvidedServiceCreator(
-        private val cloudFoundryClient: CloudFoundryClient,
-        private val serviceConfigs: List<UserProvidedServiceConfig>,
-        private val maxInFlight: Int,
-        private val retryCount: Int
+    private val cloudFoundryClient: CloudFoundryClient,
+    private val serviceConfigs: List<UserProvidedServiceConfig>,
+    private val maxInFlight: Int
 ) {
     private val logger = LogManager.getLogger(UserProvidedServiceCreator::class.java)
 
     fun createOrUpdateServices(): Flux<OperationResult> {
         val serviceNames = serviceConfigs.map(UserProvidedServiceConfig::name)
         logger.info("Creating user provided services: ${serviceNames.joinToString(", ")}.")
-
-        val queue = ConcurrentLinkedQueue<UserProvidedServiceConfig>()
-        queue.addAll(serviceConfigs)
 
         val existingServiceNames = cloudFoundryClient
             .listServices()
@@ -30,19 +25,13 @@ class UserProvidedServiceCreator(
             createUserProvidedService(existingServiceNames, serviceConfig)
         }
 
-        return Flux.create<OperationResult> { sink ->
-            val subscriber = OperationScheduler<UserProvidedServiceConfig>(
-                maxInFlight = maxInFlight,
-                sink = sink,
-                operation = createServiceOperation,
-                operationIdentifier = UserProvidedServiceConfig::name,
-                operationDescription = { service -> "Create user provided service ${service.name}" },
-                operationConfigQueue = queue
-            )
-
-            val flux = createQueueBackedFlux(queue)
-            flux.subscribe(subscriber)
-        }
+        return scheduleOperations(
+            configs = serviceConfigs,
+            maxInFlight = maxInFlight,
+            operation = createServiceOperation,
+            operationIdentifier = UserProvidedServiceConfig::name,
+            operationDescription = { service -> "Create user provided service ${service.name}" }
+        )
     }
 
     private fun createUserProvidedService(

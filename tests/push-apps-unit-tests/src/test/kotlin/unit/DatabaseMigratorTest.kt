@@ -48,7 +48,6 @@ class DatabaseMigratorTest : Spek({
                 flywayWrapper = flywayWrapper,
                 dataSourceFactory = dataSourceFactory,
                 maxInFlight = 1,
-                retryCount = 0,
                 timeoutInMinutes = 5L
             )
 
@@ -85,12 +84,11 @@ class DatabaseMigratorTest : Spek({
 
 
             val databaseMigrator = DatabaseMigrator(
-                    migrations = listOf(migration),
-                    flywayWrapper = flywayWrapper,
-                    dataSourceFactory = dataSourceFactory,
-                    maxInFlight = 1,
-                    retryCount = 0,
-                    timeoutInMinutes = 5L
+                migrations = listOf(migration),
+                flywayWrapper = flywayWrapper,
+                dataSourceFactory = dataSourceFactory,
+                maxInFlight = 1,
+                timeoutInMinutes = 5L
             )
 
             databaseMigrator.migrate().toIterable().toList()

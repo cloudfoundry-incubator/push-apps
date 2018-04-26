@@ -25,8 +25,7 @@ class UserProvidedServiceCreatorTest : Spek({
         val serviceCreator = UserProvidedServiceCreator(
             cloudFoundryClient = mockCloudFoundryClient,
             serviceConfigs = listOf(serviceConfig),
-            maxInFlight = 1,
-            retryCount = 0
+            maxInFlight = 1
         )
 
         return TestContext(serviceCreator, mockCloudFoundryClient, serviceConfig)
