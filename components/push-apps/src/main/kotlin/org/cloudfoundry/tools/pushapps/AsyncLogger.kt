@@ -15,7 +15,11 @@ fun <T> logAsyncOperation(logger: Logger, operation: String): (Publisher<T>) -> 
         logger.info("$operation: SUCCESS")
     }
 
-    val printErrorMessage: (Throwable) -> Unit = { _ ->
+    val printErrorMessage: (Throwable) -> Unit = { error ->
+        logger.error("Encountered error: $error with message ${error.message} while conducting operation $operation")
+        if (logger.isDebugEnabled) {
+            error.printStackTrace()
+        }
         logger.error("$operation: ERROR")
     }
 

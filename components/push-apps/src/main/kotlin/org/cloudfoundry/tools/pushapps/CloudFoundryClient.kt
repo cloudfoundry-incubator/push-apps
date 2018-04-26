@@ -34,20 +34,21 @@ class CloudFoundryClient(
 ) {
     private val logger = LogManager.getLogger(CloudFoundryClient::class.java)
 
-    private fun <T> buildMonoCfOperationWithRetries(operation: () -> Mono<T>, numberOfRetries: Int): Mono<T> {
+    private fun <T> buildMonoCfOperationWithRetries(numberOfRetries: Int, operation: () -> Mono<T>): Mono<T> {
         if (numberOfRetries == 0) {
-            return operation().timeout(Duration.ofMinutes(operationTimeoutInMinutes))
+            return operation()
+                .timeout(Duration.ofMinutes(operationTimeoutInMinutes))
         }
 
         return operation()
-            .timeout(Duration.ofMinutes(operationTimeoutInMinutes))
+            .timeout(Duration.ofMinutes(operationTimeoutInMinutes)) //TODO: this does not seem to work
             .onErrorResume { error ->
                 logger.debug("Resuming operation due to error ${error.message}")
-                buildMonoCfOperationWithRetries(operation, numberOfRetries - 1)
+                buildMonoCfOperationWithRetries(numberOfRetries - 1, operation)
             }
     }
 
-    private fun <T> buildFluxCfOperationWithRetries(operation: () -> Flux<T>, numberOfRetries: Int): Flux<T> {
+    private fun <T> buildFluxCfOperationWithRetries(numberOfRetries: Int, operation: () -> Flux<T>): Flux<T> {
         if (numberOfRetries == 0) {
             return operation().timeout(Duration.ofMinutes(operationTimeoutInMinutes))
         }
@@ -56,7 +57,7 @@ class CloudFoundryClient(
             .timeout(Duration.ofMinutes(operationTimeoutInMinutes))
             .onErrorResume { error ->
                 logger.debug("Resuming operation due to error ${error.message}")
-                buildFluxCfOperationWithRetries(operation, numberOfRetries - 1)
+                buildFluxCfOperationWithRetries(numberOfRetries - 1, operation)
             }
     }
 
@@ -68,13 +69,11 @@ class CloudFoundryClient(
             .serviceName(serviceConfig.broker)
             .build()
 
-        val cfOperation = {
+        return buildMonoCfOperationWithRetries(retryCount) {
             cloudFoundryOperations
                 .services()
                 .createInstance(createServiceRequest)
         }
-
-        return buildMonoCfOperationWithRetries(cfOperation, retryCount)
     }
 
     fun createUserProvidedService(serviceConfig: UserProvidedServiceConfig): Mono<Void> {
@@ -84,13 +83,11 @@ class CloudFoundryClient(
             .credentials(serviceConfig.credentials)
             .build()
 
-        val cfOperation = {
+        return buildMonoCfOperationWithRetries(retryCount) {
             cloudFoundryOperations
                 .services()
                 .createUserProvidedInstance(createServiceRequest)
         }
-
-        return buildMonoCfOperationWithRetries(cfOperation, retryCount)
     }
 
     fun updateUserProvidedService(serviceConfig: UserProvidedServiceConfig): Mono<Void> {
@@ -100,19 +97,18 @@ class CloudFoundryClient(
             .credentials(serviceConfig.credentials)
             .build()
 
-        val cfOperation = {
+        return buildMonoCfOperationWithRetries(retryCount) {
             cloudFoundryOperations
                 .services()
                 .updateUserProvidedInstance(updateServiceRequest)
         }
-
-        return buildMonoCfOperationWithRetries(cfOperation, retryCount)
     }
 
     fun pushApplication(appConfig: AppConfig): Mono<Void> {
         val pushApplication = PushApplication(cloudFoundryOperations, appConfig)
-        val cfOperation = { pushApplication.generatePushAppAction() }
-        return buildMonoCfOperationWithRetries(cfOperation, retryCount)
+        return buildMonoCfOperationWithRetries(retryCount) {
+            pushApplication.generatePushAppAction()
+        }
     }
 
     fun startApplication(appName: String): Mono<Void> {
@@ -122,13 +118,11 @@ class CloudFoundryClient(
             .stagingTimeout(Duration.ofMinutes(10))
             .build()
 
-        val cfOperation = {
+        return buildMonoCfOperationWithRetries(retryCount) {
             cloudFoundryOperations
                 .applications()
                 .start(startApplicationRequest)
         }
-
-        return buildMonoCfOperationWithRetries(cfOperation, retryCount)
     }
 
     fun stopApplication(appName: String): Mono<Void> {
@@ -137,26 +131,24 @@ class CloudFoundryClient(
             .name(appName)
             .build()
 
-        val cfOperation = {
+        return buildMonoCfOperationWithRetries(retryCount) {
             cloudFoundryOperations
                 .applications()
                 .stop(stopApplicationRequest)
         }
-
-        return buildMonoCfOperationWithRetries(cfOperation, retryCount)
     }
 
     fun setApplicationEnvironment(appConfig: AppConfig): Mono<Void> {
         val setEnvRequests = generateSetEnvRequests(appConfig)
 
         return setEnvRequests.foldRight(Mono.empty<Void>(), { request, memo ->
-            val cfOperation = {
+            val monoCfOperationWithRetries = buildMonoCfOperationWithRetries(retryCount) {
                 cloudFoundryOperations
                     .applications()
                     .setEnvironmentVariable(request)
             }
 
-            memo.then(buildMonoCfOperationWithRetries(cfOperation, retryCount))
+            memo.then(monoCfOperationWithRetries)
         })
     }
 
@@ -164,7 +156,9 @@ class CloudFoundryClient(
         if (appConfig.environment === null) return emptyList()
 
         return appConfig.environment.map { variable ->
-            if (variable.value.isEmpty()) {
+            val value = variable.value ?: return@map null
+
+            if (value.isEmpty()) {
                 logger.debug("Setting environment variable ${variable.key} to empty string")
             }
 
@@ -172,9 +166,9 @@ class CloudFoundryClient(
                 .builder()
                 .name(appConfig.name)
                 .variableName(variable.key)
-                .variableValue(variable.value)
+                .variableValue(value)
                 .build()
-        }
+        }.filterNotNull()
     }
 
     //FIXME: should this just return one action at a time?
@@ -182,13 +176,11 @@ class CloudFoundryClient(
         val bindServiceRequests = generateBindServiceRequests(appName, serviceNames)
 
         return bindServiceRequests.map { request ->
-            val cfOperation = {
+            buildMonoCfOperationWithRetries(retryCount) {
                 cloudFoundryOperations
                     .services()
                     .bind(request)
             }
-
-            buildMonoCfOperationWithRetries(cfOperation, retryCount)
         }
     }
 
@@ -207,7 +199,7 @@ class CloudFoundryClient(
             return Mono.empty()
         }
 
-        //FIXME return error mono if domain, hostname, or path don't exist
+        //FIXME: return error mono if domain, hostname, or path don't exist
         var route = "http://${appConfig.route.hostname}.${appConfig.domain}"
 
         val mapRouteRequestBuilder = MapRouteRequest
@@ -223,14 +215,12 @@ class CloudFoundryClient(
 
         val mapRouteRequest = mapRouteRequestBuilder.build()
 
-        val cfOperation = {
+        return buildMonoCfOperationWithRetries(retryCount) {
             cloudFoundryOperations
                 .routes()
                 .map(mapRouteRequest)
                 .ofType(Void.TYPE)
         }
-
-        return buildMonoCfOperationWithRetries(cfOperation, retryCount)
     }
 
     fun unmapRoute(appConfig: AppConfig): Mono<Void> {
@@ -250,13 +240,11 @@ class CloudFoundryClient(
 
         val unmapRouteRequest = unmapRouteRequestBuilder.build()
 
-        val cfOperation = {
+        return buildMonoCfOperationWithRetries(retryCount) {
             cloudFoundryOperations
                 .routes()
                 .unmap(unmapRouteRequest)
         }
-
-        return buildMonoCfOperationWithRetries(cfOperation, retryCount)
     }
 
     fun createSecurityGroup(securityGroup: SecurityGroup, spaceId: String): Mono<Void> {
@@ -274,14 +262,13 @@ class CloudFoundryClient(
             .build()
 
         val defaultCloudFoundryOperations = cloudFoundryOperations as DefaultCloudFoundryOperations
-        val cfOperation = {
+
+        return buildMonoCfOperationWithRetries(retryCount) {
             defaultCloudFoundryOperations.cloudFoundryClient
                 .securityGroups()
                 .create(createSecurityGroupRequest)
                 .ofType(Void.TYPE)
         }
-
-        return buildMonoCfOperationWithRetries(cfOperation, retryCount)
     }
 
     fun createAndTargetOrganization(organizationName: String): CloudFoundryClient {
@@ -304,13 +291,11 @@ class CloudFoundryClient(
             .organizationName(name)
             .build()
 
-        val cfOperation = {
+        return buildMonoCfOperationWithRetries(retryCount) {
             cloudFoundryOperations
                 .organizations()
                 .create(createOrganizationRequest)
         }
-
-        return buildMonoCfOperationWithRetries(cfOperation, retryCount)
     }
 
     private fun targetOrganization(organizationName: String): CloudFoundryClient {
@@ -342,13 +327,11 @@ class CloudFoundryClient(
             .name(name)
             .build()
 
-        val cfOperation = {
+        return buildMonoCfOperationWithRetries(retryCount) {
             cloudFoundryOperations
                 .spaces()
                 .create(createSpaceRequest)
         }
-
-        return buildMonoCfOperationWithRetries(cfOperation, retryCount)
     }
 
     private fun targetSpace(space: String): CloudFoundryClient {
@@ -362,46 +345,35 @@ class CloudFoundryClient(
     }
 
     fun listOrganizations(): Flux<String> {
-        val cfOperation = {
+        return buildFluxCfOperationWithRetries(retryCount) {
             cloudFoundryOperations
                 .organizations()
                 .list()
-        }
-
-        return buildFluxCfOperationWithRetries(cfOperation, retryCount)
-            .map(OrganizationSummary::getName)
+        }.map(OrganizationSummary::getName)
     }
 
     fun listSpaces(): Flux<String> {
-        val cfOperation = {
+        return buildFluxCfOperationWithRetries(retryCount) {
             cloudFoundryOperations
                 .spaces()
                 .list()
-        }
-
-        return buildFluxCfOperationWithRetries(cfOperation, retryCount)
-            .map(SpaceSummary::getName)
+        }.map(SpaceSummary::getName)
     }
 
     fun listServices(): Flux<String> {
-        val cfOperation = {
+        return buildFluxCfOperationWithRetries(retryCount) {
             cloudFoundryOperations
                 .services()
                 .listInstances()
-        }
-        return buildFluxCfOperationWithRetries(cfOperation, retryCount)
-            .map(ServiceInstanceSummary::getName)
+        }.map(ServiceInstanceSummary::getName)
     }
 
     fun listApplications(): Flux<String> {
-        val cfOperation = {
+        return buildFluxCfOperationWithRetries(retryCount) {
             cloudFoundryOperations
                 .applications()
                 .list()
-        }
-
-        return buildFluxCfOperationWithRetries(cfOperation, retryCount)
-            .map(ApplicationSummary::getName)
+        }.map(ApplicationSummary::getName)
     }
 
     fun getSpaceId(spaceName: String): Mono<String> {
@@ -410,14 +382,11 @@ class CloudFoundryClient(
             .name(spaceName)
             .build()
 
-        val cfOperation = {
+        return buildMonoCfOperationWithRetries(retryCount) {
             cloudFoundryOperations
                 .spaces()
                 .get(spaceRequest)
-        }
-
-        return buildMonoCfOperationWithRetries(cfOperation, retryCount)
-            .map(SpaceDetail::getId)
+        }.map(SpaceDetail::getId)
     }
 
     fun fetchRecentLogsForAsync(appName: String): Flux<LogMessage> {
@@ -427,12 +396,10 @@ class CloudFoundryClient(
             .recent(true)
             .build()
 
-        val cfOperation = {
+        return buildFluxCfOperationWithRetries(retryCount) {
             cloudFoundryOperations
                 .applications()
                 .logs(logsRequest)
         }
-
-        return buildFluxCfOperationWithRetries(cfOperation, retryCount)
     }
 }

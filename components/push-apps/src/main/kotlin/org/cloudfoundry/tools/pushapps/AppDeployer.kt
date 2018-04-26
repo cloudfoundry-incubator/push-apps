@@ -10,11 +10,10 @@ import reactor.core.publisher.whenComplete
 import java.util.concurrent.ConcurrentLinkedQueue
 
 class AppDeployer(
-        private val cloudFoundryClient: CloudFoundryClient,
-        private val appConfigs: List<AppConfig>,
-        private val availableServices: List<String>,
-        private val maxInFlight: Int,
-        private val retryCount: Int
+    private val cloudFoundryClient: CloudFoundryClient,
+    private val appConfigs: List<AppConfig>,
+    private val availableServices: List<String>,
+    private val maxInFlight: Int
 ) {
     private val logger: Logger = LogManager.getLogger(AppDeployer::class.java)
 
@@ -66,7 +65,7 @@ class AppDeployer(
         if (applications.contains(greenAppConfig.name)) {
             operations.add(doOperation(
                 "Un-map current application routes ${greenAppConfig.name}",
-                cloudFoundryClient.unmapRoute(greenAppConfig),
+                { cloudFoundryClient.unmapRoute(greenAppConfig) },
                 greenAppConfig
             ))
         }
@@ -76,13 +75,13 @@ class AppDeployer(
 
         val unmapBlueRoute = doOperation(
             "Un-map blue routes ${greenAppConfig.name}",
-            cloudFoundryClient.unmapRoute(blueAppConfig),
+            { cloudFoundryClient.unmapRoute(blueAppConfig) },
             greenAppConfig
         )
 
         val stopBlueApplication = doOperation(
             "Stop blue application ${greenAppConfig.name}",
-            cloudFoundryClient.stopApplication(blueAppConfig.name),
+            { cloudFoundryClient.stopApplication(blueAppConfig.name) },
             greenAppConfig
         )
 
@@ -94,40 +93,49 @@ class AppDeployer(
     private fun asyncDeployApplication(appConfig: AppConfig): Flux<OperationResult> {
         val pushAppAction = doOperation(
             "Push ${appConfig.name}",
-            cloudFoundryClient.pushApplication(appConfig),
+            { cloudFoundryClient.pushApplication(appConfig) },
             appConfig
         )
 
         val setEnvActions = doOperation(
             "Set environment variables for ${appConfig.name}",
-            cloudFoundryClient.setApplicationEnvironment(appConfig),
+            { cloudFoundryClient.setApplicationEnvironment(appConfig) },
             appConfig
         )
 
         val bindServiceActions = doOperation(
             "Bind services for ${appConfig.name}",
-            generateBindServiceActions(appConfig),
+            { generateBindServiceActions(appConfig) },
             appConfig
         )
 
         val startApplication = doOperation(
             "Start application ${appConfig.name}",
-            cloudFoundryClient.startApplication(appConfig.name),
+            { cloudFoundryClient.startApplication(appConfig.name) },
             appConfig
         )
 
         val mapRoute = doOperation(
             "Map routes for ${appConfig.name}",
-            cloudFoundryClient.mapRoute(appConfig),
+            { cloudFoundryClient.mapRoute(appConfig) },
             appConfig
         )
 
         return Flux.concat(pushAppAction, setEnvActions, bindServiceActions, startApplication, mapRoute)
     }
 
-    private fun doOperation(description: String, operation: Mono<Void>, appConfig: AppConfig): Mono<OperationResult> {
-        return operation
+    private fun doOperation(description: String, operation: () -> Mono<Void>, appConfig: AppConfig): Mono<OperationResult> {
+        val mono = try {
+            operation()
+        } catch (e: Exception) {
+            Mono.error<Void>(e)
+        }
+
+        return mono
             .transform(logAsyncOperation(logger, description))
+            .doOnEach { signal ->
+                logger.info("Signal $signal")
+            }
             .then(Mono.just(
                 OperationResult(
                     description = description,

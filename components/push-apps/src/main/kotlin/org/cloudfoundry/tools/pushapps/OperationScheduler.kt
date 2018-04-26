@@ -62,7 +62,9 @@ class OperationScheduler<T : OperationConfig>(
 
     private fun waitForCurrentDeployments() {
         pendingOperations.flatMap { deployment ->
-            deployment.toIterable().filterNotNull()
+            deployment
+                .toIterable()
+                .filterNotNull()
         }.map(sink::next)
 
         pendingOperations.clear()

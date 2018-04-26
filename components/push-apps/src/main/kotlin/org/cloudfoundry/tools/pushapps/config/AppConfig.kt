@@ -16,7 +16,7 @@ data class AppConfig(
     val path: String,
     val buildpack: String? = null,
     val command: String? = null,
-    val environment: Map<String, String>? = null,
+    val environment: Map<String, String?>? = null,
     val instances: Int? = null,
     val diskQuota: Int? = null,
     val memory: Int? = null,

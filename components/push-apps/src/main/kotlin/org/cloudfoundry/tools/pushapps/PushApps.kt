@@ -74,7 +74,6 @@ class PushApps(
                 apps.deployApps(
                     availableServices = allServicesAvailable.toList(),
                     maxInFlight = pushAppsConfig.maxInFlight,
-                    retryCount = pushAppsConfig.operationRetryCount,
                     cloudFoundryClient = cloudFoundryClient
                 ).collectList()
             }
@@ -237,10 +236,9 @@ class PushApps(
     private fun List<AppConfig>.deployApps(
         availableServices: List<String>,
         maxInFlight: Int,
-        retryCount: Int,
         cloudFoundryClient: CloudFoundryClient
     ): Flux<OperationResult> {
-        val appDeployer = org.cloudfoundry.tools.pushapps.AppDeployer(cloudFoundryClient, this, availableServices, maxInFlight, retryCount)
+        val appDeployer = org.cloudfoundry.tools.pushapps.AppDeployer(cloudFoundryClient, this, availableServices, maxInFlight)
         val results = appDeployer.deployApps()
 
         return handleOperationResults(results, "Deploying application")

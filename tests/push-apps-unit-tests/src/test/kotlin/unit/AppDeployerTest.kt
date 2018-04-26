@@ -2,10 +2,11 @@ package unit
 
 import com.nhaarman.mockito_kotlin.*
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.fail
 import org.cloudfoundry.doppler.LogMessage
-import org.cloudfoundry.tools.pushapps.config.AppConfig
 import org.cloudfoundry.tools.pushapps.CloudFoundryClient
 import org.cloudfoundry.tools.pushapps.OperationResult
+import org.cloudfoundry.tools.pushapps.config.AppConfig
 import org.cloudfoundry.tools.pushapps.config.Route
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.context
@@ -13,6 +14,8 @@ import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.time.Duration
+import java.time.temporal.ChronoUnit
 
 class AppDeployerTest : Spek({
     data class TestContext(
@@ -28,9 +31,8 @@ class AppDeployerTest : Spek({
         val appDeployer = org.cloudfoundry.tools.pushapps.AppDeployer(
             cloudFoundryClient = mockCfClient,
             appConfigs = listOf(appConfig),
-            retryCount = retryCount,
-            maxInFlight = 1,
-            availableServices = listOf("grapefruit")
+            availableServices = listOf("grapefruit"),
+            maxInFlight = 1
         )
 
         return TestContext(appDeployer, mockCfClient)
@@ -39,12 +41,12 @@ class AppDeployerTest : Spek({
     describe("#deployApps") {
         it("Deploys the apps") {
             val appConfig = AppConfig(
-                    name = "Foo bar",
-                    path = "/tmp/foo/bar",
-                    buildpack = "bob_the_builder",
-                    environment = mapOf("LEMONS" to "LIMES"),
-                    serviceNames = listOf("grapefruit"),
-                    route = Route("kiwi", "orange")
+                name = "Foo bar",
+                path = "/tmp/foo/bar",
+                buildpack = "bob_the_builder",
+                environment = mapOf("LEMONS" to "LIMES"),
+                serviceNames = listOf("grapefruit"),
+                route = Route("kiwi", "orange")
             )
             val tc = buildTestContext(appConfig = appConfig, retryCount = 1)
 
@@ -69,12 +71,12 @@ class AppDeployerTest : Spek({
 
         it("Deploys the app despite unavailable services") {
             val appConfig = AppConfig(
-                    name = "Foo bar",
-                    path = "/tmp/foo/bar",
-                    buildpack = "bob_the_builder",
-                    environment = mapOf("LEMONS" to "LIMES"),
-                    serviceNames = listOf("unavailable"),
-                    route = Route("kiwi", "orange")
+                name = "Foo bar",
+                path = "/tmp/foo/bar",
+                buildpack = "bob_the_builder",
+                environment = mapOf("LEMONS" to "LIMES"),
+                serviceNames = listOf("unavailable"),
+                route = Route("kiwi", "orange")
             )
             val tc = buildTestContext(appConfig = appConfig, retryCount = 1)
 
@@ -94,12 +96,12 @@ class AppDeployerTest : Spek({
 
         it("Returns a failed operation result when an operation fails, without losing successful results") {
             val appConfig = AppConfig(
-                    name = "Foo bar",
-                    path = "/tmp/foo/bar",
-                    buildpack = "bob_the_builder",
-                    environment = mapOf("LEMONS" to "LIMES"),
-                    serviceNames = listOf("grapefruit"),
-                    route = Route("kiwi", "orange")
+                name = "Foo bar",
+                path = "/tmp/foo/bar",
+                buildpack = "bob_the_builder",
+                environment = mapOf("LEMONS" to "LIMES"),
+                serviceNames = listOf("grapefruit"),
+                route = Route("kiwi", "orange")
             )
             val tc = buildTestContext(appConfig = appConfig, retryCount = 0)
 
@@ -188,6 +190,45 @@ class AppDeployerTest : Spek({
                 verify(tc.mockCfClient, times(1)).pushApplication(argForWhich {
                     name == blueAppConfig.name && noRoute
                 })
+            }
+        }
+
+        context("handling errors") {
+            it("catches thrown exceptions and returns the appropriate operation result") {
+                val appConfig = AppConfig(
+                    name = "Foo bar",
+                    path = "/tmp/foo/bar",
+                    buildpack = "bob_the_builder",
+                    environment = mapOf("LEMONS" to null),
+                    serviceNames = listOf("grapefruit"),
+                    route = Route("kiwi", "orange")
+                )
+                val tc = buildTestContext(appConfig = appConfig, retryCount = 1)
+
+                whenever(tc.mockCfClient.pushApplication(any())).thenReturn(Mono.empty())
+                whenever(tc.mockCfClient.setApplicationEnvironment(any())).thenThrow(NullPointerException())
+                whenever(tc.mockCfClient.bindServicesToApplication(any(), any())).thenReturn(listOf(Mono.empty()))
+                whenever(tc.mockCfClient.startApplication(any())).thenReturn(Mono.empty())
+                whenever(tc.mockCfClient.mapRoute(any())).thenReturn(Mono.empty())
+
+                val results = tc.appDeployer
+                    .deployApps()
+                    .timeout(Duration.of(10, ChronoUnit.SECONDS))
+                    .toIterable()
+                    .toList()
+
+                assertThat(results).hasSize(2)
+
+                verify(tc.mockCfClient, times(1)).pushApplication(appConfig)
+                verify(tc.mockCfClient, times(1)).setApplicationEnvironment(appConfig)
+
+                val allOperationsWereSuccessful = results.fold(true) { memo, result -> memo && result.didSucceed }
+                assertThat(allOperationsWereSuccessful).isFalse()
+
+                val failedOperation = results.find { result -> !result.didSucceed }
+                    ?: return@it fail("Expected a failed operation result")
+
+                assertThat(failedOperation.description).isEqualTo("Push application ${appConfig.name}")
             }
         }
     }
