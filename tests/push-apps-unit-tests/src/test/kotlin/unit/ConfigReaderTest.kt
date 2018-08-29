@@ -12,8 +12,11 @@ import java.nio.file.Paths
 
 class ConfigReaderTest : Spek({
     fun findConfigPath(fileName: String): String {
-        val compiledFileLocation = ConfigReaderTest::class.java.getResource("${ConfigReaderTest::class.simpleName}.class")
-        val projectPath = Paths.get(compiledFileLocation.path.toString(), "../../../../../../src/test/kotlin/support/$fileName").toAbsolutePath().toString()
+        val compiledFileLocation =
+            ConfigReaderTest::class.java.getResource("${ConfigReaderTest::class.simpleName}.class")
+        val projectPath =
+            Paths.get(compiledFileLocation.path.toString(), "../../../../../../src/test/kotlin/support/$fileName")
+                .toAbsolutePath().toString()
         return FilenameUtils.normalize(projectPath)
     }
 
@@ -100,26 +103,28 @@ class ConfigReaderTest : Spek({
             it("correctly assigns values") {
                 val pushAppsConfig = ConfigReader.parseConfig(findConfigPath("exampleConfig.yml")).get()
 
-            val apps = pushAppsConfig.apps
-            assertThat(apps).hasSize(2)
+                val apps = pushAppsConfig.apps
+                assertThat(apps).hasSize(2)
 
-            val app1 = apps[0]
-            assertThat(app1.name).isEqualTo("some-name")
-            assertThat(app1.path).isEqualTo("some-path")
-            assertThat(app1.buildpack).isEqualTo("some-buildpack")
-            assertThat(app1.memory).isEqualTo(456)
-            assertThat(app1.diskQuota).isEqualTo(500)
+                val app1 = apps[0]
+                assertThat(app1.name).isEqualTo("some-name")
+                assertThat(app1.path).isEqualTo("some-path")
+                assertThat(app1.buildpack).isEqualTo("some-buildpack")
+                assertThat(app1.memory).isEqualTo(456)
+                assertThat(app1.diskQuota).isEqualTo(500)
+                assertThat(app1.stack).isEqualTo("some-stack")
 
                 assertThat(app1.environment).isEqualTo(mapOf("FRUIT" to "lemons", "MISSING" to ""))
                 assertThat(app1.serviceNames).isEqualTo(listOf("some-service-name"))
 
-            assertThat(app1.route!!.hostname).isEqualTo("lemons")
-            assertThat(app1.route!!.path).isEqualTo("/citrus")
+                assertThat(app1.route!!.hostname).isEqualTo("lemons")
+                assertThat(app1.route!!.path).isEqualTo("/citrus")
 
-            val app2 = apps[1]
-            assertThat(app2.memory).isEqualTo(1024)
-            assertThat(app2.diskQuota).isEqualTo(2048)
-        }
+                val app2 = apps[1]
+                assertThat(app2.memory).isEqualTo(1024)
+                assertThat(app2.diskQuota).isEqualTo(2048)
+                assertThat(app2.stack).isNull()
+            }
 
             context("if blueGreenDeploy is true") {
                 it("throws an error unless a route is provided or noRoute is true") {

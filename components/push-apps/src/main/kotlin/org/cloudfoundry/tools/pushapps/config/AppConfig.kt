@@ -23,6 +23,7 @@ data class AppConfig(
     val noHostname: Boolean? = null,
     val noRoute: Boolean = false,
     val route: Route? = null,
+    val stack: String? = null,
     val timeout: Int? = null,
     val blueGreenDeploy: Boolean = false,
     val domain: String? = null,
@@ -71,6 +72,7 @@ class ApplicationDeserializer : StdDeserializer<AppConfig>(AppConfig::class.java
         val domain = node.get("domain")?.asText()
         val healthCheckType = node.get("healthCheckType")?.asText()
         val optional = node.get("optional")?.asBoolean() ?: false
+        val stack = node.get("stack")?.asText()
 
         return AppConfig(
             name,
@@ -84,6 +86,7 @@ class ApplicationDeserializer : StdDeserializer<AppConfig>(AppConfig::class.java
             noHostname,
             noRoute,
             route,
+            stack,
             timeout,
             blueGreenDeploy,
             domain,

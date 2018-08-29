@@ -70,6 +70,10 @@ class PushApplication(
             newBuilder.healthCheckType(ApplicationHealthCheck.from(appConfig.healthCheckType))
         }
 
+        if (appConfig.stack !== null) {
+            newBuilder.stack(appConfig.stack)
+        }
+
         return newBuilder
     }
 }

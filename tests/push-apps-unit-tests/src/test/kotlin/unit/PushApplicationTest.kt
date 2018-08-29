@@ -186,6 +186,21 @@ class PushApplicationTest : Spek({
                     argForWhich { healthCheckType == ApplicationHealthCheck.NONE }
                 )
             }
+
+            it("sets stack if present in config") {
+                val appConfig = AppConfig(
+                        name = "Foo bar",
+                        path = "/tmp/foo/bar",
+                        stack = "some-stack"
+                )
+                val tc = buildTestContext(appConfig)
+
+                tc.pushApplication.generatePushAppAction()
+
+                verify(tc.mockApplications).push(
+                    argForWhich { stack == "some-stack" }
+                )
+            }
         }
     }
 })
