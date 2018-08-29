@@ -50,7 +50,7 @@ task verifyLastpassLogin {
 }
 
 static String getSecretsFromLastpass() {
-    return ['lpass', 'show', 'push-apps-ci'].execute().text
+    return ['lpass', 'show', 'Shared-CF-Denver-Pivotal/push-apps-ci'].execute().text
 }
 
 task setCiPipeline(dependsOn: 'verifyLastpassLogin') {
