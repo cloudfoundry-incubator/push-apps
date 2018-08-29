@@ -41,6 +41,8 @@ apps: #required array
   healthCheckType: none #optional, CF default
   instances: 2 #optional, CF default
   memory: 4096M #optional, CF default
+  stack: cflinuxfs2 #optional, CF default
+  diskQuota: 1G #optional, CF default (eg: 500M, 2G)
   noRoute: true #optional, CF default
   blueGreenDeploy: true #optional, default false
   command: "./backend/backend" #optional, CF default
@@ -53,12 +55,14 @@ apps: #required array
     MYSQL_DB: backend
   serviceNames: #optional array
   - "metrics_forwarder"
-- name: frontent #required
+- name: frontend #required
   path: "/var/vcap/packages/metrics-data/frontend.zip" #required
   buildpack: binary_buildpack #optional, CF default
   healthCheckType: none #optional, CF default
   instances: 2 #optional, CF default
   memory: 4G #optional, CF default
+  stack: cflinuxfs2 #optional, CF default
+  diskQuota: 1G #optional, CF default (eg: 500M, 2G)
   noRoute: true #optional, CF default
   blueGreenDeploy: true #optional, default false
   command: "./frontend/frontend" #optional, CF default
