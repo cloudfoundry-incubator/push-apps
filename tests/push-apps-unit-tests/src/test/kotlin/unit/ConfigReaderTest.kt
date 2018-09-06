@@ -112,7 +112,7 @@ class ConfigReaderTest : Spek({
                 assertThat(app1.buildpack).isEqualTo("some-buildpack")
                 assertThat(app1.memory).isEqualTo(456)
                 assertThat(app1.diskQuota).isEqualTo(500)
-                assertThat(app1.stack).isEqualTo("some-stack")
+                assertThat(app1.stackPriority).isEqualTo(listOf("some-stack", "some-other-stack"))
 
                 assertThat(app1.environment).isEqualTo(mapOf("FRUIT" to "lemons", "MISSING" to ""))
                 assertThat(app1.serviceNames).isEqualTo(listOf("some-service-name"))
@@ -123,7 +123,7 @@ class ConfigReaderTest : Spek({
                 val app2 = apps[1]
                 assertThat(app2.memory).isEqualTo(1024)
                 assertThat(app2.diskQuota).isEqualTo(2048)
-                assertThat(app2.stack).isNull()
+                assertThat(app2.stackPriority).isEqualTo(emptyList<String>())
             }
 
             context("if blueGreenDeploy is true") {

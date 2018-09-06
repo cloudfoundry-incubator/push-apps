@@ -17,6 +17,7 @@ import org.cloudfoundry.operations.spaces.CreateSpaceRequest
 import org.cloudfoundry.operations.spaces.GetSpaceRequest
 import org.cloudfoundry.operations.spaces.SpaceDetail
 import org.cloudfoundry.operations.spaces.SpaceSummary
+import org.cloudfoundry.operations.stacks.Stack
 import org.cloudfoundry.tools.pushapps.config.AppConfig
 import org.cloudfoundry.tools.pushapps.config.SecurityGroup
 import org.cloudfoundry.tools.pushapps.config.ServiceConfig
@@ -105,7 +106,7 @@ class CloudFoundryClient(
     }
 
     fun pushApplication(appConfig: AppConfig): Mono<Void> {
-        val pushApplication = PushApplication(cloudFoundryOperations, appConfig)
+        val pushApplication = PushApplication(cloudFoundryOperations, appConfig, listStacks())
         return buildMonoCfOperationWithRetries(retryCount) {
             pushApplication.generatePushAppAction()
         }
@@ -401,5 +402,13 @@ class CloudFoundryClient(
                 .applications()
                 .logs(logsRequest)
         }
+    }
+
+    fun listStacks(): Flux<String> {
+        return buildFluxCfOperationWithRetries(retryCount) {
+            cloudFoundryOperations
+                    .stacks()
+                    .list()
+        }.map(Stack::getName)
     }
 }

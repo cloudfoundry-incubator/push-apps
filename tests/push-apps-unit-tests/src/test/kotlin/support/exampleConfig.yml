@@ -18,7 +18,9 @@ apps:
   buildpack: some-buildpack
   memory: 456M
   diskQuota: 500M
-  stack: some-stack
+  stackPriority:
+    - some-stack
+    - some-other-stack
   route:
     hostname: "lemons"
     path: "/citrus"

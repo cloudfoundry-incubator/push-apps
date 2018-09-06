@@ -6,6 +6,7 @@ import org.cloudfoundry.doppler.LogMessage
 import org.cloudfoundry.operations.applications.ApplicationSummary
 import org.cloudfoundry.operations.routes.MapRouteRequest
 import org.cloudfoundry.operations.routes.UnmapRouteRequest
+import org.cloudfoundry.operations.stacks.Stack
 import org.cloudfoundry.tools.pushapps.*
 import org.cloudfoundry.tools.pushapps.config.AppConfig
 import org.cloudfoundry.tools.pushapps.config.Route
@@ -25,6 +26,11 @@ class DeployAppTest : Spek({
                 path = "$workingDir/src/test/kotlin/support/helloapp.zip",
                 buildpack = "binary_buildpack",
                 command = "./helloapp",
+                stackPriority = listOf(
+                        "stack1",
+                        "stack2",
+                        "stack3"
+                ),
                 environment = mapOf(
                         "NAME" to "Steve"
                 )
@@ -91,6 +97,32 @@ class DeployAppTest : Spek({
                         buildpack == goodbyeApp.buildpack &&
                         command == goodbyeApp.command
                 })
+        }
+
+        it("uses first available stack in stack priority list") {
+            val tc = buildTestContext(
+                    apps = listOf(helloApp), organization = "foo_bar_org"
+            )
+
+            val pushApps = PushApps(
+                    tc.config,
+                    tc.cfClientBuilder
+            )
+
+            whenever(tc.cfOperations.stacks().list())
+                    .thenReturn(Flux.just(
+                            Stack.builder().name("stack2").description("").id("").build(),
+                            Stack.builder().name("stack3").description("").id("").build()
+                    ))
+
+            val result = pushApps.pushApps()
+
+            assertThat(result).isTrue()
+
+            verify(tc.cfOperations.applications()).push(
+                    argForWhich {
+                        stack == "stack2"
+                    })
         }
 
         it("setting the env vars on the app") {

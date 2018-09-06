@@ -12,24 +12,24 @@ import java.io.IOException
 
 @JsonDeserialize(using = ApplicationDeserializer::class)
 data class AppConfig(
-    override val name: String,
-    val path: String,
-    val buildpack: String? = null,
-    val command: String? = null,
-    val environment: Map<String, String?>? = null,
-    val instances: Int? = null,
-    val diskQuota: Int? = null,
-    val memory: Int? = null,
-    val noHostname: Boolean? = null,
-    val noRoute: Boolean = false,
-    val route: Route? = null,
-    val stack: String? = null,
-    val timeout: Int? = null,
-    val blueGreenDeploy: Boolean = false,
-    val domain: String? = null,
-    val healthCheckType: String? = null,
-    val serviceNames: List<String> = emptyList(),
-    override val optional: Boolean = false
+        override val name: String,
+        val path: String,
+        val buildpack: String? = null,
+        val command: String? = null,
+        val environment: Map<String, String?>? = null,
+        val instances: Int? = null,
+        val diskQuota: Int? = null,
+        val memory: Int? = null,
+        val noHostname: Boolean? = null,
+        val noRoute: Boolean = false,
+        val route: Route? = null,
+        val stackPriority: List<String> = emptyList(),
+        val timeout: Int? = null,
+        val blueGreenDeploy: Boolean = false,
+        val domain: String? = null,
+        val healthCheckType: String? = null,
+        val serviceNames: List<String> = emptyList(),
+        override val optional: Boolean = false
 ) : OperationConfig
 
 
@@ -72,7 +72,10 @@ class ApplicationDeserializer : StdDeserializer<AppConfig>(AppConfig::class.java
         val domain = node.get("domain")?.asText()
         val healthCheckType = node.get("healthCheckType")?.asText()
         val optional = node.get("optional")?.asBoolean() ?: false
-        val stack = node.get("stack")?.asText()
+        val stackPriority = if (node.has("stackPriority")) {
+            val typeReference = jacksonTypeRef<List<String>>()
+            mapper.convertValue<List<String>>(node.get("stackPriority"), typeReference)
+        } else emptyList()
 
         return AppConfig(
             name,
@@ -86,7 +89,7 @@ class ApplicationDeserializer : StdDeserializer<AppConfig>(AppConfig::class.java
             noHostname,
             noRoute,
             route,
-            stack,
+            stackPriority,
             timeout,
             blueGreenDeploy,
             domain,

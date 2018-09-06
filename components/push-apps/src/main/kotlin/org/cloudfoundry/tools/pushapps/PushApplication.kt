@@ -4,35 +4,39 @@ import org.cloudfoundry.operations.CloudFoundryOperations
 import org.cloudfoundry.operations.applications.ApplicationHealthCheck
 import org.cloudfoundry.operations.applications.PushApplicationRequest
 import org.cloudfoundry.tools.pushapps.config.AppConfig
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.io.File
 
 class PushApplication(
-    private val cloudFoundryOperations: CloudFoundryOperations,
-    private val appConfig: AppConfig
+        private val cloudFoundryOperations: CloudFoundryOperations,
+        private val appConfig: AppConfig,
+        availableStacksFlux: Flux<String>
 ) {
+    private val availableStacks: MutableList<String> = availableStacksFlux.collectList().block() ?: mutableListOf()
+
     fun generatePushAppAction(): Mono<Void> {
         var builder = PushApplicationRequest
-            .builder()
-            .name(appConfig.name)
-            .path(File(appConfig.path).toPath())
-            .noRoute(appConfig.noRoute)
-            .noStart(true)
+                .builder()
+                .name(appConfig.name)
+                .path(File(appConfig.path).toPath())
+                .noRoute(appConfig.noRoute)
+                .noStart(true)
 
         builder = setOptionalBuilderParams(builder)
 
         val pushAppRequest = builder.build()
 
         return cloudFoundryOperations
-            .applications()
-            .push(pushAppRequest)
+                .applications()
+                .push(pushAppRequest)
     }
 
     private fun setOptionalBuilderParams(builder: PushApplicationRequest.Builder): PushApplicationRequest.Builder {
         val pushApplicationRequest = builder.build()
         val newBuilder = PushApplicationRequest
-            .builder()
-            .from(pushApplicationRequest)
+                .builder()
+                .from(pushApplicationRequest)
 
         if (appConfig.buildpack !== null) {
             newBuilder.buildpack(appConfig.buildpack)
@@ -70,8 +74,9 @@ class PushApplication(
             newBuilder.healthCheckType(ApplicationHealthCheck.from(appConfig.healthCheckType))
         }
 
-        if (appConfig.stack !== null) {
-            newBuilder.stack(appConfig.stack)
+        val stack = appConfig.stackPriority.find { availableStacks.contains(it) }
+        if (stack !== null) {
+            newBuilder.stack(stack)
         }
 
         return newBuilder

@@ -17,6 +17,8 @@ import org.cloudfoundry.operations.services.Services
 import org.cloudfoundry.operations.spaces.SpaceDetail
 import org.cloudfoundry.operations.spaces.SpaceSummary
 import org.cloudfoundry.operations.spaces.Spaces
+import org.cloudfoundry.operations.stacks.Stack
+import org.cloudfoundry.operations.stacks.Stacks
 import org.cloudfoundry.tools.pushapps.*
 import org.cloudfoundry.tools.pushapps.config.*
 import org.jetbrains.spek.api.Spek
@@ -24,18 +26,20 @@ import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.util.*
 
 class CloudFoundryClientTest : Spek({
     data class TestContext(
-        val cloudFoundryClient: CloudFoundryClient,
-        val applications: Applications,
-        val services: Services,
-        val organizations: Organizations,
-        val spaces: Spaces,
-        val routes: Routes,
-        val cfOperations: CloudFoundryOperations,
-        val cfOperationsBuilder: CloudFoundryOperationsBuilder,
-        val securityGroups: SecurityGroups
+            val cloudFoundryClient: CloudFoundryClient,
+            val applications: Applications,
+            val services: Services,
+            val organizations: Organizations,
+            val spaces: Spaces,
+            val routes: Routes,
+            val cfOperations: CloudFoundryOperations,
+            val cfOperationsBuilder: CloudFoundryOperationsBuilder,
+            val securityGroups: SecurityGroups,
+            val stacks: Stacks
     )
 
     fun buildTestContext(): TestContext {
@@ -45,6 +49,7 @@ class CloudFoundryClientTest : Spek({
         val mockSpaces = mock<Spaces>()
         val mockRoutes = mock<Routes>()
         val mockSecurityGroups = mock<SecurityGroups>()
+        val mockStacks = mock<Stacks>()
 
         val mockCfClient = mock<org.cloudfoundry.client.CloudFoundryClient>()
         val mockCfOperations = mock<DefaultCloudFoundryOperations>()
@@ -55,6 +60,7 @@ class CloudFoundryClientTest : Spek({
         whenever(mockCfOperations.organizations()).thenReturn(mockOrganizations)
         whenever(mockCfOperations.spaces()).thenReturn(mockSpaces)
         whenever(mockCfOperations.routes()).thenReturn(mockRoutes)
+        whenever(mockCfOperations.stacks()).thenReturn(mockStacks)
         whenever(mockCfOperations.cloudFoundryClient).thenReturn(mockCfClient)
 
         whenever(mockCfClient.securityGroups()).thenReturn(mockSecurityGroups)
@@ -69,15 +75,16 @@ class CloudFoundryClientTest : Spek({
         )
 
         return TestContext(
-            cloudFoundryClient = cloudFoundryClient,
-            cfOperations = mockCfOperations,
-            cfOperationsBuilder = mockCfOperationsBuilder,
-            applications = mockApplications,
-            services = mockServices,
-            organizations = mockOrganizations,
-            spaces = mockSpaces,
-            routes = mockRoutes,
-            securityGroups = mockSecurityGroups
+                cloudFoundryClient = cloudFoundryClient,
+                applications = mockApplications,
+                services = mockServices,
+                organizations = mockOrganizations,
+                spaces = mockSpaces,
+                routes = mockRoutes,
+                cfOperations = mockCfOperations,
+                cfOperationsBuilder = mockCfOperationsBuilder,
+                securityGroups = mockSecurityGroups,
+                stacks = mockStacks
         )
     }
 
@@ -331,6 +338,38 @@ class CloudFoundryClientTest : Spek({
 
     describe("#createAndTargetSpace") {
         //TODO
+    }
+
+    describe("#listStacks") {
+        val tc = buildTestContext()
+
+        val cflinuxfs2 = Stack.builder()
+                .description("Cloud Foundry Linux-based filesystem")
+                .id("${UUID.randomUUID()}")
+                .name("cflinuxfs2")
+                .build()
+
+        val cflinuxfs3 = Stack.builder()
+                .description("Cloud Foundry Linux-based filesystem (Ubuntu 18.04)")
+                .id("${UUID.randomUUID()}")
+                .name("cflinuxfs3")
+                .build()
+
+        val windows2016 = Stack.builder()
+                .description("Windows Server 2016")
+                .id("${UUID.randomUUID()}")
+                .name("windows2016")
+                .build()
+
+        whenever(tc.stacks.list()).thenReturn(
+                Flux.fromArray(arrayOf(cflinuxfs2, cflinuxfs3, windows2016))
+        )
+
+        val stackResults = tc.cloudFoundryClient
+                .listStacks()
+                .toIterable()
+                .toList()
+        assertThat(stackResults).isEqualTo(listOf("cflinuxfs2", "cflinuxfs3", "windows2016"))
     }
 
     describe("#listOrganizations") {

@@ -9,6 +9,7 @@ import org.cloudfoundry.tools.pushapps.PushApplication
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 
@@ -18,16 +19,18 @@ class PushApplicationTest : Spek({
         val mockApplications: Applications
     )
 
-    fun buildTestContext(appConfig: AppConfig): TestContext {
+    fun buildTestContext(appConfig: AppConfig, availableStacks: Flux<String> = Flux.empty()): TestContext {
         val mockApplications = mock<Applications>()
+
         whenever(mockApplications.push(any())).thenReturn(Mono.empty())
 
         val mockCfOperations = mock<CloudFoundryOperations>()
         whenever(mockCfOperations.applications()).thenReturn(mockApplications)
 
         val pushApplication = PushApplication(
-            cloudFoundryOperations = mockCfOperations,
-            appConfig = appConfig
+                cloudFoundryOperations = mockCfOperations,
+                appConfig = appConfig,
+                availableStacksFlux = availableStacks
         )
 
         return TestContext(pushApplication, mockApplications)
@@ -187,18 +190,18 @@ class PushApplicationTest : Spek({
                 )
             }
 
-            it("sets stack if present in config") {
+            it("sets stack to first available stack in stack priority list") {
                 val appConfig = AppConfig(
                         name = "Foo bar",
                         path = "/tmp/foo/bar",
-                        stack = "some-stack"
+                        stackPriority = listOf("first-priority-stack", "second-priority-stack", "third-priority-stack")
                 )
-                val tc = buildTestContext(appConfig)
+                val tc = buildTestContext(appConfig, Flux.just("second-priority-stack", "third-priority-stack"))
 
                 tc.pushApplication.generatePushAppAction()
 
                 verify(tc.mockApplications).push(
-                    argForWhich { stack == "some-stack" }
+                    argForWhich { stack == "second-priority-stack" }
                 )
             }
         }

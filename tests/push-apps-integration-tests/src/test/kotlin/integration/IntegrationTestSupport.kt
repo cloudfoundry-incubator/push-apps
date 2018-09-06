@@ -16,6 +16,7 @@ import org.cloudfoundry.operations.services.ServiceInstanceSummary
 import org.cloudfoundry.operations.services.Services
 import org.cloudfoundry.operations.spaces.SpaceDetail
 import org.cloudfoundry.operations.spaces.Spaces
+import org.cloudfoundry.operations.stacks.Stacks
 import org.cloudfoundry.tools.pushapps.*
 import org.cloudfoundry.tools.pushapps.config.*
 import reactor.core.publisher.Flux
@@ -131,6 +132,7 @@ private fun buildMockCfOperations(): DefaultCloudFoundryOperations {
     val spaces = mock<Spaces>()
     val services = mock<Services>()
     val routes = mock<Routes>()
+    val stacks = mock<Stacks>()
 
     val securityGroups = mock<SecurityGroups>()
     val createSecurityGroupResponse = mock<CreateSecurityGroupResponse>()
@@ -145,6 +147,7 @@ private fun buildMockCfOperations(): DefaultCloudFoundryOperations {
     whenever(cfOperations.spaces()).thenReturn(spaces)
     whenever(cfOperations.services()).thenReturn(services)
     whenever(cfOperations.routes()).thenReturn(routes)
+    whenever(cfOperations.stacks()).thenReturn(stacks)
     whenever(cfOperations.cloudFoundryClient).thenReturn(cfClient)
 
     whenever(cfClient.securityGroups()).thenReturn(securityGroups)
@@ -178,6 +181,8 @@ private fun buildMockCfOperations(): DefaultCloudFoundryOperations {
 
     whenever(routes.map(any())).thenReturn(Mono.empty())
     whenever(routes.unmap(any())).thenReturn(Mono.empty())
+
+    whenever(stacks.list()).thenReturn(Flux.empty())
 
     return cfOperations
 }
