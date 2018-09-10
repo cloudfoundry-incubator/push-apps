@@ -41,7 +41,9 @@ apps: #required array
   healthCheckType: none #optional, CF default
   instances: 2 #optional, CF default
   memory: 4096M #optional, CF default
-  stack: cflinuxfs2 #optional, CF default
+  stackPriority:
+  - cflinuxfs3
+  - cflinuxfs2 #optional, will use highest priority available stack
   diskQuota: 1G #optional, CF default (eg: 500M, 2G)
   noRoute: true #optional, CF default
   blueGreenDeploy: true #optional, default false
@@ -61,7 +63,9 @@ apps: #required array
   healthCheckType: none #optional, CF default
   instances: 2 #optional, CF default
   memory: 4G #optional, CF default
-  stack: cflinuxfs2 #optional, CF default
+  stackPriority:
+  - cflinuxfs3
+  - cflinuxfs2 #optional, will use highest priority available stack
   diskQuota: 1G #optional, CF default (eg: 500M, 2G)
   noRoute: true #optional, CF default
   blueGreenDeploy: true #optional, default false
