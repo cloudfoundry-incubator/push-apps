@@ -1,11 +1,11 @@
 package org.cloudfoundry.tools.pushapps
 
-import com.mysql.jdbc.jdbc2.optional.MysqlConnectionPoolDataSource
+import org.mariadb.jdbc.MariaDbPoolDataSource
 import javax.sql.DataSource
 
 fun mySqlDataSourceBuilder(dataSource: DataSource?): MySqlDataSourceBuilder {
     if (dataSource !== null) {
-        val ds = dataSource as MysqlConnectionPoolDataSource
+        val ds = dataSource as MariaDbPoolDataSource
         val builder = MySqlDataSourceBuilder()
 
         builder.user = ds.user
@@ -27,7 +27,7 @@ class MySqlDataSourceBuilder : DataSourceBuilder {
     override var port: Int = 0
 
     override fun build(): DataSource {
-        val dataSource = MysqlConnectionPoolDataSource()
+        val dataSource = MariaDbPoolDataSource()
 
         if (user !== null) dataSource.user = user
         if (host !== null) dataSource.serverName = host
