@@ -82,7 +82,7 @@ class DockerSupport {
         }
     }
 
-    fun waitForPg(pgHost: String, pgPort: String, pgUser: String, pgPassword: String) {
+    private fun waitForPg(pgHost: String, pgPort: String, pgUser: String, pgPassword: String) {
         var attempts = 0
         while (attempts < 3) {
             try {
@@ -99,8 +99,8 @@ class DockerSupport {
 
     fun connectToPg(pgHost: String, pgPort: String, pgUser: String, pgPassword: String): Connection? {
         val connectionProps = Properties()
-        connectionProps.put("user", pgUser)
-        connectionProps.put("password", pgPassword)
+        connectionProps["user"] = pgUser
+        connectionProps["password"] = pgPassword
         Class.forName("org.postgresql.Driver").newInstance()
         return DriverManager.getConnection(
                 "jdbc:postgresql://" +
@@ -110,7 +110,7 @@ class DockerSupport {
                 connectionProps)
     }
 
-    fun waitForMysql(mysqlHost: String, mysqlPort: String, mysqlUser: String, mysqlPassword: String) {
+    private fun waitForMysql(mysqlHost: String, mysqlPort: String, mysqlUser: String, mysqlPassword: String) {
         var attempts = 0
         while (attempts < 120) {
             try {
@@ -127,9 +127,9 @@ class DockerSupport {
 
     fun connectToMysql(mysqlHost: String, mysqlPort: String, mysqlUser: String, mysqlPassword: String): Connection? {
         val connectionProps = Properties()
-        connectionProps.put("user", mysqlUser)
-        connectionProps.put("password", mysqlPassword)
-        Class.forName("com.mysql.jdbc.Driver").newInstance()
+        connectionProps["user"] = mysqlUser
+        connectionProps["password"] = mysqlPassword
+        Class.forName("org.mariadb.jdbc.Driver").newInstance()
         return DriverManager.getConnection(
                 "jdbc:mysql://" +
                         mysqlHost +
@@ -166,7 +166,7 @@ class DockerSupport {
 
     fun checkIfTableExists(conn: Connection, dbName: String, tableName: String): Boolean {
         try {
-            var query = "SELECT TABLE_NAME FROM information_schema.tables WHERE TABLE_SCHEMA='${dbName}';"
+            var query = "SELECT TABLE_NAME FROM information_schema.tables WHERE TABLE_SCHEMA='$dbName';"
             if (conn.metaData.databaseProductName.contains("PostgreSQL")) {
                 query = "SELECT TABLE_NAME FROM information_schema.tables WHERE TABLE_SCHEMA='public';"
             }
