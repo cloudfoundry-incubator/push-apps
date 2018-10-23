@@ -131,10 +131,7 @@ class DockerSupport {
         connectionProps["password"] = mysqlPassword
         Class.forName("org.mariadb.jdbc.Driver").newInstance()
         return DriverManager.getConnection(
-                "jdbc:mysql://" +
-                        mysqlHost +
-                        ":" + mysqlPort + "/" +
-                        "",
+                "jdbc:mariadb://$mysqlHost:$mysqlPort/",
                 connectionProps)
     }
 
@@ -166,7 +163,7 @@ class DockerSupport {
 
     fun checkIfTableExists(conn: Connection, dbName: String, tableName: String): Boolean {
         try {
-            var query = "SELECT TABLE_NAME FROM information_schema.tables WHERE TABLE_SCHEMA='$dbName';"
+            var query = "SELECT TABLE_NAME FROM information_schema.tables WHERE TABLE_SCHEMA='${dbName}';"
             if (conn.metaData.databaseProductName.contains("PostgreSQL")) {
                 query = "SELECT TABLE_NAME FROM information_schema.tables WHERE TABLE_SCHEMA='public';"
             }

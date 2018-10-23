@@ -1,5 +1,6 @@
 package org.cloudfoundry.tools.pushapps
 
+import org.apache.logging.log4j.LogManager
 import org.cloudfoundry.tools.pushapps.config.DatabaseDriver
 import org.cloudfoundry.tools.pushapps.config.Migration
 import javax.sql.DataSource
