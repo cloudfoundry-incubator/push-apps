@@ -1,5 +1,8 @@
 package org.cloudfoundry.tools.pushapps
 
+import org.apache.logging.log4j.Level
+import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.io.IoBuilder
 import org.mariadb.jdbc.MariaDbPoolDataSource
 import javax.sql.DataSource
 
@@ -25,6 +28,7 @@ class MySqlDataSourceBuilder : DataSourceBuilder {
     override var databaseName: String? = null
     override var password: String? = null
     override var port: Int = 0
+    private val logger = LogManager.getLogger(MySqlDataSourceBuilder::class.java)
 
     override fun build(): DataSource {
         val dataSource = MariaDbPoolDataSource()
@@ -33,9 +37,9 @@ class MySqlDataSourceBuilder : DataSourceBuilder {
         if (host !== null) dataSource.serverName = host
         if (port > 0) dataSource.port = port
         if (databaseName !== null) dataSource.databaseName = databaseName
-
         if (password !== null) dataSource.setPassword(password)
 
+        dataSource.logWriter = IoBuilder.forLogger(logger).setLevel(Level.DEBUG).buildPrintWriter()
         return dataSource
     }
 }
