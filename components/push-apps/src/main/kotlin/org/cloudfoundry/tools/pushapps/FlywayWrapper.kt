@@ -11,7 +11,7 @@ import javax.sql.DataSource
 class FlywayWrapper(
     private val createFlywayInstance: () -> Flyway
 ) {
-    fun migrate(dataSource: DataSource, migrationsLocation: String, repair: Boolean): Mono<Void> {
+    fun migrate(dataSource: DataSource, migrationsLocation: String, repair: Boolean, placeholders: Map<String, String>): Mono<Void> {
         return Mono.fromRunnable {
             // Need a new flyway instance for each migration, otherwise it can use the wrong datasource,
             // since this is executed async
@@ -26,6 +26,8 @@ class FlywayWrapper(
             flyway.setLocations("filesystem:$migrationsLocation")
 
             if (repair) flyway.repair()
+
+            flyway.placeholders = placeholders
 
             flyway.migrate()
             flyway.validate()

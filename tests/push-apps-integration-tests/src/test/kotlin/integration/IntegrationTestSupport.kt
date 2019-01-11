@@ -81,7 +81,7 @@ fun buildTestContext(
 
 private fun buildMockFlywayWrapper(): FlywayWrapper {
     val flywayWrapper = mock<FlywayWrapper>()
-    whenever(flywayWrapper.migrate(any(), any(), any())).thenReturn(Mono.empty())
+    whenever(flywayWrapper.migrate(any(), any(), any(), any())).thenReturn(Mono.empty())
     return flywayWrapper
 }
 

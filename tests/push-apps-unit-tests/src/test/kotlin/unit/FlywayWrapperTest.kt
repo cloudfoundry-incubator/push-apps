@@ -19,7 +19,8 @@ class FlywayWrapperTest : Spek({
     data class TestContext(
         val flyway: Flyway,
         val flywayWrapper: FlywayWrapper,
-        val dataSource: DataSource
+        val dataSource: DataSource,
+        val placeholders: Map<String, String>
     )
 
     fun buildTextContext(): TestContext {
@@ -31,7 +32,8 @@ class FlywayWrapperTest : Spek({
         return TestContext(
             flyway = flyway,
             flywayWrapper = flywayWrapper,
-            dataSource = dataSource
+            dataSource = dataSource,
+            placeholders = mapOf("foo" to "bar")
         )
     }
 
@@ -48,35 +50,38 @@ class FlywayWrapperTest : Spek({
     val validMigrationsPath = "$supportPath/dummyMigrations"
 
     describe("#migrate") {
-        it("migrates the database using the provided datasource and migration location") {
-            val (flyway, flywayWrapper, dataSource) = buildTextContext()
+        it("migrates the database using the provided datasource, migration location, and placeholders") {
+            val (flyway, flywayWrapper, dataSource, placeholders) = buildTextContext()
 
             flywayWrapper.migrate(
                 dataSource = dataSource,
                 migrationsLocation = validMigrationsPath,
-                repair = false
+                repair = false,
+                placeholders = placeholders
             ).block()
 
             verify(flyway).dataSource = dataSource
             verify(flyway).setLocations("filesystem:$validMigrationsPath")
+            verify(flyway).placeholders = placeholders
             verify(flyway).validate()
             verify(flyway).migrate()
         }
 
         it("repairs the schema table when repair is requested") {
-            val (flyway, flywayWrapper, dataSource) = buildTextContext()
+            val (flyway, flywayWrapper, dataSource, placeholders) = buildTextContext()
 
             flywayWrapper.migrate(
                 dataSource = dataSource,
                 migrationsLocation = validMigrationsPath,
-                repair = true
+                repair = true,
+                placeholders = placeholders
             ).block()
 
             verify(flyway).repair()
         }
 
         it("throws exceptions thrown by flyway") {
-            val (flyway, flywayWrapper, dataSource) = buildTextContext()
+            val (flyway, flywayWrapper, dataSource, placeholders) = buildTextContext()
 
             whenever(flyway.migrate()).thenThrow(FlywayException())
 
@@ -84,13 +89,14 @@ class FlywayWrapperTest : Spek({
                 flywayWrapper.migrate(
                     dataSource = dataSource,
                     migrationsLocation = validMigrationsPath,
-                    repair = false
+                    repair = false,
+                    placeholders = placeholders
                 ).block()
             }
         }
 
         it("throws a FlywayException if migrations location does not exist or contain migrations") {
-            val (flyway, flywayWrapper, dataSource) = buildTextContext()
+            val (flyway, flywayWrapper, dataSource, placeholders) = buildTextContext()
             val invalidMigrationsPath = "$supportPath/doesNotExist"
 
             println("valid: $validMigrationsPath")
@@ -99,11 +105,13 @@ class FlywayWrapperTest : Spek({
             flywayWrapper.migrate(
                 dataSource = dataSource,
                 migrationsLocation = validMigrationsPath,
-                repair = false
+                repair = false,
+                placeholders = placeholders
             ).block()
 
             verify(flyway).setLocations("filesystem:$validMigrationsPath")
             verify(flyway).dataSource = dataSource
+            verify(flyway).placeholders = placeholders
             verify(flyway).validate()
             verify(flyway).migrate()
 
@@ -111,7 +119,8 @@ class FlywayWrapperTest : Spek({
                 flywayWrapper.migrate(
                     dataSource = dataSource,
                     migrationsLocation = invalidMigrationsPath,
-                    repair = false
+                    repair = false,
+                    placeholders = placeholders
                 ).block()
             }
             verifyNoMoreInteractions(flyway)

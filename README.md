@@ -100,6 +100,8 @@ migrations: #optional array
   schema: backend #required
   migrationDir: /var/vcap/packages/backend/dbmigrations/metrics/ #required
   repair: true #optional, default false
+  placeholders: #optional, map of placeholders https://flywaydb.org/documentation/migrations#placeholder-replacement
+    SOME_PLACEHOLDER: "some-value" #optional
 securityGroups: #optional array
 - name: outer-api #required
   destination: "0.0.0.0-255.255.255.255" #required

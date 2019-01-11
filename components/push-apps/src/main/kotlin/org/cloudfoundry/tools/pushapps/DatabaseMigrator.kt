@@ -47,7 +47,7 @@ class DatabaseMigrator(
         )
 
         return flywayWrapper
-            .migrate(newDataSource, migration.migrationDir, migration.repair)
+            .migrate(newDataSource, migration.migrationDir, migration.repair, migration.placeholders)
             .timeout(Duration.ofMinutes(timeoutInMinutes))
             .transform(logAsyncOperation(logger, description))
             .then(Mono.just(operationResult))

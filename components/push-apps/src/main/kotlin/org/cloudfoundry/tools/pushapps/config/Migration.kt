@@ -10,19 +10,21 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
 
+
 @JsonDeserialize(using = MigrationDeserializer::class)
 @JsonSerialize(using = MigrationSerializer::class)
 data class Migration(
-        val user: String,
-        val password: String,
-        val driver: DatabaseDriver,
-        val host: String,
-        val port: String,
-        val schema: String,
-        val migrationDir: String,
-        val repair: Boolean,
-        override val name: String = "Migrate schema $schema",
-        override val optional: Boolean = false
+    val user: String,
+    val password: String,
+    val driver: DatabaseDriver,
+    val host: String,
+    val port: String,
+    val schema: String,
+    val migrationDir: String,
+    val repair: Boolean,
+    val placeholders: Map<String, String>,
+    override val name: String = "Migrate schema $schema",
+    override val optional: Boolean = false
 ) : OperationConfig
 
 class MigrationDeserializer : StdDeserializer<Migration>(Migration::class.java) {
@@ -35,6 +37,13 @@ class MigrationDeserializer : StdDeserializer<Migration>(Migration::class.java) 
         val port = node.get("port").asText()
         val schema = node.get("schema").asText()
         val migrationDir = node.get("migrationDir").asText()
+
+        val placeholders = mutableMapOf<String, String>()
+        if (node.has("placeholders")) {
+            for (placeholder in node.get("placeholders").fields()) {
+                placeholders[placeholder.key] = placeholder.value.asText()
+            }
+        }
 
         val repair = if (node.has("repair")) {
             node.get("repair").asBoolean()
@@ -49,14 +58,15 @@ class MigrationDeserializer : StdDeserializer<Migration>(Migration::class.java) 
         }
 
         return Migration(
-                user,
-                password,
-                driver,
-                host,
-                port,
-                schema,
-                migrationDir,
-                repair
+            user,
+            password,
+            driver,
+            host,
+            port,
+            schema,
+            migrationDir,
+            repair,
+            placeholders
         )
     }
 }
