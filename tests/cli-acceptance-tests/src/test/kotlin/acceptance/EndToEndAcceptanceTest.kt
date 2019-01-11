@@ -91,7 +91,8 @@ class EndToEndAcceptanceTest : Spek({
                     schema = "new_db",
                     driver = DatabaseDriver.MySql(),
                     migrationDir = "${acceptanceTestSupport.acceptanceTestProjectDir}/src/test/kotlin/support/dbmigrations",
-                    repair = false
+                    repair = false,
+                    placeholders = emptyMap()
             )
 
             val pgMigration = Migration(
@@ -102,7 +103,8 @@ class EndToEndAcceptanceTest : Spek({
                     schema = "metrics",
                     driver = DatabaseDriver.Postgres(),
                     migrationDir = "${acceptanceTestSupport.acceptanceTestProjectDir}/src/test/kotlin/support/dbmigrations",
-                    repair = false
+                    repair = false,
+                    placeholders = emptyMap()
             )
 
             val securityGroup = SecurityGroup(

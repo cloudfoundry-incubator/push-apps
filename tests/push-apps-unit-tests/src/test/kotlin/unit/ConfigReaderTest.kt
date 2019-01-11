@@ -185,6 +185,7 @@ class ConfigReaderTest : Spek({
             assertThat(migration.schema).isEqualTo("metrics")
             assertThat(migration.migrationDir).isEqualTo("/all/the/cool/migrations")
             assertThat(migration.repair).isFalse()
+            assertThat(migration.placeholders).isEqualTo(mapOf("SOME_PLACEHOLDER" to "foo foo"))
         }
     }
 })

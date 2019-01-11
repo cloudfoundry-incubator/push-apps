@@ -50,6 +50,8 @@ migrations:
   schema: metrics
   migrationDir: /all/the/cool/migrations
   repair: false
+  placeholders:
+    SOME_PLACEHOLDER: "foo foo"
 securityGroups:
 - name: some-group
   destination: some-destination

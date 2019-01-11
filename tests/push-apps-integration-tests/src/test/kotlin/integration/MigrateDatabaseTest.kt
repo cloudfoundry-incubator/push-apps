@@ -24,7 +24,8 @@ class MigrateDatabaseTest : Spek({
                 schema = "new_db",
                 driver = DatabaseDriver.MySql(),
                 migrationDir = "$workingDir/src/test/kotlin/support/dbmigrations",
-                repair = false
+                repair = false,
+                placeholders = emptyMap()
         )
 
         it("performing the given migrations") {
@@ -53,7 +54,8 @@ class MigrateDatabaseTest : Spek({
             verify(tc.flyway).migrate(
                 dataSource = tc.dataSource,
                 migrationsLocation = migration.migrationDir,
-                repair = false
+                repair = false,
+                placeholders = emptyMap()
             )
         }
         it("does not create the database if postgres") {
@@ -65,7 +67,8 @@ class MigrateDatabaseTest : Spek({
                     schema = "new_db",
                     driver = DatabaseDriver.Postgres(),
                     migrationDir = "$workingDir/src/test/kotlin/support/dbmigrations",
-                    repair = false
+                    repair = false,
+                    placeholders = emptyMap()
             )
 
             val tc = buildTestContext(
