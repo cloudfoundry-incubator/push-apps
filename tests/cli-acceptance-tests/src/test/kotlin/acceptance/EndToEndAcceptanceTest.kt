@@ -29,12 +29,6 @@ class EndToEndAcceptanceTest : Spek({
                     credentials = mapOf("compliment" to "handsome")
             )
 
-            val metricsForwarderService = ServiceConfig(
-                    name = "my-scheduler",
-                    plan = "standard",
-                    broker = "scheduler-for-pcf"
-            )
-
             val optionalService = ServiceConfig(
                     name = "optional-service",
                     plan = "some-plan",
@@ -126,7 +120,7 @@ class EndToEndAcceptanceTest : Spek({
                 acceptanceTestContext = acceptanceTestSupport.buildTestContext(
                     space = "test",
                     apps = listOf(helloApp, blueGreenApp),
-                    services = listOf(metricsForwarderService, optionalService),
+                    services = listOf(optionalService),
                     userProvidedServices = listOf(complimentService),
                     migrations = listOf(mysqlMigration, pgMigration),
                     securityGroups = listOf(securityGroup),
