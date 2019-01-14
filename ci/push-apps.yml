@@ -17,7 +17,7 @@ resources:
 - name: slack-alert
   type: slack-notification
   source:
-    url: ((webhook-url))
+    url: ((push-apps-webhook-url))
 
 jobs:
 - name: test-push-apps
@@ -140,11 +140,11 @@ jobs:
       passed: [ test-push-apps ]
   - task: publish
     params:
-      BINTRAY_USER: ((bintray-user))
-      BINTRAY_API_KEY: ((bintray-api-key))
-      BINTRAY_GPG_PASSPHRASE: ((bintray-gpg-passphrase))
-      MAVEN_CENTRAL_TOKEN_USER: ((maven-central-token-user))
-      MAVEN_CENTRAL_TOKEN_PASSWORD: ((maven-central-token-password))
+      BINTRAY_USER: ((push-apps-bintray-user))
+      BINTRAY_API_KEY: ((push-apps-bintray-api-key))
+      BINTRAY_GPG_PASSPHRASE: ((push-apps-bintray-gpg-passphrase))
+      MAVEN_CENTRAL_TOKEN_USER: ((push-apps-maven-central-token-user))
+      MAVEN_CENTRAL_TOKEN_PASSWORD: ((push-apps-maven-central-token-password))
     config:
       platform: linux
       image_resource:
@@ -200,8 +200,8 @@ jobs:
       inputs:
       - name: push-apps
       params:
-        DOCKER_USERNAME: ((docker-username))
-        DOCKER_PASSWORD: ((docker-password))
+        DOCKER_USERNAME: ((push-apps-docker-username))
+        DOCKER_PASSWORD: ((push-apps-docker-password))
       run:
         path: bash
         args:
@@ -218,5 +218,5 @@ jobs:
     params:
       DOCKER_API_VERSION: 1.23
       DOCKER_HOST: "10.0.16.11:4243"
-      DOCKER_USERNAME: "((docker-username))"
-      DOCKER_PASSWORD: "((docker-password))"
+      DOCKER_USERNAME: "((push-apps-docker-username))"
+      DOCKER_PASSWORD: "((push-apps-docker-password))"

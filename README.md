@@ -129,6 +129,19 @@ variables to determine which environment to hit.
 This test does not run as a part of the build `./gradlew build`, but will run on CI, and is available via the
 `acceptanceTest` gradle task.
 
+### CI
+
+CI is running on [concourse](https://concourse.superpipe.gcp.pcf-metrics.com/teams/main/pipelines/push-apps).
+
+Pushing this repository will trigger a build. 
+
+In order to update the pipelines, you must have lpass and superpipe access and you can run `ci/set-pipeline.sh`. 
+Any changes to `ci/push-app.yml` should be pushed up to github once you are happy with the pipeline.
+
+Currently, the pipeline is targeted to the denver sunstorm environment. In order for the pipeline to run 
+properly, [PCF Scheduler](https://network.pivotal.io/products/p-scheduler) must be installed as push-apps uses a service binding
+in acceptance tests.
+
 ## Known Issues
 
 The following issues are known and have stories/bugs waiting for them in the backlog.
