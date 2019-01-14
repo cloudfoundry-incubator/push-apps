@@ -141,8 +141,6 @@ In order to update the pipelines, you must have lpass and superpipe access and y
 Any changes to `ci/push-app.yml` should be pushed up to github once you are happy with the pipeline.
 
 Currently, the pipeline is targeted to a denver bbl deployed environment (see `CF_DOMAIN` in the pipeline). 
-In order for the pipeline to run properly, [PCF Scheduler](https://network.pivotal.io/products/p-scheduler) must be installed as push-apps uses a service binding
-in acceptance tests.
 
 ## Known Issues
 
