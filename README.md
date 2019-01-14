@@ -131,11 +131,13 @@ This test does not run as a part of the build `./gradlew build`, but will run on
 
 ### CI
 
-CI is running on [concourse](https://concourse.superpipe.gcp.pcf-metrics.com/teams/main/pipelines/push-apps).
+Unfortunately, CI is private and you may be unable to view the 
+[concourse](https://concourse.superpipe.gcp.pcf-metrics.com/teams/main/pipelines/push-apps) pipeline.
 
-Pushing this repository will trigger a build. 
+Pushing master of this repository will trigger a build. 
 
-In order to update the pipelines, you must have lpass and superpipe access and you can run `ci/set-pipeline.sh`. 
+In order to update the pipelines, you must have access to private lpass folders and private concourse access.
+The script `ci/set-pipeline.sh` will set the pipeline if you have the necessary permissions. 
 Any changes to `ci/push-app.yml` should be pushed up to github once you are happy with the pipeline.
 
 Currently, the pipeline is targeted to a denver bbl deployed environment (see `CF_DOMAIN` in the pipeline). 
