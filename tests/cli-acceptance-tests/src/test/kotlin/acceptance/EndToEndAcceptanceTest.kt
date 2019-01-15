@@ -54,7 +54,6 @@ class EndToEndAcceptanceTest : Spek({
                     ),
                     serviceNames = listOf(
                             "compliment-service",
-                            "my-scheduler",
                             "optional-service"
                     )
             )
@@ -181,7 +180,6 @@ class EndToEndAcceptanceTest : Spek({
                 val helloResponse = acceptanceTestSupport.httpGet("http://$helloUrl").block()
                 assertThat(helloResponse).contains("hello Steve, you are handsome!")
                 assertThat(helloResponse).contains("compliment-service")
-                assertThat(helloResponse).contains("my-scheduler")
                 assertThat(helloResponse).contains("Did you remember to walk your dog named Sally at 12:15?")
 
                 val greenUrl = applicationOperations
