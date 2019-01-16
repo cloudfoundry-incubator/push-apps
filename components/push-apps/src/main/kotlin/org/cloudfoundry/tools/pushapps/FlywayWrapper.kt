@@ -24,11 +24,9 @@ class FlywayWrapper(
 
             flyway.dataSource = dataSource
             flyway.setLocations("filesystem:$migrationsLocation")
-
-            if (repair) flyway.repair()
-
             flyway.placeholders = placeholders
 
+            if (repair) flyway.repair()
             flyway.migrate()
             flyway.validate()
         }
