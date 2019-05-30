@@ -1,4 +1,12 @@
 ---
+docker-environment: &docker-environment
+  COMPOSE_PROJECT_NAME: push_apps
+  DOCKER_HOST: "tcp://10.0.1.9:4243"
+  DOCKER_CA_CERT: ((docker-tls.ca))
+  DOCKER_TLS_CERT: ((docker-tls.certificate))
+  DOCKER_TLS_KEY: ((docker-tls.private_key))
+  INTEGRATION_HOST: "10.0.1.9"
+
 resource_types:
 - name: slack-notification
   type: docker-image
@@ -17,7 +25,13 @@ resources:
 - name: slack-alert
   type: slack-notification
   source:
-    url: ((push-apps-webhook-url))
+    url: ((webhook-url))
+- name: push-app-ci-image
+  type: docker-image
+  source:
+    repository: pcfmetrics/push-apps-ci
+    username: "((docker-username))"
+    password: "((docker-password))"
 
 jobs:
 - name: test-push-apps
@@ -26,9 +40,7 @@ jobs:
   on_failure:
     put: slack-alert
     params:
-      text: |
-        The Push-Apps build failed
-        https://concourse.superpipe.gcp.pcf-metrics.com/teams/main/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+      text: "$BUILD_PIPELINE_NAME <$ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|$BUILD_JOB_NAME> failed."
   plan:
   - get: push-apps
     trigger: true
@@ -65,8 +77,7 @@ jobs:
       attempts: 3
       timeout: 15m
       params:
-        DOCKER_HOST: "10.0.16.11:4243"
-        INTEGRATION_HOST: "10.0.16.11"
+        <<: *docker-environment
         LOG_LEVEL: "debug"
         CF_LOG_LEVEL: "error"
         CF_API: ((cf-api))
@@ -95,6 +106,12 @@ jobs:
               mkdir -p gradleCache
               gradle_cache="$(pwd)/gradleCache"
 
+              export DOCKER_CERT_PATH="$(pwd)/docker_certs"
+              mkdir -p $DOCKER_CERT_PATH
+              echo "$DOCKER_TLS_KEY" > $DOCKER_CERT_PATH/key.pem
+              echo "$DOCKER_TLS_CERT" > $DOCKER_CERT_PATH/cert.pem
+              echo "$DOCKER_CA_CERT" > $DOCKER_CERT_PATH/ca.pem
+
               echo "Running Acceptance Tests!"
 
               pushd push-apps
@@ -102,7 +119,7 @@ jobs:
               popd
   - task: docker-compose-down
     params:
-      DOCKER_HOST: "10.0.16.11:4243"
+      <<: *docker-environment
     config:
       platform: linux
       image_resource:
@@ -140,11 +157,11 @@ jobs:
       passed: [ test-push-apps ]
   - task: publish
     params:
-      BINTRAY_USER: ((push-apps-bintray-user))
-      BINTRAY_API_KEY: ((push-apps-bintray-api-key))
-      BINTRAY_GPG_PASSPHRASE: ((push-apps-bintray-gpg-passphrase))
-      MAVEN_CENTRAL_TOKEN_USER: ((push-apps-maven-central-token-user))
-      MAVEN_CENTRAL_TOKEN_PASSWORD: ((push-apps-maven-central-token-password))
+      BINTRAY_USER: ((bintray-user))
+      BINTRAY_API_KEY: ((bintray-api-key))
+      BINTRAY_GPG_PASSPHRASE: ((bintray-gpg-passphrase))
+      MAVEN_CENTRAL_TOKEN_USER: ((maven-central-token-user))
+      MAVEN_CENTRAL_TOKEN_PASSWORD: ((maven-central-token-password))
     config:
       platform: linux
       image_resource:
@@ -186,37 +203,11 @@ jobs:
   build_logs_to_retain: 25
   serial: true
   plan:
-  - aggregate:
-    - get: push-apps
-      trigger: false
-  - task: build-docker
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: pcfmetrics/push-apps-ci
-          tag: latest
-      inputs:
-      - name: push-apps
-      params:
-        DOCKER_USERNAME: ((push-apps-docker-username))
-        DOCKER_PASSWORD: ((push-apps-docker-password))
-      run:
-        path: bash
-        args:
-          - -c
-          - |
-            #!/bin/bash
-            set -ex
-
-            pushd push-apps/ci
-              docker login -u "${DOCKER_USERNAME}" -p "${DOCKER_PASSWORD}"
-              docker build -t pcfmetrics/push-apps-ci .
-              docker push pcfmetrics/push-apps-ci
-            popd
+  - get: push-apps
+    trigger: false
+  - put: push-app-ci-image
     params:
-      DOCKER_API_VERSION: 1.23
-      DOCKER_HOST: "10.0.16.11:4243"
-      DOCKER_USERNAME: "((push-apps-docker-username))"
-      DOCKER_PASSWORD: "((push-apps-docker-password))"
+      build: push-apps/ci
+    get_params:
+      skip_download: true
+
