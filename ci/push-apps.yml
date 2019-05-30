@@ -101,7 +101,7 @@ jobs:
             - -c
             - |
               #!/bin/bash
-              set -ex
+              set -e
 
               mkdir -p gradleCache
               gradle_cache="$(pwd)/gradleCache"
@@ -135,7 +135,13 @@ jobs:
           - -c
           - |
             #!/bin/bash
-            set -ex
+            set -e
+
+            export DOCKER_CERT_PATH="$(pwd)/docker_certs"
+            mkdir -p $DOCKER_CERT_PATH
+            echo "$DOCKER_TLS_KEY" > $DOCKER_CERT_PATH/key.pem
+            echo "$DOCKER_TLS_CERT" > $DOCKER_CERT_PATH/cert.pem
+            echo "$DOCKER_CA_CERT" > $DOCKER_CERT_PATH/ca.pem
 
             pushd push-apps/tests/cli-acceptance-tests/src/test/kotlin/support
               docker-compose down
