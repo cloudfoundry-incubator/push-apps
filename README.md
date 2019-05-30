@@ -134,7 +134,7 @@ This test does not run as a part of the build `./gradlew build`, but will run on
 ### CI
 
 Unfortunately, CI is private and you may be unable to view the 
-[concourse](https://concourse.superpipe.gcp.pcf-metrics.com/teams/main/pipelines/push-apps) pipeline.
+[concourse](https://concourse.cf-denver.com/teams/main/pipelines/push-apps) pipeline.
 
 Pushing master of this repository will trigger a build. 
 
